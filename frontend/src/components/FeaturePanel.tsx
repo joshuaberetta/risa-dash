@@ -1,8 +1,9 @@
 import { ActionIcon, Badge, Button, Group, Image, Modal, Select, SimpleGrid, Stack, Table, Text, TextInput } from '@mantine/core'
-import { IconPencil, IconShape, IconTrash, IconX } from '@tabler/icons-react'
+import { IconPencil, IconShape, IconSparkles, IconTrash, IconX } from '@tabler/icons-react'
 import area from '@turf/area'
 import length from '@turf/length'
 import { useEffect, useState } from 'react'
+import { photoNote } from '../analysis'
 import type { Config, LayerT, Status } from '../api'
 import type { PickedFeature } from '../map/MapView'
 import { symbolDataUrl } from '../map/symbols'
@@ -77,6 +78,9 @@ export default function FeaturePanel({ config, feature, layer, canEdit, onClose,
     .map(([k, v]) => [k, String(p[`${k}:label`] ?? v)] as const)
   const typeLabel = config.symbology.types[String(p.risa_type)]?.label
   const m = measure(feature.geometry)
+  // Observations without a photo show a template image, and every photo an example AI note
+  const observation = feature.geometry.type === 'Point' && (layer?.kind === 'kobo' || layer?.kind === 'vector')
+  const note = observation ? photoNote(String(p.risa_type || ''), String(p.risa_status || '')) : ''
   return (
     <Stack gap="sm" p="sm">
       <Group justify="space-between" wrap="nowrap" align="flex-start">
@@ -107,6 +111,17 @@ export default function FeaturePanel({ config, feature, layer, canEdit, onClose,
         <SimpleGrid cols={2} spacing={6} className="photo-grid">
           {photos.map((ph) => <img key={ph.url} src={photoUrl(ph.url)} alt={ph.name} loading="lazy" style={{ cursor: 'zoom-in' }} onClick={() => setPhoto(photoUrl(ph.large || ph.url))} />)}
         </SimpleGrid>
+      )}
+      {observation && photos.length === 0 && (
+        <SimpleGrid cols={2} spacing={6} className="photo-grid">
+          <img src="/sample-photo.svg" alt="Template image, no photo yet" style={{ cursor: 'zoom-in' }} onClick={() => setPhoto('/sample-photo.svg')} />
+        </SimpleGrid>
+      )}
+      {note && (
+        <Group gap={6} wrap="nowrap" align="flex-start">
+          <IconSparkles size={14} color="var(--mantine-color-violet-6)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <Text size="xs">{note} <Badge size="xs" color="violet" variant="light">example</Badge></Text>
+        </Group>
       )}
       {rows.length > 0 && (
         <Table fz="xs" verticalSpacing={3} withRowBorders>

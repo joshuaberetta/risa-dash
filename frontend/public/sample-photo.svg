@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+  <!-- Template image for observations without a photo -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cfe0ee"/>
+      <stop offset="1" stop-color="#eef2f5"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="480" fill="url(#sky)"/>
+  <path d="M0 330 Q160 300 320 318 T640 310 V480 H0 Z" fill="#c9b99a"/>
+  <path d="M0 370 Q200 350 380 365 T640 360 V480 H0 Z" fill="#b8a684"/>
+  <path d="M70 330 L170 230 L270 330 Z" fill="#e8ecef" stroke="#8c939c" stroke-width="4"/>
+  <path d="M170 230 L170 330" stroke="#8c939c" stroke-width="4"/>
+  <path d="M340 335 L420 255 L500 335 Z" fill="#dfe6ea" stroke="#8c939c" stroke-width="4"/>
+  <rect x="520" y="270" width="70" height="60" fill="#d5dce1" stroke="#8c939c" stroke-width="4"/>
+  <circle cx="540" cy="90" r="34" fill="#f4e3b5"/>
+  <g transform="translate(320 150)" fill="none" stroke="#1d232b" stroke-width="7" stroke-linejoin="round" opacity="0.55">
+    <rect x="-46" y="-26" width="92" height="64" rx="10"/>
+    <path d="M-18 -26 l8 -14 h20 l8 14"/>
+    <circle cx="0" cy="6" r="18"/>
+  </g>
+  <rect x="210" y="410" width="220" height="40" rx="20" fill="#1d232b" opacity="0.7"/>
+  <text x="320" y="437" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="20" font-weight="600" fill="#fff">Sample photo</text>
+</svg>

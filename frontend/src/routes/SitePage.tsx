@@ -1,12 +1,16 @@
-import { ActionIcon, AppShell, Button, Center, Divider, Group, Loader, Menu, Modal, Paper, ScrollArea, Select, Text, Tooltip } from '@mantine/core'
+import { ActionIcon, AppShell, Button, Center, Divider, Group, Loader, Menu, Modal, Paper, ScrollArea, Select, Tabs, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconRuler2, IconRulerMeasure, IconX } from '@tabler/icons-react'
+import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconRuler2, IconRulerMeasure, IconSparkles, IconTable, IconX } from '@tabler/icons-react'
+import turfBbox from '@turf/bbox'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Map as MLMap } from 'maplibre-gl'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import type { TerraDraw } from 'terra-draw'
+import { analyse, type Ref } from '../analysis'
 import { api, setCurrentResponse, type LayerT, type ProductView } from '../api'
+import AnalysisPanel, { AI_COLOR } from '../components/AnalysisPanel'
+import DataTable from '../components/DataTable'
 import { EditKeyButton } from '../components/EditKey'
 import FeaturePanel, { FeatureForm, type FeatureFields } from '../components/FeaturePanel'
 import Header from '../components/Header'
@@ -25,6 +29,8 @@ function unionBbox(layers: LayerT[]): [number, number, number, number] | null {
   return [Math.min(...bs.map((b) => b[0])), Math.min(...bs.map((b) => b[1])), Math.max(...bs.map((b) => b[2])), Math.max(...bs.map((b) => b[3]))]
 }
 
+const TABLE_HEIGHT = 320
+
 export default function SitePage() {
   const { response: rslug, site: sslug } = useParams()
   setCurrentResponse(rslug)
@@ -40,6 +46,9 @@ export default function SitePage() {
   const [mode, setMode] = useState<DrawMode>('static')
   const [shapeEdit, setShapeEdit] = useState<PickedFeature | null>(null)
   const [measurement, setMeasurement] = useState<Measurement | null>(null)
+  const [tab, setTab] = useState<string | null>('summary')
+  const [tableOpen, setTableOpen] = useState(false)
+  const [focused, setFocused] = useState<{ id: string; geometries: GeoJSON.Geometry[] } | null>(null)
   const mapRef = useRef<MLMap | null>(null)
   const drawRef = useRef<TerraDraw | null>(null)
   const fitted = useRef(false)
@@ -66,6 +75,9 @@ export default function SitePage() {
   }, [layers, state])
   const visibleIds = layers.filter((l) => fullState[l.id]?.visible && l.status === 'ready').map((l) => l.id)
   const summary = useSummary(site?.id, visibleIds, layers.map((l) => l.updated_at).join())
+  const visibleLayers = layers.filter((l) => visibleIds.includes(l.id))
+  const analysis = useMemo(() => site ? analyse(site.name, visibleLayers, data, (t) => config.symbology.types[t]?.label || t) : null,
+    [site?.name, visibleIds.join(), data, config])
   const legend = useMemo(() => legendData(layers.filter((l) => fullState[l.id]?.visible), data), [layers, fullState, data])
   const setState = useCallback((id: string, s: Partial<LayerState>) => {
     setStateAll((cur) => {
@@ -96,6 +108,21 @@ export default function SitePage() {
     qc.invalidateQueries({ queryKey: ['site'] })
   }
   const refresh = () => qc.invalidateQueries({ queryKey: ['site'] })
+
+  // Outline features on the map (from an analysis finding or a table row) and frame them
+  const focus = (id: string, geometries: GeoJSON.Geometry[]) => {
+    if (focused?.id === id) return setFocused(null)
+    setFocused({ id, geometries })
+    if (!geometries.length) return
+    const fc: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: geometries.map((geometry) => ({ type: 'Feature', geometry, properties: {} })) }
+    const bb = turfBbox(fc) as [number, number, number, number]
+    mapRef.current?.fitBounds(bb, { padding: 80, maxZoom: 18, duration: 600 })
+  }
+  const focusRefs = (refs: Ref[], id: string) => focus(id, refs.map((r) => r.geometry))
+  const pickFromTable = (f: PickedFeature) => {
+    setPicked(f)
+    focus(`row-${f.id}`, [f.geometry])
+  }
 
   const setDrawMode = (m: DrawMode) => {
     const d = drawRef.current
@@ -199,6 +226,7 @@ export default function SitePage() {
             / <Link to={`/r/${site.response.slug}`} style={{ color: 'inherit' }}>{site.response.name}</Link> / <b>{site.name}</b>
           </Text>
           <Group gap="xs" ml="auto" wrap="nowrap">
+            <Button size="xs" variant={tableOpen ? 'light' : 'default'} leftSection={<IconTable size={14} />} onClick={() => setTableOpen(!tableOpen)}>Data table</Button>
             <EditKeyButton slug={site.response.slug} canEdit={canEdit} />
             <Menu position="bottom-end">
               <Menu.Target><Button size="xs" variant="default" leftSection={<IconDownload size={14} />}>Export</Button></Menu.Target>
@@ -227,8 +255,8 @@ export default function SitePage() {
         </ScrollArea>
       </AppShell.Navbar>
       <AppShell.Main style={{ height: '100vh', paddingBottom: 0 }}>
-        <div style={{ position: 'relative', height: 'calc(100vh - 52px)' }}>
-          <MapView config={config} basemap={basemap} layers={layers} state={fullState} data={data}
+        <div style={{ position: 'relative', height: tableOpen ? `calc(100vh - 52px - ${TABLE_HEIGHT}px)` : 'calc(100vh - 52px)' }}>
+          <MapView config={config} basemap={basemap} layers={layers} state={fullState} data={data} highlight={focused?.geometries}
             initial={site.default_view?.center ? site.default_view : undefined}
             onReady={onReady} onFeatureClick={(f) => mode === 'static' && setPicked(f)} />
           <Paper shadow="sm" p={4} withBorder style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
@@ -283,18 +311,33 @@ export default function SitePage() {
             </Paper>
           )}
         </div>
+        {tableOpen && (
+          <div style={{ height: TABLE_HEIGHT, borderTop: '1px solid var(--mantine-color-gray-3)', background: 'white' }}>
+            <DataTable config={config} layers={layers.filter((l) => ['kobo', 'vector', 'annotations'].includes(l.kind))} data={data}
+              onPick={pickFromTable} onClose={() => setTableOpen(false)} />
+          </div>
+        )}
       </AppShell.Main>
       <AppShell.Aside>
         <ScrollArea>
           {picked ? (
-            <FeaturePanel config={config} feature={picked} layer={pickedLayer} canEdit={canEdit} onClose={() => setPicked(null)}
+            <FeaturePanel config={config} feature={picked} layer={pickedLayer} canEdit={canEdit} onClose={() => { setPicked(null); if (focused?.id.startsWith('row-')) setFocused(null) }}
               onSave={saveFeature} onDelete={deleteFeature} onEditShape={startShapeEdit} />
           ) : (
-            <>
-              <SummaryPanel config={config} summary={summary.data} />
-              <Divider />
-              <ProductsPanel site={site} canEdit={canEdit} captureView={captureView} />
-            </>
+            <Tabs value={tab} onChange={setTab}>
+              <Tabs.List grow>
+                <Tabs.Tab value="summary">Summary</Tabs.Tab>
+                <Tabs.Tab value="ai" color={AI_COLOR} leftSection={<IconSparkles size={14} />}>AI analysis</Tabs.Tab>
+              </Tabs.List>
+              <Tabs.Panel value="summary">
+                <SummaryPanel config={config} summary={summary.data} />
+                <Divider />
+                <ProductsPanel site={site} canEdit={canEdit} captureView={captureView} />
+              </Tabs.Panel>
+              <Tabs.Panel value="ai">
+                <AnalysisPanel analysis={analysis} active={focused?.id || null} onFocus={focusRefs} />
+              </Tabs.Panel>
+            </Tabs>
           )}
         </ScrollArea>
       </AppShell.Aside>

@@ -41,11 +41,15 @@ interface Props {
   onReady?: (map: MLMap) => void
   onFeatureClick?: (f: PickedFeature | null) => void
   onIdle?: (map: MLMap) => void
+  /** Features to outline above everything else */
+  highlight?: GeoJSON.Geometry[]
   className?: string
   style?: React.CSSProperties
 }
 
-const isOurs = (id: string) => id.startsWith(OVERLAY_PREFIX) || id.startsWith('td-')
+const HL = 'hl-'
+const HL_COLOR = '#7048e8'
+const isOurs = (id: string) => id.startsWith(OVERLAY_PREFIX) || id.startsWith('td-') || id.startsWith(HL)
 
 export default function MapView(props: Props) {
   const el = useRef<HTMLDivElement>(null)
@@ -132,7 +136,7 @@ export default function MapView(props: Props) {
   useEffect(() => {
     const map = mapRef.current
     if (map && map.isStyleLoaded()) sync(map)
-  }, [props.layers, props.state, props.data])
+  }, [props.layers, props.state, props.data, props.highlight])
 
   function sync(map: MLMap) {
     const { layers, state, data, config } = propsRef.current
@@ -172,7 +176,18 @@ export default function MapView(props: Props) {
         wanted.add(spec.id)
       }
     }
-    // Drawing layers stay on top
+    // Highlight, then the drawing layers, on top
+    const hl: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: (propsRef.current.highlight || []).map((geometry) => ({ type: 'Feature', geometry, properties: {} })) }
+    const hlSource = map.getSource(`${HL}src`) as maplibregl.GeoJSONSource | undefined
+    if (hlSource) hlSource.setData(hl)
+    else {
+      map.addSource(`${HL}src`, { type: 'geojson', data: hl })
+      map.addLayer({ id: `${HL}fill`, type: 'fill', source: `${HL}src`, filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': HL_COLOR, 'fill-opacity': 0.12 } })
+      map.addLayer({ id: `${HL}casing`, type: 'line', source: `${HL}src`, filter: ['!=', ['geometry-type'], 'Point'], paint: { 'line-color': '#fff', 'line-width': 7, 'line-opacity': 0.9 } })
+      map.addLayer({ id: `${HL}line`, type: 'line', source: `${HL}src`, filter: ['!=', ['geometry-type'], 'Point'], paint: { 'line-color': HL_COLOR, 'line-width': 3.5 } })
+      map.addLayer({ id: `${HL}point`, type: 'circle', source: `${HL}src`, filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 19, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': HL_COLOR, 'circle-stroke-width': 3.5 } })
+    }
+    for (const ly of map.getStyle().layers) if (ly.id.startsWith(HL)) map.moveLayer(ly.id)
     for (const ly of map.getStyle().layers) if (ly.id.startsWith('td-')) map.moveLayer(ly.id)
     // Remove what's gone
     for (const ly of map.getStyle().layers) {
