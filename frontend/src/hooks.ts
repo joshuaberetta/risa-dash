@@ -17,7 +17,7 @@ export function useSite(response?: string, site?: string) {
     enabled: !!response && !!site,
     // Poll while something is processing
     refetchInterval: (q) => (q.state.data?.layers.some((l) => l.status === 'processing') ||
-      q.state.data?.products.some((p) => p.versions.some((v) => v.status === 'processing')) ? 3000 : false),
+      q.state.data?.products.some((p) => p.preview?.status === 'processing' || p.versions.some((v) => v.status === 'processing')) ? 3000 : false),
   })
 }
 

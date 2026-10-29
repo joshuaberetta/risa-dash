@@ -1,8 +1,8 @@
-import { ActionIcon, Anchor, Badge, Box, Button, Checkbox, Group, Loader, Modal, ScrollArea, SegmentedControl, Stack, Text, TextInput, Textarea, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Box, Button, Center, Checkbox, Group, Loader, Modal, ScrollArea, SegmentedControl, Stack, Text, TextInput, Textarea, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconCrop, IconFileTypePdf, IconPlus, IconPrinter, IconTrash } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, type Glance, type ProductT, type ProductView, type SiteFull } from '../api'
 
 export function ProductsPanel({ site, canEdit, captureView }: { site: SiteFull; canEdit: boolean; captureView: () => ProductView }) {
@@ -60,24 +60,15 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
   const qc = useQueryClient()
   const [p, setP] = useState<ProductT>(product)
   const [dirty, setDirty] = useState(false)
-  const [previewKey, setPreviewKey] = useState(0)
-  const frame = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.4)
   useEffect(() => {
-    // Keep versions fresh while a render runs
-    setP((cur) => ({ ...cur, versions: product.versions }))
-  }, [product.versions])
+    // Keep versions and the preview fresh while the worker runs
+    setP((cur) => ({ ...cur, versions: product.versions, preview: product.preview }))
+  }, [product.versions, product.preview])
   const set = (patch: Partial<ProductT>) => { setP({ ...p, ...patch }); setDirty(true) }
-  const glance = p.glance?.length === 4 ? p.glance : DEFAULT_GLANCE
-  const pageMm = p.page_size === 'A4' ? [297, 210] : [420, 297]
-  const pagePx = [pageMm[0] / 25.4 * 96, pageMm[1] / 25.4 * 96]
   useEffect(() => {
-    const el = frame.current
-    if (!el) return
-    const ro = new ResizeObserver(() => setScale(el.clientWidth / pagePx[0]))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [pagePx[0]])
+    if (canEdit && !product.preview?.status) api(`/products/${product.id}/preview`, { method: 'POST' }).then(() => qc.invalidateQueries({ queryKey: ['site'] }))
+  }, [product.id])
+  const glance = p.glance?.length === 4 ? p.glance : DEFAULT_GLANCE
 
   const save = async (extra: Partial<ProductT> = {}) => {
     const body = { ...p, ...extra }
@@ -88,7 +79,11 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
     } })
     setP({ ...out })
     setDirty(false)
-    setPreviewKey((k) => k + 1)
+    qc.invalidateQueries({ queryKey: ['site'] })
+  }
+  const preview = async () => {
+    await save()
+    await api(`/products/${p.id}/preview`, { method: 'POST' })
     qc.invalidateQueries({ queryKey: ['site'] })
   }
   const render = async () => {
@@ -136,9 +131,10 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
               <Stack gap="xs" mt="sm">
                 <Button variant="default" leftSection={<IconCrop size={16} />} onClick={() => save({ view: captureView() })}>Use the map's current view and layers</Button>
                 <Group grow>
-                  <Button variant="light" onClick={() => save()} disabled={!dirty}>Save and preview</Button>
+                  <Button variant="light" onClick={preview} loading={p.preview?.status === 'processing'}>Update preview</Button>
                   <Button leftSection={<IconPrinter size={16} />} onClick={render}>Render PDF</Button>
                 </Group>
+                {dirty && <Text size="xs" c="dimmed">Unsaved changes: Update preview or Render PDF saves them.</Text>}
                 <Button variant="subtle" color="red" size="xs" leftSection={<IconTrash size={14} />} onClick={remove}>Delete product</Button>
               </Stack>
             )}
@@ -154,12 +150,19 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
             ))}
           </Stack>
         </ScrollArea>
-        <Box ref={frame} style={{ flex: 1, height: '100%', overflow: 'auto', background: '#e4e7eb', borderRadius: 4 }}>
-          <div style={{ width: pagePx[0] * scale, height: pagePx[1] * scale, margin: '0 auto', boxShadow: '0 2px 12px rgba(0,0,0,.15)' }}>
-            <iframe key={previewKey} src={`/print/products/${p.id}?preview=1`} title="Preview"
-              style={{ width: pagePx[0], height: pagePx[1], border: 0, transform: `scale(${scale})`, transformOrigin: '0 0', background: '#fff' }} />
-          </div>
-          <Text size="xs" c="dimmed" ta="center" mt={6}>Preview. The PDF is rendered at 300 dpi on the server.</Text>
+        <Box style={{ flex: 1, height: '100%', overflow: 'auto', background: '#e4e7eb', borderRadius: 4, padding: 16 }}>
+          {p.preview?.url ? (
+            <img src={p.preview.url} alt="Preview of page 1" style={{ display: 'block', width: '100%', maxWidth: 1400, margin: '0 auto', boxShadow: '0 2px 12px rgba(0,0,0,.15)', background: '#fff', opacity: p.preview.status === 'processing' ? 0.5 : 1 }} />
+          ) : (
+            <Center h="60%"><Text c="dimmed">{p.preview?.status === 'processing' ? 'Rendering a draft…' : 'Click Update preview to see the page as it will print.'}</Text></Center>
+          )}
+          <Group justify="center" gap={6} mt={8}>
+            {p.preview?.status === 'processing' && <Loader size="xs" />}
+            <Text size="xs" c={p.preview?.status === 'failed' ? 'red' : 'dimmed'}>
+              {p.preview?.status === 'failed' ? `Preview failed: ${p.preview.error.slice(0, 300)}`
+                : p.preview?.at ? `Draft at low resolution, ${new Date(p.preview.at).toLocaleTimeString()}. The PDF is 300 dpi.` : ''}
+            </Text>
+          </Group>
         </Box>
       </Group>
     </Modal>

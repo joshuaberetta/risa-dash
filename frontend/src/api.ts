@@ -119,6 +119,7 @@ export interface ProductT {
   credits: string
   updated_at: string
   versions: ProductVersionT[]
+  preview: { status: '' | 'processing' | 'ready' | 'failed'; error: string; at: string | null; url: string | null }
 }
 
 export interface SiteT {

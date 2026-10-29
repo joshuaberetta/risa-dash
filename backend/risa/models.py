@@ -189,6 +189,11 @@ class Product(models.Model):
         default="The boundaries and names shown on this map do not imply official endorsement or acceptance."
     )
     credits = models.CharField(max_length=300, default="HI/Atlas Logistique · MapAction · Kobo")
+    # Draft render for the editor: the real Typst output at low resolution
+    preview_key = models.CharField(max_length=500, blank=True)
+    preview_status = models.CharField(max_length=20, blank=True)
+    preview_error = models.TextField(blank=True)
+    preview_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

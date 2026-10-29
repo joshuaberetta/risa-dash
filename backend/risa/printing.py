@@ -1,61 +1,140 @@
 """
-Render a product to PDF in headless Chromium. The worker opens the frontend's print
-route, waits until every map reports it's idle, then prints. The PDF is what the
-layout shows, with vector text. No GPU needed: WebGL runs on SwiftShader.
+Print a product: headless Chromium renders only the map (and the locator inset) at
+the frame's exact size, and Typst lays out the page around them (risa/typst/page1.typ).
+Vector text, a JPEG map, and a layout shared with our other Typst documents.
+
+No GPU needed: WebGL runs on SwiftShader. Nothing here needs the internet beyond what
+the map itself loads, so it works on an offline box.
 """
 
+import json
 import logging
 import os
+import shutil
+import subprocess
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from django.conf import settings
 from django.utils import timezone
 from playwright.sync_api import sync_playwright
 
-from . import storage
-from .models import ProductVersion
+from . import page1, storage
+from .models import Product, ProductVersion
+from .summary import site_summary
 
 log = logging.getLogger(__name__)
 
-PAGE_MM = {"A3": (420, 297), "A4": (297, 210)}
+TEMPLATE_DIR = Path(__file__).parent / "typst"
 CHROMIUM_ARGS = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist",
                  "--disable-dev-shm-usage", "--no-sandbox"]
+PRINT_DPI = 300
+DRAFT_DPI = 110
+CSS_PX_PER_MM = 96 / 25.4
 
 
-def _print_pdf(url: str, w: int, h: int, out: str) -> None:
+def _shoot(page, url: str, out: str, timeout_s: int = 180) -> dict:
+    page.goto(url, wait_until="domcontentloaded", timeout=120_000)
+    page.wait_for_function("window.__printReady === true || typeof window.__printError === 'string'",
+                           timeout=timeout_s * 1000, polling=300)
+    err = page.evaluate("window.__printError || null")
+    if err:
+        raise RuntimeError(f"Map page error: {err}")
+    state = page.evaluate("window.__mapState || null")
+    page.screenshot(path=out, type="jpeg", quality=88)
+    return state
+
+
+def _render_maps(product_id: str, version_n: int | None, frames: dict, dpi: int, tmp: str) -> dict:
     """Runs on its own thread: Playwright's sync API keeps an event loop running,
     and Django won't touch the database from a thread that has one."""
+    base = f"{settings.PRINT_BASE_URL}/print/map/{product_id}"
+    v = f"&v={version_n}" if version_n else ""
+    mw, mh = frames["map"]
+    iw, ih = frames["inset"]
     with sync_playwright() as p:
         browser = p.chromium.launch(args=CHROMIUM_ARGS)
         try:
-            # Page in CSS px at 96 dpi; the map sets its own pixel ratio for 300 dpi
-            page = browser.new_page(viewport={"width": round(w / 25.4 * 96), "height": round(h / 25.4 * 96)})
-            page.on("console", lambda m: log.info("print console: %s", m.text))
-            page.goto(url, wait_until="networkidle", timeout=120_000)
-            page.wait_for_function("window.__printReady === true || typeof window.__printError === 'string'",
-                                   timeout=180_000, polling=500)
-            err = page.evaluate("window.__printError || null")
-            if err:
-                raise RuntimeError(f"Print page error: {err}")
-            page.pdf(path=out, width=f"{w}mm", height=f"{h}mm", print_background=True,
-                     prefer_css_page_size=True, margin={"top": "0", "right": "0", "bottom": "0", "left": "0"})
+            ctx = browser.new_context(viewport={"width": round(mw * CSS_PX_PER_MM), "height": round(mh * CSS_PX_PER_MM)},
+                                      device_scale_factor=dpi / 96)
+            page = ctx.new_page()
+            page.on("console", lambda m: log.info("map: %s", m.text) if m.type in ("error", "warning") else None)
+            state = _shoot(page, f"{base}?part=main{v}", os.path.join(tmp, "map.jpg"))
+            ctx.close()
+            ctx = browser.new_context(viewport={"width": round(iw * CSS_PX_PER_MM), "height": round(ih * CSS_PX_PER_MM)},
+                                      device_scale_factor=max(2, dpi / 96))
+            bounds = ",".join(f"{x:.6f}" for x in state["bounds"])
+            try:
+                _shoot(ctx.new_page(), f"{base}?part=inset&bounds={bounds}&zoom={state['zoom']:.2f}{v}",
+                       os.path.join(tmp, "inset.jpg"), timeout_s=60)
+            except Exception:
+                # The page still prints without a locator (e.g. no basemap offline)
+                log.warning("Inset failed for %s", product_id, exc_info=True)
+            ctx.close()
         finally:
             browser.close()
+    return state
+
+
+def _typst(root: str, out: str, ppi: int | None = None) -> None:
+    cmd = [settings.TYPST_BIN, "compile", "--root", root, "--font-path", str(TEMPLATE_DIR / "fonts"),
+           "--ignore-system-fonts", os.path.join(root, "page1.typ"), out]
+    if ppi:
+        cmd += ["--format", "png", "--ppi", str(ppi)]
+    p = subprocess.run(cmd, capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(f"Typst: {(p.stderr or p.stdout).strip()[-2000:]}")
+
+
+def _basemap_attribution(view: dict) -> str:
+    from .api import basemaps
+
+    bm = next((b for b in basemaps() if b["id"] == view.get("basemap")), None)
+    return bm["attribution"] if bm else ""
+
+
+def _compose(product: Product, snapshot: dict, version_n: int | None, draft: bool, tmp: str) -> None:
+    view = snapshot.get("product", {}).get("view") or product.view
+    size = snapshot.get("product", {}).get("page_size") or product.page_size
+    f = page1.frames(size)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        state = pool.submit(_render_maps, str(product.id), version_n, f, DRAFT_DPI if draft else PRINT_DPI, tmp).result()
+    data = page1.build(product, snapshot, state, timezone.localtime(), draft, _basemap_attribution(view))
+    data["has_inset"] = os.path.exists(os.path.join(tmp, "inset.jpg"))
+    root = Path(tmp)
+    page1.write_assets(root, data)
+    shutil.copy(TEMPLATE_DIR / "page1.typ", root / "page1.typ")
 
 
 def render(version: ProductVersion) -> None:
     product = version.product
-    w, h = PAGE_MM.get(product.page_size, PAGE_MM["A3"])
-    url = f"{settings.PRINT_BASE_URL}/print/products/{product.id}?v={version.n}"
-    site_slug = product.site.slug
     with tempfile.TemporaryDirectory() as tmp:
+        _compose(product, version.snapshot, version.n, False, tmp)
         out = os.path.join(tmp, "product.pdf")
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            pool.submit(_print_pdf, url, w, h, out).result()
+        _typst(tmp, out)
         code = (product.code or "RISA").replace(" ", "_")
-        name = f"{code}_{site_slug}_v{version.n:02d}_{timezone.now():%Y%m%d}.pdf"
+        name = f"{code}_{product.site.slug}_v{version.n:02d}_{timezone.now():%Y%m%d}.pdf"
         version.pdf_key = storage.save(f"products/{product.id}/{name}", out, content_type="application/pdf")
+        # Keep the data the page was made from, for audit and reprints
+        version.snapshot = {**version.snapshot, "page": json.loads((Path(tmp) / "data.json").read_text())}
     version.status = "ready"
     version.error = ""
-    version.save(update_fields=["pdf_key", "status", "error"])
+    version.save(update_fields=["pdf_key", "status", "error", "snapshot"])
+
+
+def render_preview(product: Product) -> None:
+    """The current, unsaved-as-a-version product at low resolution, as a PNG."""
+    layer_ids = [lyr["id"] for lyr in product.view.get("layers", []) if lyr.get("visible", True)] or None
+    snapshot = {"product": {"view": product.view, "page_size": product.page_size, "glance": product.glance},
+                "summary": site_summary(product.site, layer_ids)}
+    snapshot = json.loads(json.dumps(snapshot, default=str))
+    with tempfile.TemporaryDirectory() as tmp:
+        _compose(product, snapshot, None, True, tmp)
+        out = os.path.join(tmp, "preview.png")
+        _typst(tmp, out, ppi=72)
+        product.preview_key = storage.save(f"products/{product.id}/preview.png", out, content_type="image/png")
+    product.preview_status = "ready"
+    product.preview_error = ""
+    product.preview_at = timezone.now()
+    product.save(update_fields=["preview_key", "preview_status", "preview_error", "preview_at"])

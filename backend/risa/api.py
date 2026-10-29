@@ -86,6 +86,10 @@ def product_dict(p: Product) -> dict:
         "key_message": p.key_message, "glance": p.glance, "authority": p.authority, "sources": p.sources,
         "disclaimer": p.disclaimer, "credits": p.credits, "updated_at": p.updated_at,
         "versions": [version_dict(v) for v in p.versions.all()[:20]],
+        "preview": {
+            "status": p.preview_status, "error": p.preview_error, "at": p.preview_at,
+            "url": f"/api/products/{p.id}/preview.png?t={int(p.preview_at.timestamp())}" if p.preview_key and p.preview_at else None,
+        },
     }
 
 
@@ -730,7 +734,7 @@ def render_product(request, pid: str):
 
     p = _product(request, pid)
     layer_ids = [lyr["id"] for lyr in p.view.get("layers", []) if lyr.get("visible", True)] or None
-    snap = {"product": {k: val for k, val in product_dict(p).items() if k not in ("versions", "updated_at")},
+    snap = {"product": {k: val for k, val in product_dict(p).items() if k not in ("versions", "updated_at", "preview")},
             "summary": site_summary(p.site, layer_ids)}
     snap = json.loads(json.dumps(snap, default=str))
     with transaction.atomic():
@@ -738,6 +742,28 @@ def render_product(request, pid: str):
         ver = ProductVersion.objects.create(product=p, n=n, snapshot=snap)
     job.defer(version_id=ver.id)
     return version_dict(ver)
+
+
+@api.post("/products/{pid}/preview")
+def preview_product(request, pid: str):
+    """Draft render of page 1 with the current settings, as a low-resolution PNG."""
+    from .tasks import render_preview
+
+    p = _product(request, pid)
+    p.preview_status, p.preview_error = "processing", ""
+    p.save(update_fields=["preview_status", "preview_error"])
+    render_preview.defer(product_id=str(p.id))
+    return {"ok": True}
+
+
+@api.get("/products/{pid}/preview.png")
+def preview_png(request, pid: str, t: str = ""):
+    p = _product(request, pid, edit=False)
+    if not p.preview_key:
+        raise HttpError(404, "No preview yet")
+    if storage.is_s3():
+        return HttpResponseRedirect(storage.url(p.preview_key))
+    return FileResponse(default_storage.open(p.preview_key, "rb"), content_type="image/png")
 
 
 @api.get("/products/{pid}/versions/{n}/pdf")

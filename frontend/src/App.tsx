@@ -2,7 +2,7 @@ import { Center, Loader, Text } from '@mantine/core'
 import { Route, Routes } from 'react-router'
 import { useConfig } from './hooks'
 import Home from './routes/Home'
-import PrintPage from './routes/PrintPage'
+import MapPrint from './routes/MapPrint'
 import ResponsePage from './routes/ResponsePage'
 import SitePage from './routes/SitePage'
 
@@ -15,7 +15,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/r/:response" element={<ResponsePage />} />
       <Route path="/r/:response/:site" element={<SitePage />} />
-      <Route path="/print/products/:id" element={<PrintPage />} />
+      <Route path="/print/map/:id" element={<MapPrint />} />
     </Routes>
   )
 }

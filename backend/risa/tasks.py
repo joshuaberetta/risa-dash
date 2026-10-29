@@ -8,7 +8,7 @@ from django.utils import timezone
 from procrastinate.contrib.django import app
 
 from . import ingest, kobo, printing
-from .models import KoboSource, Layer, ProductVersion, Upload
+from .models import KoboSource, Layer, Product, ProductVersion, Upload
 
 log = logging.getLogger(__name__)
 
@@ -61,3 +61,14 @@ def render_product(version_id: int):
         v.save(update_fields=["status", "error"])
 
 
+
+
+@app.task(queue="print")
+def render_preview(product_id: str):
+    p = Product.objects.select_related("site__response").get(id=product_id)
+    try:
+        printing.render_preview(p)
+    except Exception as e:
+        log.exception("Preview %s failed", product_id)
+        p.preview_status, p.preview_error = "failed", str(e)[:4000]
+        p.save(update_fields=["preview_status", "preview_error"])

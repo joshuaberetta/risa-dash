@@ -18,7 +18,15 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app/backend
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv venv --python /usr/bin/python3 /opt/venv && uv sync --frozen --no-dev --no-install-project
-RUN playwright install --with-deps --only-shell chromium && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends xz-utils \
+ && playwright install --with-deps --only-shell chromium && rm -rf /var/lib/apt/lists/*
+# Typst lays out the printed pages
+ARG TYPST_VERSION=0.15.1
+ARG TARGETARCH
+RUN arch=$([ "$TARGETARCH" = "arm64" ] && echo aarch64 || echo x86_64) \
+ && curl -fsSL "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-${arch}-unknown-linux-musl.tar.xz" \
+    | tar -xJ -C /usr/local/bin --strip-components=1 "typst-${arch}-unknown-linux-musl/typst" \
+ && typst --version
 COPY deploy/start.sh /usr/local/bin/start
 
 # Development: code is mounted

@@ -157,6 +157,8 @@ GLYPHS_URL = env("GLYPHS_URL", "https://tiles.openfreemap.org/fonts/{fontstack}/
 # ---- print ------------------------------------------------------------------------
 # The worker opens the print route here. Inside compose: http://web:8000
 PRINT_BASE_URL = env("PRINT_BASE_URL", PUBLIC_URL).rstrip("/")
+# Typst lays out the printed pages (risa/typst/)
+TYPST_BIN = env("TYPST_BIN", "typst")
 
 SYMBOLOGY_FILE = Path(env("SYMBOLOGY_FILE", str(REPO_DIR / "symbology" / "risa.json")))
 

@@ -123,14 +123,19 @@ export function overlayLayers(l: LayerT, sym: Symbology): LayerSpecification[] {
       layout: {
         'icon-image': ['concat', 'risa:', ['case', ['==', rtype, ''], 'other', rtype], ':', ['case', ['==', status, ''], 'unknown', status]],
         'icon-allow-overlap': true,
-        'icon-ignore-placement': true,
+        // Labels give way to service symbols, not the other way round
+        'icon-ignore-placement': false,
         'icon-size': ['interpolate', ['linear'], ['zoom'], 12, 0.6, 17, 1],
       },
       paint: { 'icon-opacity': op },
     },
     {
       id: lid(l, 'labels-poly'), type: 'symbol', source: src, filter: isPoly,
-      layout: { 'text-field': labelField, 'text-font': FONT_BOLD, 'text-size': 13, 'text-max-width': 8, 'text-padding': 1 },
+      // Shifts off the centre rather than sitting under a service symbol
+      layout: {
+        'text-field': labelField, 'text-font': FONT_BOLD, 'text-size': 13, 'text-max-width': 8, 'text-padding': 1,
+        'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'], 'text-radial-offset': 0.9,
+      },
       paint: { 'text-color': sym.ink, 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1.6, 'text-opacity': op },
     },
     {

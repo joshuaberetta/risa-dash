@@ -1,5 +1,6 @@
-// The one theme file. Neutral for now; the chosen RISA brand direction replaces these
-// values later. The reserved status colours are not brand and live in symbology/risa.json.
+// The one theme file for the web app. Neutral for now; the chosen RISA brand direction
+// replaces these values later. The printed page's colours are in backend/risa/page1.py
+// (COLORS). The reserved status colours are not brand and live in symbology/risa.json.
 import { createTheme } from '@mantine/core'
 
 export const theme = createTheme({
@@ -12,12 +13,3 @@ export const theme = createTheme({
   defaultRadius: 'sm',
 })
 
-// Used by the printed product (page 1 header band etc.)
-export const brand = {
-  band: '#1D2A3A',
-  bandInk: '#FFFFFF',
-  accent: '#E2E7EE',
-  accentInk: '#1D2A3A',
-  rule: '#D9DEE4',
-  muted: '#4A5A6D',
-}
