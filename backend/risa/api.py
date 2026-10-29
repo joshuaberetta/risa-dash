@@ -74,6 +74,8 @@ def layer_dict(lyr: Layer) -> dict:
         d["kobo"] = {"server": k.server_url, "asset_uid": k.asset_uid, "asset_name": k.asset_name,
                      "last_synced_at": k.last_synced_at, "last_error": k.last_error,
                      "submissions": k.submission_count, "auto_sync": k.auto_sync}
+    if lyr.kind == "analysis":
+        d["analysis"] = {k: lyr.meta.get(k) for k in ("source_layer", "model", "simulated", "progress", "counts", "aoi")}
     if lyr.original:
         d["download"] = f"/api/layers/{lyr.id}/original"
     return d
@@ -417,6 +419,8 @@ class FeaturePatch(Schema):
     risa_status: str | None = None
     label: str | None = None
     properties: dict | None = None
+    # Imagery analysis: suggested | accepted | rejected
+    review: str | None = None
 
 
 def _geom(gj: dict):
@@ -473,6 +477,16 @@ def patch_feature(request, fid: str, data: FeaturePatch):
         f.geom = _geom(d.pop("geometry"))
     if "label" in d:
         f.label = d.pop("label")
+    if "review" in d:
+        review = d.pop("review")
+        if review not in REVIEW_STATES:
+            raise HttpError(400, "review must be suggested, accepted or rejected")
+        f.properties = {**f.properties, "review": review}
+    elif f.properties.get("review") == "suggested" and ("geometry" in d or "risa_type" in d):
+        # Editing a suggestion means a person has checked it
+        f.properties = {**f.properties, "review": "accepted", "edited": True}
+    if "risa_type" in d and "ai_class" in f.properties:
+        f.properties = {**f.properties, "ai_class": d["risa_type"]}
     for k, v in d.items():
         setattr(f, k, v)
     f.save()
@@ -487,6 +501,78 @@ def delete_feature(request, fid: str):
     f.delete()
     _bbox(lyr)
     return {"ok": True}
+
+
+# ---- imagery analysis (simulated segmentation) ------------------------------------
+
+REVIEW_STATES = ("suggested", "accepted", "rejected")
+
+
+class AnalyseIn(Schema):
+    bounds: list[float] | None = None  # [w, s, e, n]; default: the whole image
+
+
+@api.post("/layers/{layer_id}/analyse")
+def analyse_layer(request, layer_id: str, data: AnalyseIn):
+    """Detect shelters, buildings, blocks and the site boundary on an orthomosaic.
+    Simulated for now (see risa/analysis.py): the results are suggestions to review."""
+    from .tasks import analyse_imagery
+
+    src = _layer(request, layer_id)
+    if src.kind != "raster" or src.status != "ready" or not src.bbox:
+        raise HttpError(400, "Analysis needs an uploaded orthomosaic that has finished processing")
+    w, s_, e, n = src.bbox
+    b = data.bounds or src.bbox
+    aoi = [max(w, b[0]), max(s_, b[1]), min(e, b[2]), min(n, b[3])]
+    if aoi[0] >= aoi[2] or aoi[1] >= aoi[3]:
+        raise HttpError(400, "The area to analyse doesn't overlap the image")
+    site = src.site
+    lyr = Layer.objects.create(
+        site=site, name=f"Detected shelters (simulated) · {src.name}"[:200], kind="analysis", status="processing",
+        z_order=_next_z(site), style={"preset": "analysis"},
+        attribution=f"Shelters and buildings detected on {src.name} (simulated analysis, reviewed by a person)",
+        meta={"source_layer": str(src.id), "model": "simulated-colour-rules-v0", "simulated": True, "aoi": aoi,
+              "progress": {"step": "Queued", "pct": 2}},
+    )
+    analyse_imagery.defer(layer_id=str(lyr.id))
+    return layer_dict(lyr)
+
+
+class ReviewIn(Schema):
+    action: str  # accept | reject | reset | delete_rejected
+    min_confidence: float = 0
+    max_confidence: float = 1
+    classes: list[str] = []
+    only_suggested: bool = True
+
+
+@api.post("/layers/{layer_id}/review")
+def review_layer(request, layer_id: str, data: ReviewIn):
+    """Bulk review of an analysis layer, e.g. accept every suggested shelter at 70 % or more."""
+    lyr = _layer(request, layer_id)
+    if lyr.kind != "analysis":
+        raise HttpError(400, "Only analysis layers have suggestions to review")
+    qs = lyr.features.all()
+    if data.action == "delete_rejected":
+        n, _ = qs.filter(properties__review="rejected").delete()
+        _bbox(lyr)
+        return {"changed": n}
+    target = {"accept": "accepted", "reject": "rejected", "reset": "suggested"}.get(data.action)
+    if not target:
+        raise HttpError(400, "action must be accept, reject, reset or delete_rejected")
+    qs = qs.filter(properties__confidence__gte=data.min_confidence, properties__confidence__lte=data.max_confidence)
+    if data.only_suggested and target != "suggested":
+        qs = qs.filter(properties__review="suggested")
+    if data.classes:
+        qs = qs.filter(risa_type__in=data.classes)
+    n = 0
+    with transaction.atomic():
+        for f in qs.only("id", "properties"):
+            f.properties = {**f.properties, "review": target}
+            f.save(update_fields=["properties", "updated_at"])
+            n += 1
+    lyr.save(update_fields=["updated_at"])
+    return {"changed": n}
 
 
 # ---- uploads (chunked, resumable) --------------------------------------------------

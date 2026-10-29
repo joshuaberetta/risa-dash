@@ -29,7 +29,7 @@ export function useSummary(siteId?: string, layerIds?: string[], version?: strin
   })
 }
 
-const VECTOR = ['vector', 'kobo', 'annotations']
+const VECTOR = ['vector', 'kobo', 'annotations', 'analysis']
 
 /** GeoJSON for each ready vector layer, keyed by layer id. URLs carry the layer's
  * updated_at, so a change re-fetches and everything else comes from cache. */

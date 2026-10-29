@@ -16,6 +16,7 @@ import FeaturePanel, { FeatureForm, type FeatureFields } from '../components/Fea
 import Header from '../components/Header'
 import LayerPanel from '../components/LayerPanel'
 import Legend from '../components/Legend'
+import { AnalyseButton, AnalysisProgress } from '../components/Analysis'
 import { ProductsPanel } from '../components/Products'
 import SummaryPanel from '../components/SummaryPanel'
 import { useConfigData, useLayerData, useSite, useSummary } from '../hooks'
@@ -166,6 +167,16 @@ export default function SitePage() {
     setPicked({ ...picked, properties: { ...picked.properties, risa_type: f.risa_type, risa_status: f.risa_status, risa_label: f.label } })
     refresh()
   }
+  const reviewFeature = async (review: 'accepted' | 'rejected' | 'suggested') => {
+    if (!picked) return
+    await api(`/features/${picked.id}`, { method: 'PATCH', body: { review } })
+    setPicked({ ...picked, properties: { ...picked.properties, review } })
+    refresh()
+  }
+  const viewBounds = (): [number, number, number, number] | null => {
+    const b = mapRef.current?.getBounds()
+    return b ? [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()] : null
+  }
   const deleteFeature = async () => {
     if (!picked || !confirm('Delete this feature?')) return
     await api(`/features/${picked.id}`, { method: 'DELETE' })
@@ -305,6 +316,7 @@ export default function SitePage() {
               )}
             </Paper>
           )}
+          <AnalysisProgress layers={layers} />
           {mode !== 'static' && !shapeEdit && !isMeasureMode(mode) && (
             <Paper shadow="sm" px="sm" py={4} style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
               <Text size="xs">{mode === 'point' ? 'Click to place a point' : 'Click to add vertices, click the last point again (or the first, for an area) to finish'}</Text>
@@ -322,7 +334,7 @@ export default function SitePage() {
         <ScrollArea>
           {picked ? (
             <FeaturePanel config={config} feature={picked} layer={pickedLayer} canEdit={canEdit} onClose={() => { setPicked(null); if (focused?.id.startsWith('row-')) setFocused(null) }}
-              onSave={saveFeature} onDelete={deleteFeature} onEditShape={startShapeEdit} />
+              onSave={saveFeature} onDelete={deleteFeature} onEditShape={startShapeEdit} onReview={reviewFeature} />
           ) : (
             <Tabs value={tab} onChange={setTab}>
               <Tabs.List grow>
@@ -335,6 +347,7 @@ export default function SitePage() {
                 <ProductsPanel site={site} canEdit={canEdit} captureView={captureView} />
               </Tabs.Panel>
               <Tabs.Panel value="ai">
+                {canEdit && <div style={{ padding: '12px 12px 0' }}><AnalyseButton site={site} getViewBounds={viewBounds} onStarted={() => setTab('ai')} /></div>}
                 <AnalysisPanel analysis={analysis} active={focused?.id || null} onFocus={focusRefs} />
               </Tabs.Panel>
             </Tabs>

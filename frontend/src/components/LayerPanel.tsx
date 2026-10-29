@@ -1,7 +1,7 @@
 import { ActionIcon, Badge, Box, Button, Group, Loader, Menu, Slider, Stack, Switch, Text, Tooltip } from '@mantine/core'
 import {
   IconArrowDown, IconArrowUp, IconCloudDownload, IconDots, IconDownload, IconFocus2, IconPencil, IconPlus,
-  IconRefresh, IconSettings, IconTrash, IconWorld,
+  IconRefresh, IconSettings, IconSparkles, IconTrash, IconWorld,
 } from '@tabler/icons-react'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
@@ -9,11 +9,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api, type LayerT, type SiteFull } from '../api'
 import type { LayerState } from '../map/MapView'
+import { BulkReviewModal, useBulkReview } from './Analysis'
 import { KoboConnectModal, KoboMappingModal } from './KoboModals'
 import { UploadModal, UrlLayerModal } from './UploadModal'
 
 const KIND_LABEL: Record<LayerT['kind'], string> = {
-  raster: 'Imagery', vector: 'Vector', kobo: 'Kobo', annotations: 'Drawn', xyz: 'Tiles', wms: 'WMS', cog_url: 'COG',
+  raster: 'Imagery', vector: 'Vector', kobo: 'Kobo', annotations: 'Drawn', xyz: 'Tiles', wms: 'WMS', cog_url: 'COG', analysis: 'Analysis',
 }
 
 interface Props {
@@ -28,6 +29,8 @@ export default function LayerPanel({ site, state, setState, onZoom, canEdit }: P
   const qc = useQueryClient()
   const [modal, setModal] = useState<null | 'upload' | 'kobo' | 'url'>(null)
   const [mapping, setMapping] = useState<LayerT | null>(null)
+  const [reviewing, setReviewing] = useState<LayerT | null>(null)
+  const bulkReview = useBulkReview()
   const refresh = () => qc.invalidateQueries({ queryKey: ['site'] })
   const layers = site.layers
 
@@ -88,11 +91,14 @@ export default function LayerPanel({ site, state, setState, onZoom, canEdit }: P
                   <Text size="sm" truncate fw={500} title={l.name}>{l.name}</Text>
                   <Group gap={4}>
                     <Badge size="xs" variant="light" color="gray">{KIND_LABEL[l.kind]}</Badge>
-                    {l.status === 'processing' && <Group gap={4}><Loader size={10} /><Text size="xs" c="dimmed">processing</Text></Group>}
+                    {l.status === 'processing' && <Group gap={4}><Loader size={10} /><Text size="xs" c="dimmed">{l.analysis?.progress?.step || 'processing'}</Text></Group>}
+                    {l.kind === 'analysis' && l.status === 'ready' && l.analysis?.counts && (
+                      <Text size="xs" c="violet.8">{l.analysis.counts.shelter} shelters · {l.analysis.counts.block} blocks{l.analysis.simulated ? ' · simulated' : ''}</Text>
+                    )}
                     {l.status === 'failed' && <Tooltip label={l.error} multiline w={300}><Badge size="xs" color="red">failed</Badge></Tooltip>}
                     {l.resolution_cm && <Text size="xs" c="dimmed">{l.resolution_cm} cm/px</Text>}
                     {l.captured_at && <Text size="xs" c="dimmed">{l.captured_at}</Text>}
-                    {l.feature_count != null && l.feature_count > 0 && <Text size="xs" c="dimmed">{l.feature_count} features</Text>}
+                    {l.kind !== 'analysis' && l.feature_count != null && l.feature_count > 0 && <Text size="xs" c="dimmed">{l.feature_count} features</Text>}
                     {l.kobo?.last_error && <Tooltip label={l.kobo.last_error} multiline w={300}><Badge size="xs" color="orange">sync error</Badge></Tooltip>}
                   </Group>
                 </div>
@@ -107,6 +113,8 @@ export default function LayerPanel({ site, state, setState, onZoom, canEdit }: P
                     {canEdit && <Menu.Item leftSection={<IconPencil size={14} />} onClick={() => rename(l)}>Rename</Menu.Item>}
                     {canEdit && l.kind === 'kobo' && <Menu.Item leftSection={<IconRefresh size={14} />} onClick={() => sync(l)}>Sync now</Menu.Item>}
                     {canEdit && l.kind === 'kobo' && <Menu.Item leftSection={<IconSettings size={14} />} onClick={() => setMapping(l)}>Map form to RISA</Menu.Item>}
+                    {canEdit && l.kind === 'analysis' && l.status === 'ready' && <Menu.Item leftSection={<IconSparkles size={14} />} onClick={() => setReviewing(l)}>Review by confidence…</Menu.Item>}
+                    {canEdit && l.kind === 'analysis' && l.status === 'ready' && <Menu.Item leftSection={<IconTrash size={14} />} onClick={() => bulkReview(l, 'delete_rejected')}>Remove rejected</Menu.Item>}
                     {l.download && <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={l.download}>Download original</Menu.Item>}
                     {l.kind === 'raster' && l.url && <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={l.url} download>Download COG (QGIS/ArcGIS)</Menu.Item>}
                     {canEdit && <Menu.Divider />}
@@ -126,6 +134,7 @@ export default function LayerPanel({ site, state, setState, onZoom, canEdit }: P
       <KoboConnectModal site={site} opened={modal === 'kobo'} onClose={() => setModal(null)} />
       <UrlLayerModal site={site} opened={modal === 'url'} onClose={() => setModal(null)} />
       {mapping && <KoboMappingModal layer={mapping} onClose={() => setMapping(null)} />}
+      {reviewing && <BulkReviewModal layer={reviewing} onClose={() => setReviewing(null)} />}
     </Stack>
   )
 }

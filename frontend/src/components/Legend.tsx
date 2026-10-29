@@ -20,7 +20,7 @@ export default function Legend({ config, data, compact }: { config: Config; data
   const row: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: '0.5em', margin: '0.2em 0', fontSize: '0.85em' }
   const areaColor = (t: string) => t === 'flood' ? sym.hazards.flood.fill : t === 'debris' ? sym.hazards.debris.fill : t === 'block' ? 'rgba(200,168,107,0.45)' : 'rgba(59,91,122,0.3)'
   const areaStroke = (t: string) => t === 'flood' ? sym.hazards.flood.color : t === 'debris' ? sym.hazards.debris.color : '#8C939C'
-  const empty = !data.routes.length && !data.services.length && !data.areas.length
+  const empty = !data.routes.length && !data.services.length && !data.areas.length && !data.analysis.classes.length
   return (
     <div style={{ fontFamily: 'Inter, sans-serif', color: sym.ink }}>
       {empty && <p style={{ ...row, color: '#8C939C' }}>No mapped features yet</p>}
@@ -45,6 +45,22 @@ export default function Legend({ config, data, compact }: { config: Config; data
               </span>
             ))}
           </p>
+        </>
+      )}
+      {data.analysis.classes.length > 0 && (
+        <>
+          <h3 style={h3}>Imagery analysis{data.analysis.simulated ? ' (simulated)' : ''}</h3>
+          {data.analysis.classes.map((c) => {
+            const col = sym.analysis?.[c]?.color || '#7048E8'
+            const isArea = c === 'block' || c === 'boundary'
+            return (
+              <p key={c} style={row}>
+                <i style={{ width: '1.6em', height: '1em', display: 'inline-block', background: isArea ? 'transparent' : `${col}55`, border: `${isArea ? 2 : 1.5}px solid ${col}` }} />
+                {c === 'block' ? 'Detected block' : c === 'boundary' ? 'Detected site boundary' : sym.types[c]?.label || c}
+              </p>
+            )
+          })}
+          {data.analysis.suggested && <p style={{ ...row, color: '#4A5A6D' }}>Dashed: suggested, not yet reviewed</p>}
         </>
       )}
       {data.areas.length > 0 && (

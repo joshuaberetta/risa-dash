@@ -27,10 +27,11 @@ The test for the MVP is the Venezuela response (MapAction is sharing the data). 
 | 9 | **GIS export** | Per site or product: a GeoPackage with every vector layer and its styles embedded (opens styled in QGIS, reads in ArcGIS Pro), GeoJSON, CSV and the COGs |
 | 10 | **Response bundle** | Export a whole response (data, imagery, products) as one file and import it on another instance. This is how data moves between the cloud, an NDMA server and a box until there is real sync |
 | 11 | **Share** | Every site and product has a permalink that restores the view |
+| 12 | **Imagery analysis (simulated)** | One button per site: detect shelters and buildings on the orthomosaic, group shelters into blocks and outline the site. Results are suggestions to accept, reject, re-tag or reshape; only accepted shelters count. A simulated detector stands in for the model until one is chosen (section 4, Imagery analysis) |
 
 ### Not in the MVP
 
-User accounts and roles. Pages 2 and 3 of the product (key findings, hotspot); the layout engine is built so they can be added next. Live sync between instances (the bundle covers it for now). Kobo webhooks (polling first). Interface translations; text on the printed product is free text, so Spanish and French maps work from day one. AI analysis of imagery (kobo-in-a-box R11), tent counting, in-browser photogrammetry.
+User accounts and roles. Pages 2 and 3 of the product (key findings, hotspot); the layout engine is built so they can be added next. Live sync between instances (the bundle covers it for now). Kobo webhooks (polling first). Interface translations; text on the printed product is free text, so Spanish and French maps work from day one. A real segmentation model (the MVP ships the review workflow with a simulated detector), in-browser photogrammetry.
 
 ---
 
@@ -181,6 +182,33 @@ IDs are UUIDs, so bundles from different instances merge without collisions. `ri
 - **GeoPackage**: one table per vector layer, with Kobo layers flattened to columns. Each layer's QML style goes in the `layer_styles` table, so QGIS opens it with RISA symbology. A `metadata` table holds sources, dates and the permalink. Orthomosaics are offered as the COG file.
 - **Response bundle**: a zip holding the GeoPackage, the COGs, `response.json` (sites, layer settings, styles, products, field maps; Kobo tokens are left out) and the rendered PDFs. Import merges by UUID. Uses: preload a box from the cloud before a mission, send a box's work to the cloud or an NDMA server when a link appears, and archive a response.
 
+### Imagery analysis (segmentation)
+
+Automatic segmentation of the orthomosaic for each camp or area of interest, built into the dashboard rather than a separate tool. It turns hours of manual digitising into minutes of review, and feeds the figures RISA reports (shelters counted on imagery, shelters per block, people estimates).
+
+**What it produces**, per area of interest, as one "analysis" layer:
+
+| Class | Geometry | Use |
+|---|---|---|
+| Shelter (tent, tarp, sheet-metal shelter) | Footprint polygon | Count, density, shelters per block, people estimate (× household size) |
+| Building | Footprint polygon | Collective centres, services, damage later |
+| Block | Polygon round a cluster of shelters, with a count | Planning, page 1 labels, "where do we act first" |
+| Site boundary | Polygon | The camp's extent on the map and in exports |
+| Later: standing water, debris, latrines, water points, roads and paths | Polygons and lines | Hazards, access, services from imagery to check against Kobo |
+
+**Human in the loop.** Every feature carries `class`, `confidence`, `model` and `review` (suggested, accepted, rejected; `edited` when a person changed it). Suggested features are dashed on the map and in print, accepted ones solid, rejected ones hidden. Review is one at a time (accept, reject, re-tag, reshape with the same tools as drawing) or in bulk by confidence. Only accepted features count in the summary and on page 1. This follows kobo-in-a-box R11: an `ai_candidates` layer reviewed by a GIS specialist, nothing published without review.
+
+**Pipeline** (worker job, one per area of interest): cut the area from the COG at about 25 cm/px → tile with overlap → run the model → merge across tile edges → polygonise and simplify → classify by class and size → write features → derive blocks (DBSCAN over shelter centres, then concave hulls) and the boundary in PostGIS. Progress is reported per step so the interface can show it.
+
+**Model options**, to try on the Venezuela and Mozambique orthomosaics against hand-labelled samples and the Kobo points:
+- HOT's fAIr and RAMP (open building-footprint models trained on drone imagery, fine-tunable on a few hundred labelled shelters per context).
+- Segment Anything (SAM 2) prompted with Kobo points or a box, for outlining what a person points at.
+- A small detector (YOLO family, ONNX) fine-tuned on tents and tarps, for counting at speed on a CPU or a laptop GPU.
+
+Run them with ONNX Runtime on the worker (CPU, slow but simple), on a GPU droplet for big sites, or on the box's GPU offline. The interface, data model and review workflow stay the same whichever model wins: the model replaces one function.
+
+**MVP: simulated.** `risa/analysis.py` implements the whole pipeline and review workflow with a stand-in detector: colour rules on the real image (bright grey roofs and blue tarps as shelter candidates, large bright roofs as buildings). Its outlines sit on real objects, so reviewing them is realistic, but counts are not reliable. Every feature and the layer say "simulated", and the dialog says so before it runs. On the Haiti sample (0.5 km², 3.3 cm/px) it finds about 2,100 shelter candidates, 22 buildings and 15 blocks in about 10 s locally.
+
 ### Access with an edit key
 
 - **Viewing** is open at unlisted URLs (`/r/<response>/<site>`), with `noindex`. A response marked private is hidden from the index page.
@@ -277,7 +305,7 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 - `docs/self-hosting.md`, `compose.box.yaml` and the edge snippet. Install on the kobo-in-a-box droplet next to Kobo, cut it off with `offline.sh on`, and run the MVP test there.
 - A demo response from the fictional sample site on the RISA site, for showing the tool without real data.
 
-**After the MVP**: pages 2 and 3; live sync between instances; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; AI candidates from imagery (box R11) as a review layer.
+**After the MVP**: a real segmentation model (spike on the Venezuela orthomosaic: precision and recall against hand-labelled shelters, time per hectare on CPU and GPU), and feeding accepted counts into people estimates and the AI analysis brief; pages 2 and 3; live sync between instances; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; imagery classes beyond shelters and buildings (water, debris, services).
 
 ---
 
@@ -306,6 +334,7 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 | Imagery licences (Esri limits export and print; Maxar Open Data is CC BY-NC) | Attribution and licence per layer, printed automatically; open sources for the content pack |
 | Open write access gets abused | Edit key, rate limits, upload size limits, cleanup of abandoned uploads |
 | Kobo forms vary | RISA preset, mapping screen, unmapped answers shown as "Not assessed" |
+| Segmentation counts read as fact (a model, or today the simulation, is wrong in ways people don't see) | Suggestions are dashed and labelled; only accepted features count; confidence and model are kept on every feature and in exports; the simulation is marked everywhere |
 | Data protection (where displaced people's shelters and services are) | Observation-only by design; unlisted and `noindex`; private flag; `READ_ONLY_PUBLIC=false`; in-country hosting. Review with the consortium before the first live response |
 
 ## 10. Still open

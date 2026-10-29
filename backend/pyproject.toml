@@ -17,6 +17,7 @@ dependencies = [
     "cryptography>=44",
     "playwright>=1.50",
     "qrcode>=8.0",
+    "numpy>=2.1",
 ]
 
 [dependency-groups]

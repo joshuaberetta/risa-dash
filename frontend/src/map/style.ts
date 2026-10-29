@@ -63,10 +63,38 @@ const isPoint: ExpressionSpecification = ['in', ['geometry-type'], ['literal', [
 const status: ExpressionSpecification = ['coalesce', ['get', 'risa_status'], '']
 const rtype: ExpressionSpecification = ['coalesce', ['get', 'risa_type'], '']
 
+/** Imagery analysis: colour by class; dashed while suggested, solid once accepted;
+ * rejected hidden. Kept clear of the status colours. */
+function analysisLayers(l: LayerT, sym: Symbology, op: number): LayerSpecification[] {
+  const src = sourceId(l)
+  const A = sym.analysis || {}
+  const cls: ExpressionSpecification = ['coalesce', ['get', 'ai_class'], ['get', 'risa_type'], '']
+  const review: ExpressionSpecification = ['coalesce', ['get', 'review'], 'suggested']
+  const color: ExpressionSpecification = ['match', cls,
+    'shelter', A.shelter?.color || '#7048E8', 'building', A.building?.color || '#1098AD',
+    'block', A.block?.color || '#B08A3E', 'boundary', A.boundary?.color || '#1D232B', '#7048E8']
+  const notRejected: ExpressionSpecification = ['!=', review, 'rejected']
+  const small: ExpressionSpecification = ['in', cls, ['literal', ['shelter', 'building']]]
+  const area: ExpressionSpecification = ['in', cls, ['literal', ['block', 'boundary']]]
+  return [
+    { id: lid(l, 'fill'), type: 'fill', source: src, filter: ['all', notRejected, small],
+      paint: { 'fill-color': color, 'fill-opacity': ['*', op, ['case', ['==', review, 'accepted'], 0.38, 0.18]] } },
+    { id: lid(l, 'outline-dashed'), type: 'line', source: src, filter: ['all', ['==', review, 'suggested'], ['any', small, area]],
+      paint: { 'line-color': color, 'line-width': ['case', area, 2.5, 1.2], 'line-dasharray': [2, 1.5], 'line-opacity': op } },
+    { id: lid(l, 'outline-solid'), type: 'line', source: src, filter: ['all', ['==', review, 'accepted'], ['any', small, area]],
+      paint: { 'line-color': color, 'line-width': ['case', area, 3, 1.6], 'line-opacity': op } },
+    // Blocks are labelled with their count; the boundary is explained by the legend
+    { id: lid(l, 'labels-poly'), type: 'symbol', source: src, filter: ['all', notRejected, ['==', cls, 'block']],
+      layout: { 'text-field': ['coalesce', ['get', 'risa_label'], ''], 'text-font': FONT_BOLD, 'text-size': 12, 'text-max-width': 10 },
+      paint: { 'text-color': sym.ink, 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1.6, 'text-opacity': op } },
+  ]
+}
+
 /** The layers drawn for one site layer, bottom to top. */
 export function overlayLayers(l: LayerT, sym: Symbology): LayerSpecification[] {
   const src = sourceId(l)
   const op = l.style.opacity ?? 1
+  if (l.kind === 'analysis') return analysisLayers(l, sym, op)
   if (!['vector', 'kobo', 'annotations'].includes(l.kind)) {
     return [{ id: lid(l, 'raster'), type: 'raster', source: src, paint: { 'raster-opacity': op, 'raster-fade-duration': 0 } }]
   }

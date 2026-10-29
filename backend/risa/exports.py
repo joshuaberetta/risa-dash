@@ -48,7 +48,7 @@ def _table_name(name: str, used: set) -> str:
 def site_geopackage(site: Site, out_path: str) -> str:
     used: set[str] = set()
     with tempfile.TemporaryDirectory() as tmp:
-        for layer in site.layers.filter(kind__in=["vector", "kobo", "annotations"], status="ready"):
+        for layer in site.layers.filter(kind__in=["vector", "kobo", "annotations", "analysis"], status="ready"):
             if not layer.features.exists():
                 continue
             src = os.path.join(tmp, f"{layer.id}.geojson")

@@ -102,7 +102,8 @@
 
 #let legend = {
   let lg = d.legend
-  if lg.routes.len() == 0 and lg.services.len() == 0 and lg.areas.len() == 0 {
+  let an = lg.at("analysis", default: (classes: (), simulated: false, suggested: false))
+  if lg.routes.len() == 0 and lg.services.len() == 0 and lg.areas.len() == 0 and an.classes.len() == 0 {
     text(fill: muted, L.no_features)
   }
   if lg.routes.len() > 0 {
@@ -118,6 +119,17 @@
       ..lg.services.map(s => leg-row(sym("sym/" + s.type + "-ok.svg"), s.label)))
     v(0.45em)
     lg.statuses.map(st => leg-inline(sym("sym/water-" + st + ".svg"), L.status.at(st))).join(h(0.9em))
+    v(0.7em)
+  }
+  if an.classes.len() > 0 {
+    eyebrow(L.analysis + if an.simulated { " (" + L.simulated + ")" } else { "" })
+    v(0.25em)
+    stack(spacing: 0.35em, ..an.classes.map(c => leg-row(
+      box(width: 6mm, height: 3.4mm, baseline: 20%,
+        fill: if c.area { none } else { rgb(c.color).transparentize(65%) },
+        stroke: (paint: rgb(c.color), thickness: if c.area { 1pt } else { 0.7pt },
+          dash: if an.suggested { "dashed" } else { none })), c.label)))
+    if an.suggested { v(0.2em); text(size: 0.78em, fill: muted, L.dashed) }
     v(0.7em)
   }
   if lg.areas.len() > 0 {

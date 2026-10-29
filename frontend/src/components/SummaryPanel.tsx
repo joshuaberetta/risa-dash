@@ -41,6 +41,9 @@ export default function SummaryPanel({ config, summary }: { config: Config; summ
           ))}
         </>
       )}
+      {!!summary.pending_review && (
+        <Text size="xs" c="violet.8">{summary.pending_review.toLocaleString()} detections from imagery are waiting for review. Accepted shelters count above.</Text>
+      )}
       {summary.features === 0 && <Text size="xs" c="dimmed">Connect Kobo, upload vector data or draw on the map to see figures here.</Text>}
     </Stack>
   )

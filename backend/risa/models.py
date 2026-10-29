@@ -77,6 +77,7 @@ class Layer(models.Model):
         ("xyz", "XYZ tiles"),
         ("wms", "WMS"),
         ("cog_url", "COG by URL"),
+        ("analysis", "Imagery analysis"),
     ]
     STATUSES = [("processing", "Processing"), ("ready", "Ready"), ("failed", "Failed")]
 
@@ -100,6 +101,8 @@ class Layer(models.Model):
     resolution_cm = models.FloatField(null=True, blank=True)
     bbox = models.JSONField(null=True, blank=True)  # [w, s, e, n]
     online_only = models.BooleanField(default=False)
+    # Analysis layers: {source_layer, model, simulated, aoi, progress: {step, pct}, counts}
+    meta = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -111,7 +114,7 @@ class Layer(models.Model):
 
     @property
     def is_vector(self):
-        return self.kind in {"vector", "kobo", "annotations"}
+        return self.kind in {"vector", "kobo", "annotations", "analysis"}
 
 
 class Feature(models.Model):

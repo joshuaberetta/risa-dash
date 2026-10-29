@@ -33,21 +33,21 @@ LABELS = {
            "scale_note": "at print size", "page": "Page 1", "no_features": "No mapped features yet",
            "status": {"ok": "Working", "partial": "Partly", "no": "Not working", "unknown": "Not assessed"},
            "route_status": {"ok": "Open", "partial": "Restricted", "no": "Closed", "unknown": "Not assessed"},
-           "draft": "DRAFT PREVIEW"},
+           "draft": "DRAFT PREVIEW", "analysis": "Imagery analysis", "simulated": "simulated", "dashed": "Dashed: not yet reviewed"},
     "es": {"key_message": "Mensaje clave", "at_a_glance": "En resumen", "routes": "Rutas de acceso", "services": "Servicios",
            "areas": "Áreas", "imagery": "Imágenes", "sources": "Fuentes", "produced_with": "Elaborado con el",
            "method": "método", "support": "Apoyo técnico", "scan": "Escanee para ver el mapa en vivo", "tbc": "POR CONF.",
            "scale_note": "a tamaño de impresión", "page": "Página 1", "no_features": "Aún sin elementos cartografiados",
            "status": {"ok": "Funciona", "partial": "Parcialmente", "no": "No funciona", "unknown": "No evaluado"},
            "route_status": {"ok": "Abierta", "partial": "Restringida", "no": "Cerrada", "unknown": "No evaluada"},
-           "draft": "BORRADOR"},
+           "draft": "BORRADOR", "analysis": "Análisis de imágenes", "simulated": "simulado", "dashed": "Discontinuo: sin revisar"},
     "fr": {"key_message": "Message clé", "at_a_glance": "En bref", "routes": "Voies d'accès", "services": "Services",
            "areas": "Zones", "imagery": "Imagerie", "sources": "Sources", "produced_with": "Réalisé avec la",
            "method": "méthode", "support": "Appui technique", "scan": "Scannez pour la carte en direct", "tbc": "À CONF.",
            "scale_note": "à la taille d'impression", "page": "Page 1", "no_features": "Aucun élément cartographié",
            "status": {"ok": "Fonctionne", "partial": "Partiellement", "no": "Ne fonctionne pas", "unknown": "Non évalué"},
            "route_status": {"ok": "Ouverte", "partial": "Restreinte", "no": "Fermée", "unknown": "Non évaluée"},
-           "draft": "BROUILLON"},
+           "draft": "BROUILLON", "analysis": "Analyse d'imagerie", "simulated": "simulée", "dashed": "Tirets : non vérifié"},
 }
 LABELS["pt"] = {**LABELS["en"]}
 
@@ -55,6 +55,8 @@ COLORS = {"band": "#1D2A3A", "band_ink": "#FFFFFF", "accent": "#E2E7EE", "accent
           "rule": "#D9DEE4", "muted": "#4A5A6D"}
 
 STATUS_ORDER = ["ok", "partial", "no", "unknown"]
+ANALYSIS_LABELS = {"shelter": "Shelter (detected)", "building": "Building (detected)",
+                   "block": "Detected block", "boundary": "Detected site boundary"}
 AREA_STYLE = {"block": ("#C8A86B73", "#8C939C"), "other": ("#3B5B7A4D", "#8C939C")}
 
 
@@ -111,7 +113,13 @@ def visible_layers(product: Product, view: dict) -> list[Layer]:
 def legend(layers: list[Layer]) -> dict:
     routes, statuses = set(), set()
     services, areas = OrderedDict(), OrderedDict()
-    rows = (Feature.objects.filter(layer__in=[lyr for lyr in layers if lyr.is_vector])
+    analysis_layers = [lyr for lyr in layers if lyr.kind == "analysis"]
+    a_rows = (Feature.objects.filter(layer__in=analysis_layers).exclude(properties__review="rejected")
+              .values_list("risa_type", "properties__review").distinct())
+    a_classes = {t for t, _ in a_rows}
+    a_suggested = any(r in (None, "suggested") for _, r in a_rows)
+    a_colors = symbology().get("analysis", {})
+    rows = (Feature.objects.filter(layer__in=[lyr for lyr in layers if lyr.is_vector and lyr.kind != "analysis"])
             .annotate(gt=GeometryType("geom")).values_list("gt", "risa_type", "risa_status").distinct())
     for gt, t, st in rows:
         st = st or "unknown"
@@ -135,7 +143,13 @@ def legend(layers: list[Layer]) -> dict:
         "routes": [s for s in STATUS_ORDER if s in routes],
         "services": sorted(({"type": t, "label": types.get(t, {}).get("label", t)} for t in services), key=lambda x: x["label"]),
         "statuses": [s for s in STATUS_ORDER if s in statuses] or (["ok", "partial", "no"] if services else []),
-        "areas": [area(t) for t in areas],
+        "areas": sorted((area(t) for t in areas), key=lambda x: x["label"]),
+        "analysis": {
+            "classes": [{"type": c, "label": ANALYSIS_LABELS[c], "color": a_colors.get(c, {}).get("color", "#7048E8"),
+                         "area": c in ("block", "boundary")} for c in ANALYSIS_LABELS if c in a_classes],
+            "simulated": any(lyr.meta.get("simulated") for lyr in analysis_layers),
+            "suggested": a_suggested,
+        },
     }
 
 

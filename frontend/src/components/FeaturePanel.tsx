@@ -1,5 +1,5 @@
 import { ActionIcon, Badge, Button, Group, Image, Modal, Select, SimpleGrid, Stack, Table, Text, TextInput } from '@mantine/core'
-import { IconPencil, IconShape, IconSparkles, IconTrash, IconX } from '@tabler/icons-react'
+import { IconCheck, IconPencil, IconShape, IconSparkles, IconTrash, IconX } from '@tabler/icons-react'
 import area from '@turf/area'
 import length from '@turf/length'
 import { useEffect, useState } from 'react'
@@ -47,7 +47,7 @@ export function FeatureForm({ config, initial, geometryType, onSave, onCancel, s
   )
 }
 
-const HIDDEN = new Set(['risa_id', 'risa_type', 'risa_status', 'risa_label', '_photos', 'observed_at'])
+const HIDDEN = new Set(['risa_id', 'risa_type', 'risa_status', 'risa_label', '_photos', 'observed_at', 'review', 'simulated', 'ai_class', 'model', 'confidence', 'edited'])
 
 function measure(g: GeoJSON.Geometry) {
   const f = { type: 'Feature', geometry: g, properties: {} } as GeoJSON.Feature
@@ -62,9 +62,10 @@ function measure(g: GeoJSON.Geometry) {
   return ''
 }
 
-export default function FeaturePanel({ config, feature, layer, canEdit, onClose, onSave, onDelete, onEditShape }: {
+export default function FeaturePanel({ config, feature, layer, canEdit, onClose, onSave, onDelete, onEditShape, onReview }: {
   config: Config; feature: PickedFeature; layer?: LayerT; canEdit: boolean
   onClose: () => void; onSave: (f: FeatureFields) => Promise<void>; onDelete: () => void; onEditShape: () => void
+  onReview: (review: 'accepted' | 'rejected' | 'suggested') => Promise<void>
 }) {
   const [editing, setEditing] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
@@ -90,8 +91,28 @@ export default function FeaturePanel({ config, feature, layer, canEdit, onClose,
         </div>
         <ActionIcon variant="subtle" color="gray" onClick={onClose}><IconX size={16} /></ActionIcon>
       </Group>
+      {p.review != null && (
+        <Stack gap={6} p={8} style={{ background: 'var(--mantine-color-violet-0)', borderRadius: 4 }}>
+          <Group gap={6}>
+            <IconSparkles size={15} color="var(--mantine-color-violet-7)" />
+            <Text size="xs" fw={600} c="violet.8">
+              {p.review === 'accepted' ? 'Accepted' : p.review === 'rejected' ? 'Rejected' : 'Suggested'} · {Math.round(Number(p.confidence || 0) * 100)}% confidence
+              {p.edited ? ' · edited' : ''}
+            </Text>
+            {p.simulated === true ? <Badge size="xs" color="violet" variant="outline">Simulated</Badge> : null}
+          </Group>
+          {canEdit && (
+            <Group gap={6}>
+              {p.review !== 'accepted' && <Button size="compact-xs" color="violet" leftSection={<IconCheck size={13} />} onClick={() => onReview('accepted')}>Accept</Button>}
+              {p.review !== 'rejected' && <Button size="compact-xs" variant="light" color="red" leftSection={<IconX size={13} />} onClick={() => onReview('rejected')}>Reject</Button>}
+              {p.review !== 'suggested' && <Button size="compact-xs" variant="subtle" color="gray" onClick={() => onReview('suggested')}>Undo</Button>}
+            </Group>
+          )}
+          <Text size="xs" c="dimmed">Detected by {String(p.model)}{p.area_m2 != null ? ` · ${String(p.area_m2)} m²` : ''}{p.shelters ? ` · ${String(p.shelters)} shelters` : ''}</Text>
+        </Stack>
+      )}
       <Group gap="xs">
-        <StatusBadge config={config} status={String(p.risa_status || '')} />
+        {p.review == null && <StatusBadge config={config} status={String(p.risa_status || '')} />}
         {typeLabel && <Badge variant="light" color="gray">{typeLabel}</Badge>}
         {m && <Badge variant="light" color="gray">{m}</Badge>}
       </Group>

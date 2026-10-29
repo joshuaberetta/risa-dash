@@ -18,7 +18,15 @@ def site_summary(site: Site, layer_ids: list[str] | None = None) -> dict:
     routes = dict(EMPTY)
     route_list = []
     shelters = 0
+    pending = 0
     for f in qs.only("risa_type", "risa_status", "label", "properties").iterator():
+        review = f.properties.get("review")
+        if review is not None and review != "accepted":
+            # Imagery-analysis suggestions count only once a person accepts them
+            pending += review == "suggested"
+            continue
+        if f.risa_type in ("block", "boundary", "building"):
+            continue
         st = f.risa_status or "unknown"
         is_line = "LINE" in (f.gt or "").upper()
         if f.risa_type == "route" or (is_line and not f.risa_type):
@@ -44,4 +52,4 @@ def site_summary(site: Site, layer_ids: list[str] | None = None) -> dict:
         {"value": f"{routes['ok']} of {r_total}" if r_total else "", "label": "access routes open", "tbc": False},
     ]
     return {"services": services, "routes": routes, "route_list": route_list[:20], "shelters": shelters,
-            "glance": glance, "features": qs.count()}
+            "glance": glance, "features": qs.count(), "pending_review": pending}

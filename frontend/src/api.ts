@@ -17,6 +17,7 @@ export interface Symbology {
   ink: string
   hazards: Record<string, { label: string; color: string; fill: string }>
   types: Record<string, { glyph: string; label: string }>
+  analysis?: Record<string, { color: string }>
 }
 
 export interface Config {
@@ -48,7 +49,7 @@ export interface ResponseT {
 export interface LayerT {
   id: string
   name: string
-  kind: 'raster' | 'vector' | 'kobo' | 'annotations' | 'xyz' | 'wms' | 'cog_url'
+  kind: 'raster' | 'vector' | 'kobo' | 'annotations' | 'xyz' | 'wms' | 'cog_url' | 'analysis'
   status: 'processing' | 'ready' | 'failed'
   error: string
   style: { color?: string; opacity?: number; label_field?: string; preset?: string }
@@ -64,6 +65,14 @@ export interface LayerT {
   url?: string
   download?: string
   feature_count?: number | null
+  analysis?: {
+    source_layer: string
+    model: string
+    simulated: boolean
+    progress?: { step: string; pct: number }
+    counts?: { shelter: number; building: number; block: number }
+    aoi: [number, number, number, number]
+  }
   kobo?: {
     server: string
     asset_uid: string
@@ -147,6 +156,7 @@ export interface Summary {
   shelters: number
   glance: Glance[]
   features: number
+  pending_review?: number
 }
 
 export interface KoboQuestion {

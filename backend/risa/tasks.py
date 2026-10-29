@@ -7,7 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 from procrastinate.contrib.django import app
 
-from . import ingest, kobo, printing
+from . import analysis, ingest, kobo, printing
 from .models import KoboSource, Layer, Product, ProductVersion, Upload
 
 log = logging.getLogger(__name__)
@@ -72,3 +72,14 @@ def render_preview(product_id: str):
         log.exception("Preview %s failed", product_id)
         p.preview_status, p.preview_error = "failed", str(e)[:4000]
         p.save(update_fields=["preview_status", "preview_error"])
+
+
+@app.task(queue="analysis")
+def analyse_imagery(layer_id: str):
+    layer = Layer.objects.get(id=layer_id)
+    try:
+        analysis.analyse(layer)
+    except Exception as e:
+        log.exception("Analysis %s failed", layer_id)
+        layer.status, layer.error = "failed", str(e)[:4000]
+        layer.save(update_fields=["status", "error", "updated_at"])
