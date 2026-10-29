@@ -1,0 +1,50 @@
+# DigitalOcean App Platform: the consortium instance at https://risa-dash.kobolabs.dev.
+# Secrets (SECRET_KEY, CREATE_KEY, S3 keys) are set in the app, not here.
+# Self-hosted and offline installs use deploy/compose.yaml instead; same image.
+name: risa-dash
+region: fra
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+domains:
+  - domain: risa-dash.kobolabs.dev
+    type: PRIMARY
+    zone: kobolabs.dev
+databases:
+  - name: db
+    engine: PG
+    production: true
+    cluster_name: risa-dash-db
+services:
+  - name: web
+    github: { repo: joshuaberetta/risa-dash, branch: main, deploy_on_push: true }
+    dockerfile_path: deploy/Dockerfile
+    run_command: start web
+    http_port: 8000
+    instance_size_slug: apps-s-1vcpu-1gb
+    instance_count: 1
+    health_check: { http_path: /api/config, initial_delay_seconds: 20 }
+    envs: &envs
+      - { key: DATABASE_URL, scope: RUN_TIME, value: "${db.DATABASE_URL}" }
+      - { key: PUBLIC_URL, scope: RUN_AND_BUILD_TIME, value: "https://risa-dash.kobolabs.dev" }
+      - { key: PRINT_BASE_URL, scope: RUN_TIME, value: "https://risa-dash.kobolabs.dev" }
+      - { key: ALLOWED_HOSTS, scope: RUN_TIME, value: "risa-dash.kobolabs.dev,.ondigitalocean.app" }
+      - { key: ALLOWED_SERVERS, scope: RUN_TIME, value: "https://kf.kobotoolbox.org,https://eu.kobotoolbox.org" }
+      - { key: STORAGE, scope: RUN_TIME, value: s3 }
+      - { key: S3_BUCKET, scope: RUN_TIME, value: risa-dash }
+      - { key: S3_ENDPOINT_URL, scope: RUN_TIME, value: "https://fra1.digitaloceanspaces.com" }
+      - { key: S3_REGION, scope: RUN_TIME, value: fra1 }
+      - { key: S3_PREFIX, scope: RUN_TIME, value: prod }
+      - { key: MEDIA_PUBLIC_URL, scope: RUN_TIME, value: "https://risa-dash.fra1.cdn.digitaloceanspaces.com" }
+      - { key: SECRET_KEY, scope: RUN_TIME, type: SECRET }
+      - { key: CREATE_KEY, scope: RUN_TIME, type: SECRET }
+      - { key: S3_ACCESS_KEY_ID, scope: RUN_TIME, type: SECRET }
+      - { key: S3_SECRET_ACCESS_KEY, scope: RUN_TIME, type: SECRET }
+workers:
+  - name: worker
+    github: { repo: joshuaberetta/risa-dash, branch: main, deploy_on_push: true }
+    dockerfile_path: deploy/Dockerfile
+    run_command: start worker
+    instance_size_slug: apps-s-1vcpu-2gb
+    instance_count: 1
+    envs: *envs

@@ -1,0 +1,6 @@
+html, body, #root { height: 100%; margin: 0; }
+body { background: #f6f7f9; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
+.layer-row { border-bottom: 1px solid var(--mantine-color-gray-2); }
+.layer-row:hover { background: var(--mantine-color-gray-0); }
+.photo-grid img { width: 100%; border-radius: 4px; display: block; }

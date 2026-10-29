@@ -1,0 +1,61 @@
+{
+  "_comment": "RISA map symbology, defined once. Read by the backend (exports, legend data) and the frontend (MapLibre styles, legend, print). Values from the RISA style guide (~/code/risa/site/assets/base.css and sitemap.js). Status is always shown twice: colour plus line style or symbol shape.",
+  "status": {
+    "ok":      { "label": "Open / working",              "short": "Working",      "color": "#1F9A62", "line": "solid",  "symbol": "filled" },
+    "partial": { "label": "Restricted / partly working", "short": "Partly",       "color": "#E9A23B", "line": "dashed", "symbol": "half" },
+    "no":      { "label": "Closed / not working",        "short": "Not working",  "color": "#A8281A", "line": "dotted", "symbol": "crossed" },
+    "unknown": { "label": "Not assessed",                "short": "Not assessed", "color": "#8C939C", "line": "solid",  "symbol": "outline" }
+  },
+  "ink": "#1D232B",
+  "hazards": {
+    "flood":  { "label": "Flooded area", "color": "#2F74B5", "fill": "rgba(47,116,181,0.16)" },
+    "debris": { "label": "Debris",       "color": "#7B5A3C", "fill": "rgba(123,90,60,0.18)" }
+  },
+  "types": {
+    "water":    { "glyph": "W", "label": "Water point" },
+    "latrine":  { "glyph": "L", "label": "Latrine block" },
+    "hand":     { "glyph": "H", "label": "Handwashing station" },
+    "health":   { "glyph": "+", "label": "Health post" },
+    "cfs":      { "glyph": "C", "label": "Child-friendly space" },
+    "dist":     { "glyph": "D", "label": "Distribution point" },
+    "storage":  { "glyph": "S", "label": "Storage" },
+    "shelter":  { "glyph": "T", "label": "Shelter" },
+    "registration": { "glyph": "R", "label": "Registration" },
+    "kitchen":  { "glyph": "K", "label": "Kitchen / dining" },
+    "gate":     { "glyph": "G", "label": "Gate / entrance" },
+    "landing":  { "glyph": "Z", "label": "Landing zone" },
+    "choke":    { "glyph": "!", "label": "Choke point" },
+    "route":    { "glyph": "",  "label": "Access route" },
+    "block":    { "glyph": "",  "label": "Shelter block" },
+    "flood":    { "glyph": "",  "label": "Flooded area" },
+    "debris":   { "glyph": "",  "label": "Debris" },
+    "other":    { "glyph": "•", "label": "Other" }
+  },
+  "synonyms": {
+    "status": {
+      "ok": ["ok", "open", "working", "functional", "functioning", "yes", "good", "operational", "accessible", "available", "abierto", "funciona", "funcional", "si", "sí", "ouvert", "fonctionnel", "oui"],
+      "partial": ["partial", "partly", "partially", "restricted", "limited", "partly_working", "partially_functional", "damaged", "parcial", "parcialmente", "restringido", "limitado", "partiel", "partiellement", "restreint"],
+      "no": ["no", "closed", "not_working", "not working", "non_functional", "nonfunctional", "broken", "destroyed", "blocked", "inaccessible", "cerrado", "no_funciona", "destruido", "bloqueado", "fermé", "ferme", "non"],
+      "unknown": ["unknown", "not_assessed", "dont_know", "don_t_know", "na", "n/a", "desconocido", "ns", "inconnu"]
+    },
+    "type": {
+      "water": ["water", "water_point", "waterpoint", "tap", "well", "borehole", "agua", "punto_de_agua", "eau", "point_d_eau"],
+      "latrine": ["latrine", "latrines", "toilet", "toilets", "sanitation", "letrina", "letrinas", "latrines_block"],
+      "hand": ["handwashing", "hand_washing", "handwash", "lavamanos", "lavado_de_manos"],
+      "health": ["health", "health_post", "clinic", "hospital", "salud", "puesto_de_salud", "ambulatorio", "sante", "santé"],
+      "cfs": ["cfs", "child_friendly_space", "espacio_seguro", "espace_ami_des_enfants"],
+      "dist": ["distribution", "distribution_point", "distribucion", "distribución"],
+      "storage": ["storage", "warehouse", "almacen", "almacén", "entrepot", "entrepôt"],
+      "shelter": ["shelter", "tent", "carpa", "tienda", "abri", "tente"],
+      "registration": ["registration", "registro", "enregistrement"],
+      "kitchen": ["kitchen", "dining", "comedor", "cocina", "cuisine"],
+      "gate": ["gate", "entrance", "entrada", "puerta", "entree", "entrée"],
+      "landing": ["landing_zone", "helipad", "lz"],
+      "choke": ["choke_point", "chokepoint", "bottleneck"],
+      "route": ["route", "road", "access_route", "camino", "carretera", "via", "vía", "route_d_acces"],
+      "block": ["block", "shelter_block", "bloque", "sector"],
+      "flood": ["flood", "flooded", "inundacion", "inundación", "inondation"],
+      "debris": ["debris", "escombros", "debris_area"]
+    }
+  }
+}

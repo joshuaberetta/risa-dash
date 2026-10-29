@@ -1,0 +1,264 @@
+import { ActionIcon, AppShell, Button, Center, Divider, Group, Loader, Menu, Modal, Paper, ScrollArea, Select, Text, Tooltip } from '@mantine/core'
+import { notifications } from '@mantine/notifications'
+import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconX } from '@tabler/icons-react'
+import { useQueryClient } from '@tanstack/react-query'
+import type { Map as MLMap } from 'maplibre-gl'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router'
+import type { TerraDraw } from 'terra-draw'
+import { api, setCurrentResponse, type LayerT, type ProductView } from '../api'
+import { EditKeyButton } from '../components/EditKey'
+import FeaturePanel, { FeatureForm, type FeatureFields } from '../components/FeaturePanel'
+import Header from '../components/Header'
+import LayerPanel from '../components/LayerPanel'
+import Legend from '../components/Legend'
+import { ProductsPanel } from '../components/Products'
+import SummaryPanel from '../components/SummaryPanel'
+import { useConfigData, useLayerData, useSite, useSummary } from '../hooks'
+import { createDraw, editShape, type DrawMode } from '../map/draw'
+import { legendData } from '../map/legend'
+import MapView, { type LayerState, type PickedFeature } from '../map/MapView'
+
+function unionBbox(layers: LayerT[]): [number, number, number, number] | null {
+  const bs = layers.map((l) => l.bbox).filter(Boolean) as [number, number, number, number][]
+  if (!bs.length) return null
+  return [Math.min(...bs.map((b) => b[0])), Math.min(...bs.map((b) => b[1])), Math.max(...bs.map((b) => b[2])), Math.max(...bs.map((b) => b[3]))]
+}
+
+export default function SitePage() {
+  const { response: rslug, site: sslug } = useParams()
+  setCurrentResponse(rslug)
+  const config = useConfigData()
+  const qc = useQueryClient()
+  const q = useSite(rslug, sslug)
+  const site = q.data
+  const storeKey = site ? `risa-view:${site.id}` : ''
+  const [state, setStateAll] = useState<Record<string, LayerState>>({})
+  const [basemap, setBasemap] = useState<string>(config.basemaps[0]?.id || 'none')
+  const [picked, setPicked] = useState<PickedFeature | null>(null)
+  const [pending, setPending] = useState<{ id: string; geometry: GeoJSON.Geometry } | null>(null)
+  const [mode, setMode] = useState<DrawMode>('static')
+  const [shapeEdit, setShapeEdit] = useState<PickedFeature | null>(null)
+  const mapRef = useRef<MLMap | null>(null)
+  const drawRef = useRef<TerraDraw | null>(null)
+  const fitted = useRef(false)
+
+  // Restore the layer state and basemap saved in this browser
+  useEffect(() => {
+    if (!storeKey) return
+    try {
+      const saved = JSON.parse(localStorage.getItem(storeKey) || '{}')
+      if (saved.state) setStateAll(saved.state)
+      if (saved.basemap && config.basemaps.some((b) => b.id === saved.basemap)) setBasemap(saved.basemap)
+    } catch { /* ignore */ }
+  }, [storeKey])
+  useEffect(() => {
+    if (storeKey) localStorage.setItem(storeKey, JSON.stringify({ state, basemap }))
+  }, [state, basemap, storeKey])
+
+  const layers = site?.layers || []
+  const { data } = useLayerData(layers)
+  const fullState = useMemo(() => {
+    const out: Record<string, LayerState> = {}
+    for (const l of layers) out[l.id] = state[l.id] || { visible: l.visible_default, opacity: l.style.opacity ?? 1 }
+    return out
+  }, [layers, state])
+  const visibleIds = layers.filter((l) => fullState[l.id]?.visible && l.status === 'ready').map((l) => l.id)
+  const summary = useSummary(site?.id, visibleIds, layers.map((l) => l.updated_at).join())
+  const legend = useMemo(() => legendData(layers.filter((l) => fullState[l.id]?.visible), data), [layers, fullState, data])
+  const setState = useCallback((id: string, s: Partial<LayerState>) => {
+    setStateAll((cur) => {
+      const l = layers.find((x) => x.id === id)
+      const prev = cur[id] || { visible: l?.visible_default ?? true, opacity: l?.style.opacity ?? 1 }
+      return { ...cur, [id]: { ...prev, ...s } }
+    })
+  }, [layers])
+
+  // First view: the site's default, or all the layers
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !site || fitted.current) return
+    const bb = unionBbox(layers)
+    if (site.default_view?.center) {
+      map.jumpTo({ center: site.default_view.center, zoom: site.default_view.zoom || 16, bearing: site.default_view.bearing || 0 })
+      fitted.current = true
+    } else if (bb) {
+      map.fitBounds(bb, { padding: 40, duration: 0, maxZoom: 19 })
+      fitted.current = true
+    }
+  }, [site, layers, mapRef.current])
+
+  const onReady = (map: MLMap) => {
+    mapRef.current = map
+    drawRef.current = createDraw(map, (id, geometry) => setPending({ id, geometry }))
+    fitted.current = false
+    qc.invalidateQueries({ queryKey: ['site'] })
+  }
+  const refresh = () => qc.invalidateQueries({ queryKey: ['site'] })
+
+  const setDrawMode = (m: DrawMode) => {
+    const d = drawRef.current
+    if (!d) return
+    d.setMode(m)
+    setMode(m)
+  }
+  const saveDrawn = async (f: FeatureFields) => {
+    if (!pending || !site) return
+    try {
+      await api(`/sites/${site.id}/annotations`, { body: { geometry: pending.geometry, ...f } })
+      drawRef.current?.removeFeatures([pending.id])
+      setPending(null)
+      refresh()
+    } catch (e) {
+      notifications.show({ color: 'red', message: String((e as Error).message) })
+    }
+  }
+  const cancelDrawn = () => {
+    if (pending) drawRef.current?.removeFeatures([pending.id])
+    setPending(null)
+  }
+  const saveFeature = async (f: FeatureFields) => {
+    if (!picked) return
+    await api(`/features/${picked.id}`, { method: 'PATCH', body: f })
+    setPicked({ ...picked, properties: { ...picked.properties, risa_type: f.risa_type, risa_status: f.risa_status, risa_label: f.label } })
+    refresh()
+  }
+  const deleteFeature = async () => {
+    if (!picked || !confirm('Delete this feature?')) return
+    await api(`/features/${picked.id}`, { method: 'DELETE' })
+    setPicked(null)
+    refresh()
+  }
+  const startShapeEdit = () => {
+    const d = drawRef.current
+    if (!picked || !d) return
+    if (!editShape(d, picked.id, picked.geometry)) return notifications.show({ message: "This shape can't be edited here" })
+    setMode('select')
+    setShapeEdit(picked)
+  }
+  const finishShapeEdit = async (save: boolean) => {
+    const d = drawRef.current
+    if (!d || !shapeEdit) return
+    const f = d.getSnapshotFeature(shapeEdit.id)
+    if (save && f) {
+      await api(`/features/${shapeEdit.id}`, { method: 'PATCH', body: { geometry: f.geometry } })
+      setPicked({ ...shapeEdit, geometry: f.geometry as GeoJSON.Geometry })
+      refresh()
+    }
+    d.clear()
+    d.setMode('static')
+    setMode('static')
+    setShapeEdit(null)
+  }
+  const captureView = (): ProductView => {
+    const map = mapRef.current!
+    const b = map.getBounds()
+    return {
+      bounds: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
+      center: map.getCenter().toArray() as [number, number],
+      zoom: map.getZoom(),
+      bearing: map.getBearing(),
+      basemap,
+      layers: layers.map((l) => ({ id: l.id, visible: fullState[l.id].visible, opacity: fullState[l.id].opacity })),
+    }
+  }
+  const saveDefaultView = async () => {
+    const map = mapRef.current
+    if (!map || !site) return
+    await api(`/sites/${site.id}`, { method: 'PATCH', body: { default_view: { center: map.getCenter().toArray(), zoom: map.getZoom(), bearing: map.getBearing() } } })
+    notifications.show({ message: 'Saved as the site’s default view' })
+    refresh()
+  }
+
+  if (q.error) return <Center h="100vh"><Text c="red">{String(q.error)}</Text></Center>
+  if (!site) return <Center h="100vh"><Loader /></Center>
+  const canEdit = site.response.can_edit
+  const pickedLayer = picked ? layers.find((l) => l.id === picked.layerId) : undefined
+
+  return (
+    <AppShell header={{ height: 52 }} navbar={{ width: 310, breakpoint: 'sm' }} aside={{ width: 340, breakpoint: 'md' }}>
+      <AppShell.Header>
+        <Header>
+          <Text size="sm" c="dimmed" truncate>
+            / <Link to={`/r/${site.response.slug}`} style={{ color: 'inherit' }}>{site.response.name}</Link> / <b>{site.name}</b>
+          </Text>
+          <Group gap="xs" ml="auto" wrap="nowrap">
+            <EditKeyButton slug={site.response.slug} canEdit={canEdit} />
+            <Menu position="bottom-end">
+              <Menu.Target><Button size="xs" variant="default" leftSection={<IconDownload size={14} />}>Export</Button></Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item component="a" href={`/api/sites/${site.id}/export.gpkg`}>GeoPackage (QGIS, ArcGIS Pro)</Menu.Item>
+                <Menu.Label>Imagery: use “Download COG” on each layer</Menu.Label>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+        </Header>
+      </AppShell.Header>
+      <AppShell.Navbar>
+        <ScrollArea>
+          <Select size="xs" p="sm" pb={0} label="Basemap" value={basemap} onChange={(v) => v && setBasemap(v)}
+            data={config.basemaps.map((b) => ({ value: b.id, label: b.name + (b.online ? '' : ' ✓ offline') }))} allowDeselect={false} />
+          <LayerPanel site={site} state={fullState} setState={setState} canEdit={canEdit}
+            onZoom={(l) => l.bbox && mapRef.current?.fitBounds(l.bbox, { padding: 40, maxZoom: 20 })} />
+          <Divider />
+          <Text fw={600} size="sm" px="sm" pt="sm">Legend</Text>
+          <div style={{ padding: '0 12px 12px', fontSize: 13 }}><Legend config={config} data={legend} compact /></div>
+          {canEdit && (
+            <Group px="sm" pb="md">
+              <Button size="compact-xs" variant="subtle" color="gray" leftSection={<IconHome size={13} />} onClick={saveDefaultView}>Save view as site default</Button>
+            </Group>
+          )}
+        </ScrollArea>
+      </AppShell.Navbar>
+      <AppShell.Main style={{ height: '100vh', paddingBottom: 0 }}>
+        <div style={{ position: 'relative', height: 'calc(100vh - 52px)' }}>
+          <MapView config={config} basemap={basemap} layers={layers} state={fullState} data={data}
+            initial={site.default_view?.center ? site.default_view : undefined}
+            onReady={onReady} onFeatureClick={(f) => mode === 'static' && setPicked(f)} />
+          {canEdit && (
+            <Paper shadow="sm" p={4} withBorder style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
+              {shapeEdit ? (
+                <Group gap={4}>
+                  <Text size="xs" px={4}>Drag the vertices</Text>
+                  <Button size="compact-xs" leftSection={<IconCheck size={13} />} onClick={() => finishShapeEdit(true)}>Save shape</Button>
+                  <Button size="compact-xs" variant="default" onClick={() => finishShapeEdit(false)}>Cancel</Button>
+                </Group>
+              ) : (
+                <Group gap={2}>
+                  {([['point', IconMapPin, 'Point (service, gate…)'], ['linestring', IconLine, 'Line (route, fence…)'], ['polygon', IconPolygon, 'Area (block, building, flood…)']] as const).map(([m, Icon, label]) => (
+                    <Tooltip key={m} label={label} position="bottom">
+                      <ActionIcon variant={mode === m ? 'filled' : 'subtle'} color={mode === m ? undefined : 'gray'} onClick={() => setDrawMode(mode === m ? 'static' : m)}><Icon size={18} /></ActionIcon>
+                    </Tooltip>
+                  ))}
+                  {mode !== 'static' && <Tooltip label="Stop drawing"><ActionIcon variant="subtle" color="gray" onClick={() => setDrawMode('static')}><IconX size={18} /></ActionIcon></Tooltip>}
+                </Group>
+              )}
+            </Paper>
+          )}
+          {mode !== 'static' && !shapeEdit && (
+            <Paper shadow="sm" px="sm" py={4} style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
+              <Text size="xs">{mode === 'point' ? 'Click to place a point' : 'Click to add vertices, click the last point again (or the first, for an area) to finish'}</Text>
+            </Paper>
+          )}
+        </div>
+      </AppShell.Main>
+      <AppShell.Aside>
+        <ScrollArea>
+          {picked ? (
+            <FeaturePanel config={config} feature={picked} layer={pickedLayer} canEdit={canEdit} onClose={() => setPicked(null)}
+              onSave={saveFeature} onDelete={deleteFeature} onEditShape={startShapeEdit} />
+          ) : (
+            <>
+              <SummaryPanel config={config} summary={summary.data} />
+              <Divider />
+              <ProductsPanel site={site} canEdit={canEdit} captureView={captureView} />
+            </>
+          )}
+        </ScrollArea>
+      </AppShell.Aside>
+      <Modal opened={!!pending} onClose={cancelDrawn} title="New feature">
+        {pending && <FeatureForm config={config} geometryType={pending.geometry.type} onSave={saveDrawn} onCancel={cancelDrawn} saveLabel="Add to map" />}
+      </Modal>
+    </AppShell>
+  )
+}

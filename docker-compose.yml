@@ -1,0 +1,52 @@
+# Local development: PostGIS, the Django API and the worker, with the code mounted.
+# The frontend runs on the host with `npm run dev` (http://localhost:5173), which
+# proxies /api and /media here. See README.
+services:
+  db:
+    image: imresamu/postgis:16-3.5
+    environment:
+      POSTGRES_USER: risa
+      POSTGRES_PASSWORD: risa
+      POSTGRES_DB: risa
+    ports: ["5433:5432"]
+    volumes: [db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risa"]
+      interval: 3s
+      retries: 20
+
+  web: &app
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+      target: dev
+    image: risa-dash:dev
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    environment: &env
+      DEBUG: "true"
+      SECRET_KEY: dev-insecure-change-me
+      DATABASE_URL: postgis://risa:risa@db:5432/risa
+      PUBLIC_URL: http://localhost:5173
+      STORAGE: filesystem
+      MEDIA_ROOT: /data/media
+      # The worker's Chromium opens the Vite dev server on the host
+      PRINT_BASE_URL: http://host.docker.internal:5173
+      ALLOWED_SERVERS: https://kf.kobotoolbox.org,https://eu.kobotoolbox.org
+    volumes:
+      - ./backend:/app/backend
+      - ./symbology:/app/symbology:ro
+      - ./.sample-data:/sample-data:ro
+      - media:/data/media
+    ports: ["8070:8000"]
+    depends_on:
+      db: {condition: service_healthy}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+
+  worker:
+    <<: *app
+    command: sh -c "sleep 4 && python manage.py procrastinate worker --concurrency 2"
+    ports: []
+
+volumes:
+  db:
+  media:

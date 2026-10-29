@@ -1,0 +1,38 @@
+[project]
+name = "risa-dash"
+version = "0.1.0"
+license = "AGPL-3.0-only"
+description = "RISA Dashboard: imagery, Kobo observations and analysis layers on one map, printed as RISA page 1"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.2,<5.3",
+    "django-ninja>=1.4",
+    "psycopg[binary]>=3.2",
+    "procrastinate[django]>=3.0",
+    "django-storages[s3]>=1.14",
+    "dj-database-url>=2.3",
+    "whitenoise>=6.8",
+    "gunicorn>=23.0",
+    "httpx>=0.28",
+    "cryptography>=44",
+    "playwright>=1.50",
+    "qrcode>=8.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-django>=4.9", "ruff>=0.8"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "tests.py"]

@@ -1,0 +1,11 @@
+.git
+.sample-data
+**/node_modules
+**/.venv
+**/__pycache__
+backend/media
+backend/staticfiles
+frontend/dist
+*.gpkg
+*.pdf
+.env

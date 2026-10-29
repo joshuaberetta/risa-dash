@@ -1,0 +1,50 @@
+# Self-hosted or offline install: PostGIS, the web app and the worker, files on a volume.
+#   cp deploy/.env.example deploy/.env   # fill in SECRET_KEY etc.
+#   docker compose -f deploy/compose.yaml --env-file deploy/.env up -d
+# Then open PUBLIC_URL. Put it behind your own proxy (or the kobo-in-a-box edge nginx,
+# see deploy/nginx/risa.conf), or publish port 8000 directly on a trusted network.
+name: risa-dash
+services:
+  db:
+    image: postgis/postgis:16-3.5   # on arm64 use imresamu/postgis:16-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: risa
+      POSTGRES_DB: risa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes: [db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risa"]
+      interval: 5s
+      retries: 20
+
+  web: &app
+    image: ${RISA_IMAGE:-risa-dash:latest}
+    build: { context: .., dockerfile: deploy/Dockerfile, target: app }
+    restart: unless-stopped
+    command: ["start", "web"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgis://risa:${POSTGRES_PASSWORD}@db:5432/risa
+      MEDIA_ROOT: /data/media
+      # The worker prints by opening the app inside the compose network
+      PRINT_BASE_URL: http://web:8000
+    volumes: [media:/data/media]
+    ports: ["${RISA_PORT:-8000}:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+    extra_hosts:
+      # On a kobo-in-a-box, the box's Kobo (kf.kobo.local) is on the host
+      - "kf.kobo.local:host-gateway"
+
+  worker:
+    <<: *app
+    command: ["start", "worker"]
+    ports: []
+    depends_on:
+      db: { condition: service_healthy }
+      web: { condition: service_started }
+
+volumes:
+  db:
+  media:
