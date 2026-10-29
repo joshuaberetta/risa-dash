@@ -27,6 +27,8 @@ export interface Config {
   create_key_required: boolean
   read_only_public: boolean
   chunk_size: number
+  source_url: string
+  licence: string
 }
 
 export interface ResponseT {

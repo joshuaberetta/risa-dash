@@ -1,6 +1,8 @@
-import { Anchor, Badge, Group, Text } from '@mantine/core'
+import { Anchor, Badge, Group, Text, Tooltip } from '@mantine/core'
+import { IconBrandGithub } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { useConfigData } from '../hooks'
 
 export function Logo() {
   return (
@@ -19,13 +21,29 @@ export function Logo() {
   )
 }
 
+/** Free and open source: the code is on GitHub (AGPL-3.0). */
+export function SourceLink({ withLabel = true }: { withLabel?: boolean }) {
+  const config = useConfigData()
+  return (
+    <Tooltip label={`Free and open source (${config.licence}). View the code on GitHub.`}>
+      <Anchor href={config.source_url} target="_blank" rel="noopener" c="dimmed" underline="never" aria-label="Source code on GitHub">
+        <Group gap={5} wrap="nowrap">
+          <IconBrandGithub size={18} />
+          {withLabel && <Text size="xs" visibleFrom="md">Open source</Text>}
+        </Group>
+      </Anchor>
+    </Tooltip>
+  )
+}
+
 export default function Header({ children }: { children?: ReactNode }) {
   return (
-    <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-      <Group gap="md" wrap="nowrap" style={{ minWidth: 0 }}>
+    <Group h="100%" px="md" justify="space-between" wrap="nowrap" gap="md">
+      <Group gap="md" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
         <Logo />
         {children}
       </Group>
+      <SourceLink />
     </Group>
   )
 }

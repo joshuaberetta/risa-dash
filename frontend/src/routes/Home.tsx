@@ -1,4 +1,4 @@
-import { AppShell, Badge, Button, Card, Container, Group, Modal, PasswordInput, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Anchor, AppShell, Badge, Button, Card, Container, Group, Modal, PasswordInput, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
 import { DateInput } from '../components/DateInput'
 import { IconPlus } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
@@ -12,6 +12,7 @@ import { useConfigData } from '../hooks'
 const HAZARDS = ['Earthquake', 'Flood', 'Tropical cyclone', 'Conflict / displacement', 'Landslide', 'Volcano', 'Drought', 'Epidemic', 'Other']
 
 export default function Home() {
+  const config = useConfigData()
   const responses = useQuery({ queryKey: ['responses'], queryFn: () => api<(ResponseT & { sites: number })[]>('/responses') })
   const [open, setOpen] = useState(false)
   return (
@@ -39,6 +40,11 @@ export default function Home() {
             ))}
           </SimpleGrid>
           {responses.data?.length === 0 && <Text c="dimmed">No responses yet.</Text>}
+          <Text size="sm" c="dimmed" mt={48} pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+            RISA Dashboard is free and open-source software under the {config.licence} licence, the same as KoboToolbox.
+            Anyone can run it, including fully offline or on their own servers.{' '}
+            <Anchor href={config.source_url} target="_blank" rel="noopener" size="sm">Source code, documentation and self-hosting guide on GitHub</Anchor>.
+          </Text>
         </Container>
         <NewResponse opened={open} onClose={() => setOpen(false)} />
       </AppShell.Main>

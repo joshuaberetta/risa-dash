@@ -160,6 +160,10 @@ PRINT_BASE_URL = env("PRINT_BASE_URL", PUBLIC_URL).rstrip("/")
 # Typst lays out the printed pages (risa/typst/)
 TYPST_BIN = env("TYPST_BIN", "typst")
 
+# Linked from every page. AGPL-3.0: an instance running modified code should point
+# this at its own source.
+SOURCE_URL = env("SOURCE_URL", "https://github.com/joshuaberetta/risa-dash")
+
 SYMBOLOGY_FILE = Path(env("SYMBOLOGY_FILE", str(REPO_DIR / "symbology" / "risa.json")))
 
 LOGGING = {

@@ -7,6 +7,7 @@ No GPU needed: WebGL runs on SwiftShader. Nothing here needs the internet beyond
 the map itself loads, so it works on an offline box.
 """
 
+import base64
 import json
 import logging
 import os
@@ -42,7 +43,10 @@ def _shoot(page, url: str, out: str, timeout_s: int = 180) -> dict:
     if err:
         raise RuntimeError(f"Map page error: {err}")
     state = page.evaluate("window.__mapState || null")
-    page.screenshot(path=out, type="jpeg", quality=88)
+    # The map's own canvas (preserveDrawingBuffer), not a page screenshot
+    data_url = page.evaluate("window.__mapImage()")
+    with open(out, "wb") as f:
+        f.write(base64.b64decode(data_url.split(",", 1)[1]))
     return state
 
 

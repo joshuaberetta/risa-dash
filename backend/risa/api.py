@@ -141,6 +141,8 @@ def config(request):
         "create_key_required": bool(settings.CREATE_KEY),
         "read_only_public": settings.READ_ONLY_PUBLIC,
         "chunk_size": settings.UPLOAD_CHUNK_SIZE,
+        "source_url": settings.SOURCE_URL,
+        "licence": "AGPL-3.0",
     }
 
 

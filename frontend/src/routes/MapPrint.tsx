@@ -19,8 +19,14 @@ declare global {
     __printReady?: boolean
     __printError?: string
     __mapState?: { zoom: number; lat: number; bearing: number; m_per_px: number; bounds: number[] }
+    /** The map canvas as a JPEG data URL, at the device pixel ratio (300 dpi when printing) */
+    __mapImage?: () => string
   }
 }
+
+// Reading the canvas directly is much cheaper than a page screenshot at 300 dpi,
+// which on a small worker spends minutes compositing in software.
+const exportCanvas = (m: MLMap) => () => m.getCanvas().toDataURL('image/jpeg', 0.88)
 
 export default function MapPrint() {
   const { id } = useParams()
@@ -71,6 +77,7 @@ function MainMap({ product, site }: { product: ProductT; site: SiteFull }) {
       m_per_px: (40075016.686 * Math.cos((c.lat * Math.PI) / 180)) / (512 * 2 ** m.getZoom()),
       bounds: [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()],
     }
+    window.__mapImage = exportCanvas(m)
     // One more frame so the last tiles are painted
     requestAnimationFrame(() => requestAnimationFrame(() => (window.__printReady = true)))
   }
@@ -107,7 +114,9 @@ function Inset({ product, bounds, zoom }: { product: ProductT; bounds: number[];
       map.addLayer({ id: 'centre', type: 'circle', source: 'centre', paint: { 'circle-radius': 4, 'circle-color': '#A8281A', 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } })
     })
     map.on('idle', () => {
-      if (map.loaded() && map.areTilesLoaded()) requestAnimationFrame(() => requestAnimationFrame(() => (window.__printReady = true)))
+      if (!map.loaded() || !map.areTilesLoaded()) return
+      window.__mapImage = exportCanvas(map)
+      requestAnimationFrame(() => requestAnimationFrame(() => (window.__printReady = true)))
     })
     map.on('error', (e) => console.warn('inset', e.error?.message))
     return () => map.remove()
