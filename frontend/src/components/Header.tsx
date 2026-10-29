@@ -1,8 +1,9 @@
-import { Anchor, Badge, Group, Text, Tooltip } from '@mantine/core'
-import { IconBrandGithub } from '@tabler/icons-react'
+import { Anchor, Badge, Button, Group, Text, Tooltip } from '@mantine/core'
+import { IconBrandGithub, IconRoute } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useConfigData } from '../hooks'
+import { startTour } from '../tour'
 
 export function Logo() {
   return (
@@ -26,7 +27,7 @@ export function SourceLink({ withLabel = true }: { withLabel?: boolean }) {
   const config = useConfigData()
   return (
     <Tooltip label={`Free and open source (${config.licence}). View the code on GitHub.`}>
-      <Anchor href={config.source_url} target="_blank" rel="noopener" c="dimmed" underline="never" aria-label="Source code on GitHub">
+      <Anchor href={config.source_url} target="_blank" rel="noopener" c="dimmed" underline="never" aria-label="Source code on GitHub" data-tour="source">
         <Group gap={5} wrap="nowrap">
           <IconBrandGithub size={18} />
           {withLabel && <Text size="xs" visibleFrom="md">Open source</Text>}
@@ -43,7 +44,12 @@ export default function Header({ children }: { children?: ReactNode }) {
         <Logo />
         {children}
       </Group>
-      <SourceLink />
+      <Group gap="sm" wrap="nowrap">
+        <Tooltip label="A walk through this page">
+          <Button size="xs" variant="subtle" color="gray" leftSection={<IconRoute size={15} />} onClick={startTour} data-tour="tour">Tour</Button>
+        </Tooltip>
+        <SourceLink />
+      </Group>
     </Group>
   )
 }

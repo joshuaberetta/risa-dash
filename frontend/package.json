@@ -23,6 +23,7 @@
     "@turf/area": "^7.4.0",
     "@turf/bbox": "^7.4.0",
     "@turf/length": "^7.4.0",
+    "driver.js": "^1.10.2",
     "maplibre-gl": "^5.24.0",
     "pmtiles": "^4.5.0",
     "qrcode": "^1.5.4",

@@ -17,6 +17,8 @@ import Header from '../components/Header'
 import LayerPanel from '../components/LayerPanel'
 import Legend from '../components/Legend'
 import { AnalyseButton, AnalysisProgress } from '../components/Analysis'
+import { siteTour } from '../tours'
+import { usePageTour } from '../tour'
 import { ProductsPanel } from '../components/Products'
 import SummaryPanel from '../components/SummaryPanel'
 import { useConfigData, useLayerData, useSite, useSummary } from '../hooks'
@@ -224,6 +226,11 @@ export default function SitePage() {
     refresh()
   }
 
+  usePageTour('site', () => siteTour({
+    showSummary: () => { setPicked(null); setTab('summary') },
+    showAi: () => { setPicked(null); setTab('ai') },
+  }), !!site)
+
   if (q.error) return <Center h="100vh"><Text c="red">{String(q.error)}</Text></Center>
   if (!site) return <Center h="100vh"><Loader /></Center>
   const canEdit = site.response.can_edit
@@ -237,10 +244,10 @@ export default function SitePage() {
             / <Link to={`/r/${site.response.slug}`} style={{ color: 'inherit' }}>{site.response.name}</Link> / <b>{site.name}</b>
           </Text>
           <Group gap="xs" ml="auto" wrap="nowrap">
-            <Button size="xs" variant={tableOpen ? 'light' : 'default'} leftSection={<IconTable size={14} />} onClick={() => setTableOpen(!tableOpen)}>Data table</Button>
-            <EditKeyButton slug={site.response.slug} canEdit={canEdit} />
+            <Button size="xs" variant={tableOpen ? 'light' : 'default'} leftSection={<IconTable size={14} />} onClick={() => setTableOpen(!tableOpen)} data-tour="data-table">Data table</Button>
+            <span data-tour="edit-key"><EditKeyButton slug={site.response.slug} canEdit={canEdit} /></span>
             <Menu position="bottom-end">
-              <Menu.Target><Button size="xs" variant="default" leftSection={<IconDownload size={14} />}>Export</Button></Menu.Target>
+              <Menu.Target><Button size="xs" variant="default" leftSection={<IconDownload size={14} />} data-tour="export">Export</Button></Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item component="a" href={`/api/sites/${site.id}/export.gpkg`}>GeoPackage (QGIS, ArcGIS Pro)</Menu.Item>
                 <Menu.Label>Imagery: use “Download COG” on each layer</Menu.Label>
@@ -251,13 +258,19 @@ export default function SitePage() {
       </AppShell.Header>
       <AppShell.Navbar>
         <ScrollArea>
-          <Select size="xs" p="sm" pb={0} label="Basemap" value={basemap} onChange={(v) => v && setBasemap(v)}
-            data={config.basemaps.map((b) => ({ value: b.id, label: b.name + (b.online ? '' : ' ✓ offline') }))} allowDeselect={false} />
-          <LayerPanel site={site} state={fullState} setState={setState} canEdit={canEdit}
-            onZoom={(l) => l.bbox && mapRef.current?.fitBounds(l.bbox, { padding: 40, maxZoom: 20 })} />
+          <div data-tour="basemap">
+            <Select size="xs" p="sm" pb={0} label="Basemap" value={basemap} onChange={(v) => v && setBasemap(v)}
+              data={config.basemaps.map((b) => ({ value: b.id, label: b.name + (b.online ? '' : ' ✓ offline') }))} allowDeselect={false} />
+          </div>
+          <div data-tour="layers">
+            <LayerPanel site={site} state={fullState} setState={setState} canEdit={canEdit}
+              onZoom={(l) => l.bbox && mapRef.current?.fitBounds(l.bbox, { padding: 40, maxZoom: 20 })} />
+          </div>
           <Divider />
-          <Text fw={600} size="sm" px="sm" pt="sm">Legend</Text>
-          <div style={{ padding: '0 12px 12px', fontSize: 13 }}><Legend config={config} data={legend} compact /></div>
+          <div data-tour="legend">
+            <Text fw={600} size="sm" px="sm" pt="sm">Legend</Text>
+            <div style={{ padding: '0 12px 12px', fontSize: 13 }}><Legend config={config} data={legend} compact /></div>
+          </div>
           {canEdit && (
             <Group px="sm" pb="md">
               <Button size="compact-xs" variant="subtle" color="gray" leftSection={<IconHome size={13} />} onClick={saveDefaultView}>Save view as site default</Button>
@@ -266,11 +279,11 @@ export default function SitePage() {
         </ScrollArea>
       </AppShell.Navbar>
       <AppShell.Main style={{ height: '100vh', paddingBottom: 0 }}>
-        <div style={{ position: 'relative', height: tableOpen ? `calc(100vh - 52px - ${TABLE_HEIGHT}px)` : 'calc(100vh - 52px)' }}>
+        <div data-tour="map" style={{ position: 'relative', height: tableOpen ? `calc(100vh - 52px - ${TABLE_HEIGHT}px)` : 'calc(100vh - 52px)' }}>
           <MapView config={config} basemap={basemap} layers={layers} state={fullState} data={data} highlight={focused?.geometries}
             initial={site.default_view?.center ? site.default_view : undefined}
             onReady={onReady} onFeatureClick={(f) => mode === 'static' && setPicked(f)} />
-          <Paper shadow="sm" p={4} withBorder style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
+          <Paper shadow="sm" p={4} withBorder style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }} data-tour="tools">
             {shapeEdit ? (
               <Group gap={4}>
                 <Text size="xs" px={4}>Drag the vertices</Text>
@@ -342,11 +355,11 @@ export default function SitePage() {
                 <Tabs.Tab value="ai" color={AI_COLOR} leftSection={<IconSparkles size={14} />}>AI analysis</Tabs.Tab>
               </Tabs.List>
               <Tabs.Panel value="summary">
-                <SummaryPanel config={config} summary={summary.data} />
+                <div data-tour="summary"><SummaryPanel config={config} summary={summary.data} /></div>
                 <Divider />
-                <ProductsPanel site={site} canEdit={canEdit} captureView={captureView} />
+                <div data-tour="products"><ProductsPanel site={site} canEdit={canEdit} captureView={captureView} /></div>
               </Tabs.Panel>
-              <Tabs.Panel value="ai">
+              <Tabs.Panel value="ai" data-tour="ai">
                 {canEdit && <div style={{ padding: '12px 12px 0' }}><AnalyseButton site={site} getViewBounds={viewBounds} onStarted={() => setTab('ai')} /></div>}
                 <AnalysisPanel analysis={analysis} active={focused?.id || null} onFocus={focusRefs} />
               </Tabs.Panel>

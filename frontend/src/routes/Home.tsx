@@ -8,6 +8,8 @@ import { api, saveEditKey, type ResponseT } from '../api'
 import { ShowKey } from '../components/EditKey'
 import Header from '../components/Header'
 import { useConfigData } from '../hooks'
+import { usePageTour } from '../tour'
+import { homeTour } from '../tours'
 
 const HAZARDS = ['Earthquake', 'Flood', 'Tropical cyclone', 'Conflict / displacement', 'Landslide', 'Volcano', 'Drought', 'Epidemic', 'Other']
 
@@ -15,6 +17,7 @@ export default function Home() {
   const config = useConfigData()
   const responses = useQuery({ queryKey: ['responses'], queryFn: () => api<(ResponseT & { sites: number })[]>('/responses') })
   const [open, setOpen] = useState(false)
+  usePageTour('home', homeTour, !!responses.data)
   return (
     <AppShell header={{ height: 52 }}>
       <AppShell.Header><Header /></AppShell.Header>
@@ -25,9 +28,9 @@ export default function Home() {
               <Title order={2}>Responses</Title>
               <Text c="dimmed" size="sm">Drone and satellite imagery, KoboCollect observations and analysis layers, printed as RISA page 1.</Text>
             </div>
-            <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)}>New response</Button>
+            <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-response">New response</Button>
           </Group>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} data-tour="responses">
             {responses.data?.map((r) => (
               <Card key={r.id} component={Link} to={`/r/${r.slug}`} withBorder padding="lg">
                 <Group justify="space-between" mb={4}>
@@ -40,7 +43,7 @@ export default function Home() {
             ))}
           </SimpleGrid>
           {responses.data?.length === 0 && <Text c="dimmed">No responses yet.</Text>}
-          <Text size="sm" c="dimmed" mt={48} pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+          <Text size="sm" c="dimmed" mt={48} pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }} data-tour="about">
             RISA Dashboard is free and open-source software under the {config.licence} licence, the same as KoboToolbox.
             Anyone can run it, including fully offline or on their own servers.{' '}
             <Anchor href={config.source_url} target="_blank" rel="noopener" size="sm">Source code, documentation and self-hosting guide on GitHub</Anchor>.

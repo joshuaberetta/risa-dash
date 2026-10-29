@@ -6,6 +6,8 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { api, setCurrentResponse, type ResponseT, type SiteT } from '../api'
 import { EditKeyButton } from '../components/EditKey'
 import Header from '../components/Header'
+import { usePageTour } from '../tour'
+import { responseTour } from '../tours'
 
 export const SITE_KINDS = [
   { value: 'camp', label: 'Camp / displacement site' },
@@ -21,6 +23,7 @@ export default function ResponsePage() {
   const q = useQuery({ queryKey: ['response', slug], queryFn: () => api<ResponseT & { sites: SiteT[] }>(`/responses/${slug}`) })
   const [open, setOpen] = useState(false)
   const r = q.data
+  usePageTour('response', responseTour, !!r)
   return (
     <AppShell header={{ height: 52 }}>
       <AppShell.Header>
@@ -41,11 +44,11 @@ export default function ResponsePage() {
                   </Group>
                 </div>
                 <Group>
-                  <EditKeyButton slug={r.slug} canEdit={r.can_edit} />
-                  {r.can_edit && <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)}>New site</Button>}
+                  <span data-tour="edit-key"><EditKeyButton slug={r.slug} canEdit={r.can_edit} /></span>
+                  {r.can_edit && <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-site">New site</Button>}
                 </Group>
               </Group>
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} data-tour="sites">
                 {r.sites.map((s) => (
                   <Card key={s.id} component={Link} to={`/r/${r.slug}/${s.slug}`} withBorder padding="lg">
                     <Group gap="xs"><IconMapPin size={16} /><Text fw={600}>{s.name}</Text></Group>
