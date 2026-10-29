@@ -47,6 +47,8 @@ export interface Analysis {
     blocks: BlockEstimate[]
     waterHa: number
     caveat: string
+    /** 'detected': counts from the shelter detection layer; 'example': made up from block areas */
+    source: 'detected' | 'example'
   } | null
   findings: Finding[]
   priorities: { text: string; finding: string }[]
@@ -147,6 +149,9 @@ interface F {
   type: string
   status: string
   label: string
+  /** Detected blocks: their shelter count and confidence */
+  count?: number
+  conf?: number
   note: string
   observed: string
   photos: number
@@ -156,14 +161,25 @@ interface F {
 export function analyse(siteName: string, layers: LayerT[], data: Record<string, GeoJSON.FeatureCollection | undefined>,
   typeLabel: (t: string) => string, today = new Date()): Analysis | null {
   const feats: F[] = []
+  // Shelter detection: only the latest run counts, and never rejected suggestions
+  const detection = layers.filter((l) => l.kind === 'analysis' && l.status === 'ready')
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]
+  const detected: { conf: number }[] = []
   for (const l of layers) {
+    if (l.kind === 'analysis' && l !== detection) continue
     for (const f of data[l.id]?.features || []) {
       if (!f.geometry) continue
       const p = f.properties || {}
+      if (l.kind === 'analysis') {
+        if (p.review === 'rejected') continue
+        if (p.ai_class === 'shelter') detected.push({ conf: Number(p.confidence) || 0 })
+        if (p.ai_class !== 'block') continue
+      }
       const photos = typeof p._photos === 'string' ? JSON.parse(p._photos) : p._photos || []
       feats.push({
         ref: { layerId: l.id, id: String(p.risa_id ?? f.id), geometry: f.geometry },
         type: String(p.risa_type || ''), status: String(p.risa_status || ''), label: String(p.risa_label || ''),
+        count: p.shelters != null ? Number(p.shelters) : undefined, conf: p.confidence != null ? Number(p.confidence) : undefined,
         note: String(p.note || ''), observed: String(p.observed || p._submission_time || p.observed_at || '').slice(0, 10),
         photos: photos.length, layer: l,
       })
@@ -178,7 +194,10 @@ export function analyse(siteName: string, layers: LayerT[], data: Record<string,
 
   const isPoint = (f: F) => f.ref.geometry.type === 'Point' || f.ref.geometry.type === 'MultiPoint'
   const services = feats.filter((f) => SERVICES.includes(f.type))
-  const blocks = feats.filter((f) => f.type === 'block' && f.ref.geometry.type.includes('Polygon'))
+  const allBlocks = feats.filter((f) => f.type === 'block' && f.ref.geometry.type.includes('Polygon'))
+  // Detected blocks replace drawn ones, so the same ground isn't counted twice
+  const detectedBlocks = allBlocks.filter((f) => f.layer.kind === 'analysis')
+  const blocks = detectedBlocks.length ? detectedBlocks : allBlocks
   const hazards = feats.filter((f) => (f.type === 'flood' || f.type === 'debris') && f.ref.geometry.type.includes('Polygon'))
   const routes = feats.filter((f) => f.type === 'route')
   const water = services.filter((f) => f.type === 'water')
@@ -192,14 +211,15 @@ export function analyse(siteName: string, layers: LayerT[], data: Record<string,
   const blockEst: BlockEstimate[] = blocks.map((b) => {
     const r = seeded(siteName + b.label + b.ref.id)
     const ha = area({ type: 'Feature', geometry: b.ref.geometry, properties: {} }) / 10000
-    const perHa = Math.round(170 + r() * 130)
-    const shelters = Math.max(1, Math.round(ha * perHa))
+    const shelters = b.count ?? Math.max(1, Math.round(ha * Math.round(170 + r() * 130)))
+    const perHa = Math.round(shelters / Math.max(ha, 0.01))
     const c = centroid(b.ref.geometry)
     const nearest = waterOk.length ? Math.min(...waterOk.map((w) => pointToGeom(c, w.ref.geometry))) : null
-    return { label: name(b), shelters, perHa, confidence: 0.72 + r() * 0.2, people: Math.round(shelters * (HOUSEHOLD[0] + HOUSEHOLD[1]) / 2), nearestWater: nearest, ref: b.ref }
+    return { label: name(b), shelters, perHa, confidence: b.conf ?? 0.72 + r() * 0.2, people: Math.round(shelters * (HOUSEHOLD[0] + HOUSEHOLD[1]) / 2), nearestWater: nearest, ref: b.ref }
   })
   if (raster && blockEst.length) {
-    const shelters = blockEst.reduce((s, b) => s + b.shelters, 0)
+    // With a detection run, the total is every shelter it found (in blocks or not)
+    const shelters = detected.length || blockEst.reduce((s, b) => s + b.shelters, 0)
     const latestObs = feats.map((f) => f.observed).filter(Boolean).sort().pop()
     const ageDays = raster.captured_at ? (today.getTime() - new Date(raster.captured_at).getTime()) / 864e5 : 0
     imagery = {
@@ -207,7 +227,10 @@ export function analyse(siteName: string, layers: LayerT[], data: Record<string,
       capturedAt: raster.captured_at,
       shelters,
       people: [round(shelters * HOUSEHOLD[0], 100), round(shelters * HOUSEHOLD[1], 100)],
-      confidence: blockEst.reduce((s, b) => s + b.confidence * b.shelters, 0) / shelters,
+      confidence: detected.length
+        ? detected.reduce((s, d) => s + d.conf, 0) / detected.length
+        : blockEst.reduce((s, b) => s + b.confidence * b.shelters, 0) / shelters,
+      source: detected.length ? 'detected' : 'example',
       blocks: blockEst,
       waterHa: hazards.filter((h) => h.type === 'flood').reduce((s, h) => s + area({ type: 'Feature', geometry: h.ref.geometry, properties: {} }), 0) / 10000,
       caveat: ageDays > 30

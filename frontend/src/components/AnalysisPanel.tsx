@@ -39,7 +39,12 @@ export default function AnalysisPanel({ analysis, active, onFocus }: {
   return (
     <Stack gap="sm" p="sm">
       <Alert color={AI_COLOR} variant="light" p="xs" icon={<IconInfoCircle size={16} />} title="Example output">
-        <Text size="xs">AI analysis isn't connected yet. This shows what it could return for this site. Shelter and people counts are illustrative: don't use them.</Text>
+        <Text size="xs">
+          AI analysis isn't connected yet. This shows what it could return for this site.{' '}
+          {analysis.imagery?.source === 'detected'
+            ? 'Shelter counts come from the latest shelter detection (simulated, including suggestions not yet reviewed). Use the figures on page 1, which count only accepted shelters.'
+            : 'Shelter and people counts are illustrative: don’t use them. Run Detect shelters on imagery for counts from the image.'}
+        </Text>
       </Alert>
 
       <div>
@@ -108,7 +113,6 @@ export default function AnalysisPanel({ analysis, active, onFocus }: {
       <div>
         <Text size="xs" c="dimmed">Inputs: {analysis.inputs.join(' · ')}</Text>
         <Group gap="xs" mt={8}>
-          <Tooltip label="Not connected yet"><Button size="compact-xs" variant="light" color={AI_COLOR} leftSection={<IconSparkles size={13} />} disabled>Run analysis</Button></Tooltip>
           <Tooltip label="Not connected yet"><Button size="compact-xs" variant="default" disabled>Send to page 1</Button></Tooltip>
         </Group>
       </div>
