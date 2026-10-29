@@ -1,6 +1,6 @@
 import { ActionIcon, AppShell, Button, Center, Divider, Group, Loader, Menu, Modal, Paper, ScrollArea, Select, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconX } from '@tabler/icons-react'
+import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconRuler2, IconRulerMeasure, IconX } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Map as MLMap } from 'maplibre-gl'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -15,7 +15,7 @@ import Legend from '../components/Legend'
 import { ProductsPanel } from '../components/Products'
 import SummaryPanel from '../components/SummaryPanel'
 import { useConfigData, useLayerData, useSite, useSummary } from '../hooks'
-import { createDraw, editShape, type DrawMode } from '../map/draw'
+import { clearMeasurements, createDraw, editShape, formatArea, formatLength, isMeasureMode, type DrawMode, type Measurement } from '../map/draw'
 import { legendData } from '../map/legend'
 import MapView, { type LayerState, type PickedFeature } from '../map/MapView'
 
@@ -39,6 +39,7 @@ export default function SitePage() {
   const [pending, setPending] = useState<{ id: string; geometry: GeoJSON.Geometry } | null>(null)
   const [mode, setMode] = useState<DrawMode>('static')
   const [shapeEdit, setShapeEdit] = useState<PickedFeature | null>(null)
+  const [measurement, setMeasurement] = useState<Measurement | null>(null)
   const mapRef = useRef<MLMap | null>(null)
   const drawRef = useRef<TerraDraw | null>(null)
   const fitted = useRef(false)
@@ -90,7 +91,7 @@ export default function SitePage() {
 
   const onReady = (map: MLMap) => {
     mapRef.current = map
-    drawRef.current = createDraw(map, (id, geometry) => setPending({ id, geometry }))
+    drawRef.current = createDraw(map, (id, geometry) => setPending({ id, geometry }), setMeasurement)
     fitted.current = false
     qc.invalidateQueries({ queryKey: ['site'] })
   }
@@ -99,9 +100,24 @@ export default function SitePage() {
   const setDrawMode = (m: DrawMode) => {
     const d = drawRef.current
     if (!d) return
+    // Leaving measuring, or switching between distance and area, clears the measurement
+    if (isMeasureMode(mode) && m !== mode) {
+      clearMeasurements(d)
+      setMeasurement(null)
+    }
     d.setMode(m)
     setMode(m)
   }
+  const clearMeasure = () => {
+    if (drawRef.current) clearMeasurements(drawRef.current)
+    setMeasurement(null)
+  }
+  useEffect(() => {
+    // Esc stops drawing or measuring
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && mode !== 'static' && !shapeEdit) setDrawMode('static') }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
   const saveDrawn = async (f: FeatureFields) => {
     if (!pending || !site) return
     try {
@@ -215,27 +231,53 @@ export default function SitePage() {
           <MapView config={config} basemap={basemap} layers={layers} state={fullState} data={data}
             initial={site.default_view?.center ? site.default_view : undefined}
             onReady={onReady} onFeatureClick={(f) => mode === 'static' && setPicked(f)} />
-          {canEdit && (
-            <Paper shadow="sm" p={4} withBorder style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
-              {shapeEdit ? (
-                <Group gap={4}>
-                  <Text size="xs" px={4}>Drag the vertices</Text>
-                  <Button size="compact-xs" leftSection={<IconCheck size={13} />} onClick={() => finishShapeEdit(true)}>Save shape</Button>
-                  <Button size="compact-xs" variant="default" onClick={() => finishShapeEdit(false)}>Cancel</Button>
+          <Paper shadow="sm" p={4} withBorder style={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
+            {shapeEdit ? (
+              <Group gap={4}>
+                <Text size="xs" px={4}>Drag the vertices</Text>
+                <Button size="compact-xs" leftSection={<IconCheck size={13} />} onClick={() => finishShapeEdit(true)}>Save shape</Button>
+                <Button size="compact-xs" variant="default" onClick={() => finishShapeEdit(false)}>Cancel</Button>
+              </Group>
+            ) : (
+              <Group gap={2}>
+                {canEdit && ([['point', IconMapPin, 'Draw a point (service, gate…)'], ['linestring', IconLine, 'Draw a line (route, fence…)'], ['polygon', IconPolygon, 'Draw an area (block, building, flood…)']] as const).map(([m, Icon, label]) => (
+                  <Tooltip key={m} label={label} position="bottom">
+                    <ActionIcon aria-label={label} variant={mode === m ? 'filled' : 'subtle'} color={mode === m ? undefined : 'gray'} onClick={() => setDrawMode(mode === m ? 'static' : m)}><Icon size={18} /></ActionIcon>
+                  </Tooltip>
+                ))}
+                {canEdit && <Divider orientation="vertical" mx={2} />}
+                {([['measure-line', IconRuler2, 'Measure distance'], ['measure-area', IconRulerMeasure, 'Measure area']] as const).map(([m, Icon, label]) => (
+                  <Tooltip key={m} label={label} position="bottom">
+                    <ActionIcon aria-label={label} variant={mode === m ? 'filled' : 'subtle'} color={mode === m ? 'dark' : 'gray'} onClick={() => setDrawMode(mode === m ? 'static' : m)}><Icon size={18} /></ActionIcon>
+                  </Tooltip>
+                ))}
+                {mode !== 'static' && <Tooltip label="Stop (Esc)"><ActionIcon aria-label="Stop" variant="subtle" color="gray" onClick={() => setDrawMode('static')}><IconX size={18} /></ActionIcon></Tooltip>}
+              </Group>
+            )}
+          </Paper>
+          {isMeasureMode(mode) && (
+            <Paper shadow="sm" withBorder px="sm" py={6} style={{ position: 'absolute', top: 54, left: 10, zIndex: 2, minWidth: 190 }}>
+              {measurement ? (
+                <Group justify="space-between" gap="md" wrap="nowrap">
+                  <div>
+                    {measurement.kind === 'line' ? (
+                      <Text fw={700} size="lg" lh={1.2}>{formatLength(measurement.length)}</Text>
+                    ) : (
+                      <>
+                        <Text fw={700} size="lg" lh={1.2}>{formatArea(measurement.area)}</Text>
+                        <Text size="xs" c="dimmed">Perimeter {formatLength(measurement.length)}</Text>
+                      </>
+                    )}
+                    {!measurement.done && <Text size="xs" c="dimmed">{measurement.kind === 'line' ? 'Click the last point again to finish' : 'Click the first point to close'}</Text>}
+                  </div>
+                  <Button size="compact-xs" variant="subtle" color="gray" onClick={clearMeasure}>Clear</Button>
                 </Group>
               ) : (
-                <Group gap={2}>
-                  {([['point', IconMapPin, 'Point (service, gate…)'], ['linestring', IconLine, 'Line (route, fence…)'], ['polygon', IconPolygon, 'Area (block, building, flood…)']] as const).map(([m, Icon, label]) => (
-                    <Tooltip key={m} label={label} position="bottom">
-                      <ActionIcon variant={mode === m ? 'filled' : 'subtle'} color={mode === m ? undefined : 'gray'} onClick={() => setDrawMode(mode === m ? 'static' : m)}><Icon size={18} /></ActionIcon>
-                    </Tooltip>
-                  ))}
-                  {mode !== 'static' && <Tooltip label="Stop drawing"><ActionIcon variant="subtle" color="gray" onClick={() => setDrawMode('static')}><IconX size={18} /></ActionIcon></Tooltip>}
-                </Group>
+                <Text size="xs" c="dimmed">{mode === 'measure-line' ? 'Click points along the way to measure a distance' : 'Click around an area to measure it'}</Text>
               )}
             </Paper>
           )}
-          {mode !== 'static' && !shapeEdit && (
+          {mode !== 'static' && !shapeEdit && !isMeasureMode(mode) && (
             <Paper shadow="sm" px="sm" py={4} style={{ position: 'absolute', bottom: 30, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
               <Text size="xs">{mode === 'point' ? 'Click to place a point' : 'Click to add vertices, click the last point again (or the first, for an area) to finish'}</Text>
             </Paper>
