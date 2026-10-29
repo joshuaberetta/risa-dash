@@ -7,8 +7,8 @@ from django.conf import settings
 from django.utils import timezone
 from procrastinate.contrib.django import app
 
-from . import analysis, ingest, kobo, printing
-from .models import KoboSource, Layer, Product, ProductVersion, Upload
+from . import analysis, ingest, kobo, learning, printing
+from .models import Detector, KoboSource, Layer, Product, ProductVersion, Upload
 
 log = logging.getLogger(__name__)
 
@@ -83,3 +83,14 @@ def analyse_imagery(layer_id: str):
         log.exception("Analysis %s failed", layer_id)
         layer.status, layer.error = "failed", str(e)[:4000]
         layer.save(update_fields=["status", "error", "updated_at"])
+
+
+@app.task(queue="analysis")
+def train_detector(detector_id: int):
+    d = Detector.objects.select_related("response").get(id=detector_id)
+    try:
+        learning.train(d)
+    except Exception as e:
+        log.exception("Training %s failed", detector_id)
+        d.status, d.error = "failed", str(e)[:2000]
+        d.save(update_fields=["status", "error"])

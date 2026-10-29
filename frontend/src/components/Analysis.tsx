@@ -3,8 +3,8 @@
 
 import { Alert, Badge, Button, Group, Loader, Modal, NumberInput, Paper, Progress, Radio, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconSparkles } from '@tabler/icons-react'
-import { useQueryClient } from '@tanstack/react-query'
+import { IconPolygon, IconSchool, IconSparkles } from '@tabler/icons-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api, type LayerT, type SiteFull } from '../api'
 
@@ -123,5 +123,69 @@ export function BulkReviewModal({ layer, onClose }: { layer: LayerT; onClose: ()
         <Group justify="flex-end"><Button color="violet" onClick={go}>{action === 'accept' ? 'Accept' : 'Reject'}</Button></Group>
       </Stack>
     </Modal>
+  )
+}
+
+interface DetectorInfo {
+  labels: { positives: number; negatives: number; added: number; needed: number }
+  versions: {
+    version: number; name: string; status: 'processing' | 'ready' | 'failed'; error: string; created_at: string
+    metrics: { examples?: number; held_out?: number; accuracy?: number; precision?: number; recall?: number; added?: number; baseline?: { accuracy?: number } }
+  }[]
+}
+
+const pc = (x?: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
+
+/** Learn from corrections: every accept, reject, edit and drawn shelter is a label. */
+export function LearnPanel({ slug, canEdit, onDrawMissed, drawing }: { slug: string; canEdit: boolean; onDrawMissed?: () => void; drawing: boolean }) {
+  const qc = useQueryClient()
+  const q = useQuery({
+    queryKey: ['detector', slug],
+    queryFn: () => api<DetectorInfo>(`/responses/${slug}/detector`),
+    refetchInterval: (x) => (x.state.data?.versions[0]?.status === 'processing' ? 2500 : 8000),
+  })
+  const d = q.data
+  if (!d) return null
+  const { positives, negatives, added, needed } = d.labels
+  const latest = d.versions.find((v) => v.status === 'ready')
+  const running = d.versions[0]?.status === 'processing'
+  const failed = d.versions[0]?.status === 'failed' ? d.versions[0] : null
+  const ready = positives >= needed && negatives >= needed
+  const train = async () => {
+    try {
+      await api(`/responses/${slug}/detector/train`, { method: 'POST' })
+      qc.invalidateQueries({ queryKey: ['detector', slug] })
+    } catch (e) {
+      notifications.show({ color: 'red', message: String((e as Error).message) })
+    }
+  }
+  return (
+    <Paper withBorder p="sm" mx="sm" mt="sm">
+      <Group gap={6} mb={4}><IconSchool size={16} color="var(--mantine-color-violet-7)" /><Text fw={600} size="sm">Learn from corrections</Text></Group>
+      <Text size="xs" c="dimmed">
+        Every shelter you accept, reject, reshape or draw teaches the detector. Learning makes a new version for this response; the next detection uses it.
+      </Text>
+      <Group gap="xs" mt="xs">
+        <Badge variant="light" color="violet">{positives} accepted{added ? ` (${added} drawn)` : ''}</Badge>
+        <Badge variant="light" color="gray">{negatives} rejected</Badge>
+      </Group>
+      {!ready && <Text size="xs" mt={6}>Review at least {needed} each way to learn ({Math.max(0, needed - positives)} more accepted, {Math.max(0, needed - negatives)} more rejected).</Text>}
+      {latest && (
+        <Text size="xs" mt={6}>
+          <b>Using v{latest.version}</b>, learned from {latest.metrics.examples} reviews: right on {pc(latest.metrics.accuracy)} of {latest.metrics.held_out} reviews held back
+          (the built-in rules: {pc(latest.metrics.baseline?.accuracy)}). Precision {pc(latest.metrics.precision)}, recall {pc(latest.metrics.recall)}.
+        </Text>
+      )}
+      {failed && <Text size="xs" c="red" mt={6}>v{failed.version} failed: {failed.error}</Text>}
+      {canEdit && (
+        <Group gap="xs" mt="sm">
+          <Button size="compact-xs" color="violet" leftSection={running ? <Loader size={12} color="white" /> : <IconSchool size={13} />} onClick={train} disabled={!ready || running}>
+            {running ? 'Learning…' : latest ? `Learn v${latest.version + 1}` : 'Learn from corrections'}
+          </Button>
+          {onDrawMissed && <Button size="compact-xs" variant={drawing ? 'filled' : 'light'} color="violet" leftSection={<IconPolygon size={13} />} onClick={onDrawMissed}>{drawing ? 'Drawing missed shelters (Esc to stop)' : 'Draw missed shelters'}</Button>}
+        </Group>
+      )}
+      <Text size="xs" c="dimmed" mt={6}>Simulated: this tunes the stand-in detector. A real model is fine-tuned on the same labels; download them from the analysis layer’s menu.</Text>
+    </Paper>
   )
 }

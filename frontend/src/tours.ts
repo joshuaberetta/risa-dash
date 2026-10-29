@@ -108,7 +108,7 @@ export const siteTour = ({ showSummary, showAi }: { showSummary: () => void; sho
   {
     target: 'ai',
     title: 'AI analysis',
-    body: 'Detect shelters on the imagery, grouped into blocks with the site outlined. Every result is a suggestion to accept, reject or reshape; only accepted shelters count. The detection is simulated for now, and the brief below shows what a model could return.',
+    body: 'Detect shelters on the imagery, grouped into blocks with the site outlined. Every result is a suggestion to accept, reject or reshape; only accepted shelters count. Your corrections teach it: Learn from corrections makes a better version for this response. The detection is simulated for now.',
     side: 'left',
     before: showAi,
   },

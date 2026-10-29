@@ -71,7 +71,7 @@ def read_aoi(cog_path: str, bounds: list[float], tmp: str) -> tuple[np.ndarray, 
         raise IngestError("Couldn't read the image for analysis")
     bands = raw.reshape(4, H, W)
     rgb = np.moveaxis(bands[:3], 0, -1)
-    return rgb, bands[3] > 0, {"path": out, "W": W, "H": H, "tr": tr, "k": k}
+    return rgb, bands[3] > 0, {"path": out, "W": W, "H": H, "tr": tr, "k": k, "gt": info["geoTransform"]}
 
 
 # ---- detection (the part a model replaces) ------------------------------------------
@@ -89,15 +89,19 @@ def _shift_max(a: np.ndarray) -> np.ndarray:
     return o
 
 
-def detect(rgb: np.ndarray, valid: np.ndarray) -> np.ndarray:
+DEFAULT_RULES = {"grey_min": 135, "sat_max": 0.13, "shelter_m2": list(SHELTER_M2)}
+
+
+def detect(rgb: np.ndarray, valid: np.ndarray, rules: dict | None = None) -> np.ndarray:
     """Candidate mask: tarps and bright roofs. Returns uint8 (1 = candidate)."""
+    rules = {**DEFAULT_RULES, **(rules or {})}
     c = rgb.astype(np.int16)
     r, g, b = c[..., 0], c[..., 1], c[..., 2]
     mx = c.max(axis=-1)
     mn = c.min(axis=-1)
     sat = (mx - mn) / np.maximum(mx, 1)
     # Tarps and sheet-metal roofs are bright and grey; bare ground is tan (red over blue)
-    grey = (mx > 135) & (sat < 0.13) & (r - b < 14)
+    grey = (mx > rules["grey_min"]) & (sat < rules["sat_max"]) & (r - b < 14)
     blue = (b > 105) & (b > r + 28) & (b > g + 6)
     m = (grey | blue) & valid
     # Opening removes speckle and closing fills each roof; one more erosion splits
@@ -137,26 +141,69 @@ def polygonise(mask: np.ndarray, georef: dict, tmp: str) -> list[dict]:
         return [json.loads(line.lstrip("\x1e")) for line in f if line.strip()]
 
 
-def classify(feats: list[dict], georef: dict) -> list[tuple[GEOSGeometry, str, float, float]]:
+def sample_colour(rgb: np.ndarray, georef: dict, x: float, y: float) -> tuple[float, float, float]:
+    """Brightness, saturation and blue-ness around a point (Web Mercator x, y)."""
+    gt = georef["gt"]
+    col, row = int((x - gt[0]) / gt[1]), int((y - gt[3]) / gt[5])
+    win = rgb[max(0, row - 2): row + 3, max(0, col - 2): col + 3].reshape(-1, 3).astype(float)
+    if not len(win):
+        return 0.0, 0.0, 0.0
+    m = win.mean(axis=0)
+    mx, mn = m.max(), m.min()
+    return round(mx / 255, 3), round((mx - mn) / max(mx, 1), 3), round((m[2] - m[0]) / 255, 3)
+
+
+def candidate_stats(merc, rgb: np.ndarray, georef: dict) -> dict:
+    """What the learned detector looks at for each candidate."""
+    a = merc.area / georef["k"] ** 2
+    perim = merc.length / georef["k"]
+    x0, y0, x1, y1 = merc.extent
+    p = merc.point_on_surface
+    bright, sat, blue = sample_colour(rgb, georef, p.x, p.y)
+    return {"area_m2": round(a, 1), "compact": round(min(1.0, 4 * math.pi * a / max(perim**2, 1e-6)), 3),
+            "aspect": round(min(x1 - x0, y1 - y0) / max(x1 - x0, y1 - y0, 1e-9), 3),
+            "bright": bright, "sat": sat, "blue": blue}
+
+
+FEATURES = ("log_area", "compact", "aspect", "bright", "sat", "blue")
+
+
+def vector(st: dict) -> list[float]:
+    return [math.log(max(st["area_m2"], 0.5)), st["compact"], st["aspect"], st["bright"], st["sat"], st["blue"]]
+
+
+def learned_confidence(st: dict, params: dict) -> float:
+    x = (np.array(vector(st)) - np.array(params["mean"])) / np.array(params["scale"])
+    return float(1 / (1 + math.exp(-(float(x @ np.array(params["weights"])) + params["bias"]))))
+
+
+def classify(feats: list[dict], georef: dict, rgb: np.ndarray, detector=None) -> list[tuple[GEOSGeometry, str, float, float, dict]]:
+    rules = {**DEFAULT_RULES, **((detector.params.get("rules") if detector else None) or {})}
+    lo, hi = rules["shelter_m2"]
     out = []
     for f in feats:
         # Grow back the pixel the last erosion took off
         merc = GEOSGeometry(json.dumps(f["geometry"]), srid=4326).transform(3857, clone=True).buffer(georef["tr"], 2)
-        g = merc.transform(4326, clone=True)
-        a = merc.area / georef["k"] ** 2
-        perim = merc.length / georef["k"]
-        compact = min(1.0, 4 * math.pi * a / max(perim**2, 1e-6))
-        if SHELTER_M2[0] <= a < SHELTER_M2[1]:
+        st = candidate_stats(merc, rgb, georef)
+        a = st["area_m2"]
+        if lo <= a < hi:
             cls = "shelter"
-        elif BUILDING_M2[0] <= a < BUILDING_M2[1] and compact > 0.35:
+        elif BUILDING_M2[0] <= a < BUILDING_M2[1] and st["compact"] > 0.35:
             cls = "building"
         else:
             continue
-        out.append((g, cls, round(a, 1), score(a, compact, cls)))
+        if detector and cls == "shelter":
+            conf = round(learned_confidence(st, detector.params), 2)
+            # The learned detector also drops what people consistently rejected
+            if conf < detector.params.get("drop_below", 0.15):
+                continue
+        else:
+            conf = score(a, st["compact"], cls)
+        out.append((merc.transform(4326, clone=True), cls, a, conf, st))
     return out
 
 
-def derive_blocks(layer: Layer, lat: float) -> int:
+def derive_blocks(layer: Layer, lat: float, model: str = MODEL) -> int:
     """Group shelters into blocks (DBSCAN on centroids) and outline the site."""
     sql_blocks = """
         WITH s AS (
@@ -182,42 +229,51 @@ def derive_blocks(layer: Layer, lat: float) -> int:
     feats = [
         Feature(layer=layer, geom=GEOSGeometry(gj, srid=4326), risa_type="block", label=f"Block {i + 1} · {n} shelters",
                 properties={"ai_class": "block", "shelters": n, "confidence": 0.6, "review": "suggested",
-                            "model": MODEL, "simulated": True})
+                            "model": model, "simulated": True})
         for i, (_, n, gj) in enumerate(rows)
     ]
     if boundary and boundary[0] and boundary[1] >= 12:
         feats.append(Feature(layer=layer, geom=GEOSGeometry(boundary[0], srid=4326), risa_type="boundary",
                              label="Site boundary (detected)",
                              properties={"ai_class": "boundary", "shelters": boundary[1], "confidence": 0.55,
-                                         "review": "suggested", "model": MODEL, "simulated": True}))
+                                         "review": "suggested", "model": model, "simulated": True}))
     Feature.objects.bulk_create(feats)
     return len(rows)
+
+
+def latest_detector(response):
+    from .models import Detector
+
+    return Detector.objects.filter(response=response, status="ready").order_by("-version").first()
 
 
 def analyse(layer: Layer) -> None:
     src = Layer.objects.get(id=layer.meta["source_layer"])
     bounds = layer.meta["aoi"]
+    detector = latest_detector(layer.site.response)
+    model = detector.name if detector else MODEL
+    layer.meta = {**layer.meta, "model": model, "detector_version": detector.version if detector else 0}
     with tempfile.TemporaryDirectory() as tmp:
         progress(layer, "Reading the imagery", 10)
         with storage.local_copy(src.source, suffix=".tif") as cog:
             rgb, valid, georef = read_aoi(cog, bounds, tmp)
         progress(layer, "Finding shelters and roofs", 35)
-        mask = detect(rgb, valid)
+        mask = detect(rgb, valid, detector.params.get("rules") if detector else None)
         # A model takes longer; keep the simulation honest about the wait, roughly
         time.sleep(1.5)
         progress(layer, "Tracing outlines", 60)
         polys = polygonise(mask, georef, tmp)
-        found = classify(polys, georef)
+        found = classify(polys, georef, rgb, detector)
     progress(layer, "Grouping into blocks", 80)
     with transaction.atomic():
         layer.features.all().delete()
         Feature.objects.bulk_create([
             Feature(layer=layer, geom=g, risa_type=cls, label="",
                     properties={"ai_class": cls, "area_m2": a, "confidence": conf, "review": "suggested",
-                                "model": MODEL, "simulated": True})
-            for g, cls, a, conf in found
+                                "model": model, "simulated": True, "stats": st})
+            for g, cls, a, conf, st in found
         ])
-        blocks = derive_blocks(layer, (bounds[1] + bounds[3]) / 2)
+        blocks = derive_blocks(layer, (bounds[1] + bounds[3]) / 2, model)
     counts = {"shelter": sum(1 for x in found if x[1] == "shelter"),
               "building": sum(1 for x in found if x[1] == "building"), "block": blocks}
     from django.contrib.gis.db.models import Extent

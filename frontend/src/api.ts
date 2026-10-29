@@ -72,6 +72,8 @@ export interface LayerT {
     progress?: { step: string; pct: number }
     counts?: { shelter: number; building: number; block: number }
     aoi: [number, number, number, number]
+    detector_version?: number
+    training_data?: string
   }
   kobo?: {
     server: string

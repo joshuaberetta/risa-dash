@@ -54,3 +54,40 @@ def test_review_and_summary_count_only_accepted():
     assert c.post(f"/api/layers/{lyr.id}/review", {"action": "delete_rejected"}, content_type="application/json").json() == {"changed": 1}
     # Without the key, no review
     assert Client().post(f"/api/layers/{lyr.id}/review", {"action": "accept"}, content_type="application/json").status_code == 403
+
+
+@pytest.mark.django_db
+def test_learning_from_reviews_beats_the_rules():
+    import random
+
+    from risa import learning
+    from risa.models import Detector
+
+    rnd = random.Random(4)
+    r = Response(name="L", slug="l")
+    r.set_edit_key()
+    r.save()
+    site = Site.objects.create(response=r, name="S", slug="s")
+    lyr = Layer.objects.create(site=site, name="A", kind="analysis")
+    with pytest.raises(ValueError):
+        learning.train(Detector.objects.create(response=r, version=1))
+    for i in range(240):
+        # The reviewer rejects thin strips, whatever their size
+        aspect = rnd.uniform(0.1, 1)
+        st = {"area_m2": rnd.uniform(5, 55), "compact": rnd.uniform(0.3, 0.9), "aspect": aspect,
+              "bright": rnd.uniform(0.5, 1), "sat": rnd.uniform(0, 0.15), "blue": rnd.uniform(-0.1, 0.2)}
+        x = (i % 40) * 0.0005
+        Feature.objects.create(layer=lyr, geom=Polygon(((x, 0), (x + 0.0001, 0), (x + 0.0001, 0.0001), (x, 0)), srid=4326),
+                               risa_type="shelter", properties={"ai_class": "shelter", "stats": st, "confidence": 0.5,
+                                                                "review": "accepted" if aspect >= 0.45 else "rejected"})
+    d = Detector.objects.create(response=r, version=2)
+    learning.train(d)
+    d.refresh_from_db()
+    m = d.metrics
+    assert d.status == "ready" and m["examples"] == 240 and m["held_out"] > 20
+    assert m["accuracy"] > 0.85 > m["baseline"]["accuracy"]
+    # The learned version scores a thin strip low and a square roof high
+    thin = {"area_m2": 20, "compact": 0.6, "aspect": 0.15, "bright": 0.8, "sat": 0.05, "blue": 0}
+    square = {**thin, "aspect": 0.95}
+    from risa import analysis
+    assert analysis.learned_confidence(thin, d.params) < 0.3 < 0.7 < analysis.learned_confidence(square, d.params)

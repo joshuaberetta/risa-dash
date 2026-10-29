@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import tempfile
 from datetime import date
@@ -75,7 +76,10 @@ def layer_dict(lyr: Layer) -> dict:
                      "last_synced_at": k.last_synced_at, "last_error": k.last_error,
                      "submissions": k.submission_count, "auto_sync": k.auto_sync}
     if lyr.kind == "analysis":
-        d["analysis"] = {k: lyr.meta.get(k) for k in ("source_layer", "model", "simulated", "progress", "counts", "aoi")}
+        d["analysis"] = {k: lyr.meta.get(k) for k in ("source_layer", "model", "simulated", "progress", "counts", "aoi",
+                                                      "detector_version")}
+        if lyr.status == "ready":
+            d["analysis"]["training_data"] = f"/api/layers/{lyr.id}/training-data.zip"
     if lyr.original:
         d["download"] = f"/api/layers/{lyr.id}/original"
     return d
@@ -573,6 +577,79 @@ def review_layer(request, layer_id: str, data: ReviewIn):
             n += 1
     lyr.save(update_fields=["updated_at"])
     return {"changed": n}
+
+
+class AddDetectionIn(Schema):
+    geometry: dict
+    ai_class: str = "shelter"
+
+
+@api.post("/layers/{layer_id}/detections")
+def add_detection(request, layer_id: str, data: AddDetectionIn):
+    """A shelter (or building) the detection missed, drawn by a person: a positive label."""
+    lyr = _layer(request, layer_id)
+    if lyr.kind != "analysis":
+        raise HttpError(400, "Add missed shelters to an analysis layer")
+    if data.ai_class not in ("shelter", "building"):
+        raise HttpError(400, "ai_class must be shelter or building")
+    g = _geom(data.geometry)
+    if g.geom_type not in ("Polygon", "MultiPolygon"):
+        raise HttpError(400, "Draw the shelter's outline as an area")
+    a = round(g.transform(3857, clone=True).area * math.cos(math.radians(g.centroid.y)) ** 2, 1)
+    f = Feature.objects.create(layer=lyr, geom=g, risa_type=data.ai_class, properties={
+        "ai_class": data.ai_class, "review": "accepted", "added": True, "confidence": 1.0, "area_m2": a,
+        "model": "person", "simulated": False})
+    lyr.save(update_fields=["updated_at"])
+    return feature_dict(f)
+
+
+@api.get("/layers/{layer_id}/training-data.zip")
+def training_data(request, layer_id: str):
+    from . import learning
+
+    lyr = _layer(request, layer_id, edit=False)
+    if lyr.kind != "analysis" or lyr.status != "ready":
+        raise HttpError(400, "Only finished analysis layers have training data")
+    tmp = tempfile.mkdtemp()
+    name = f"{lyr.site.response.slug}_{lyr.site.slug}_shelter-labels.zip"
+    learning.training_data(lyr, os.path.join(tmp, name))
+    return FileResponse(open(os.path.join(tmp, name), "rb"), as_attachment=True, filename=name,
+                        content_type="application/zip")
+
+
+def detector_dict(d) -> dict:
+    return {"version": d.version, "name": d.name, "status": d.status, "error": d.error, "metrics": d.metrics,
+            "rules": d.params.get("rules"), "created_at": d.created_at}
+
+
+@api.get("/responses/{slug}/detector")
+def get_detector(request, slug: str):
+    from . import learning
+
+    r = get_object_or_404(Response, slug=slug)
+    require_view(request, r)
+    return {"labels": learning.counts(r), "versions": [detector_dict(d) for d in r.detectors.all()[:10]]}
+
+
+@api.post("/responses/{slug}/detector/train")
+def train_detector(request, slug: str):
+    """Learn a new detector version from the shelters people accepted, corrected, drew and rejected."""
+    from . import learning
+    from .models import Detector
+    from .tasks import train_detector as job
+
+    r = get_object_or_404(Response, slug=slug)
+    require_edit(request, r)
+    c = learning.counts(r)
+    if c["positives"] < learning.MIN_EACH or c["negatives"] < learning.MIN_EACH:
+        raise HttpError(400, f"Review at least {learning.MIN_EACH} shelters each way first: "
+                             f"{c['positives']} accepted, {c['negatives']} rejected so far")
+    if r.detectors.filter(status="processing").exists():
+        raise HttpError(400, "Already learning")
+    with transaction.atomic():
+        d = Detector.objects.create(response=r, version=learning.next_version(r))
+    job.defer(detector_id=d.id)
+    return detector_dict(d)
 
 
 # ---- uploads (chunked, resumable) --------------------------------------------------

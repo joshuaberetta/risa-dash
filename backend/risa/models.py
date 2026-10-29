@@ -227,3 +227,27 @@ class Logo(models.Model):
     name = models.CharField(max_length=200)
     key = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Detector(models.Model):
+    """A version of the shelter detector learned from people's corrections in a response.
+    Version 0 is the built-in rules; each training run adds a version."""
+
+    response = models.ForeignKey(Response, on_delete=models.CASCADE, related_name="detectors")
+    version = models.IntegerField()
+    base = models.CharField(max_length=100, default="simulated-colour-rules-v0")
+    # {rules: {grey_min, sat_max, shelter_m2: [lo, hi]}, mean: [...], scale: [...], weights: [...], bias, threshold}
+    params = models.JSONField(default=dict)
+    # {examples, positives, negatives, held_out, accuracy, precision, recall, baseline_accuracy}
+    metrics = models.JSONField(default=dict)
+    status = models.CharField(max_length=20, default="processing")
+    error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-version"]
+        constraints = [models.UniqueConstraint(fields=["response", "version"], name="detector_version_per_response")]
+
+    @property
+    def name(self) -> str:
+        return f"{self.base} + learned v{self.version}"

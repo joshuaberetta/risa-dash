@@ -209,6 +209,23 @@ Run them with ONNX Runtime on the worker (CPU, slow but simple), on a GPU drople
 
 **MVP: simulated.** `risa/analysis.py` implements the whole pipeline and review workflow with a stand-in detector: colour rules on the real image (bright grey roofs and blue tarps as shelter candidates, large bright roofs as buildings). Its outlines sit on real objects, so reviewing them is realistic, but counts are not reliable. Every feature and the layer say "simulated", and the dialog says so before it runs. On the Haiti sample (0.5 km², 3.3 cm/px) it finds about 2,100 shelter candidates, 22 buildings and 15 blocks in about 10 s locally.
 
+### Learning from corrections (fine-tuning)
+
+The people reviewing the detection are labelling training data as they go. Every review is kept as a label: accepted, reshaped (`edited`), re-tagged and hand-drawn missed shelters (`added`) are positives, rejected suggestions are negatives. Over a response this adds up to thousands of labels from the exact imagery, camp layout and shelter types in that context, which is what general-purpose building models lack.
+
+**Loop:** detect → review in the dashboard → learn a new version → detect again, with each version better for that response. Versions are kept per response, because camps in one emergency look alike and differ from the next: the Venezuela stadium camp, a Mozambique resettlement site and Cox's Bazar need different models. Each version records how many reviews it learned from and its accuracy, precision and recall on reviews held back from training, next to the version before, so nobody has to take an improvement on trust. Every detected feature records the model version that made it.
+
+**In the MVP (simulated):** the loop runs end to end with the stand-in detector. "Learn from corrections" in the AI analysis tab (needs 20 reviews each way) fits a small logistic model on simple image features of each candidate (size, shape, brightness, saturation, blue), and widens the colour and size rules towards what people accepted or drew, a step per version. The next detection uses it to re-score candidates and drop the kind people reject. On the Haiti sample, with a reviewer who rejects thin strips and dim patches, version 1 was right on 91% of held-back reviews against 47% for the built-in rules, and the share of results that reviewer would reject fell from 26% to 16%. "Draw missed shelters" adds positives the detector didn't find. "Download training data" exports the imagery for the area plus labels and negatives as GeoJSON, ready for the real thing.
+
+**The real thing (after the MVP, a sizeable piece of work):**
+1. **Choose the base model** on the Venezuela and Mozambique orthomosaics (see Imagery analysis): likely a fAIr/RAMP footprint model, or a YOLO-family segmenter, both small enough to fine-tune on one GPU.
+2. **Training service:** a job that takes a response's labels, cuts image chips around them (with negatives and unlabelled background sampled inside reviewed areas only), fine-tunes from the base or the previous version, evaluates on a fixed held-out set, and registers the version only if it beats the one before. Runs on a GPU droplet on demand (minutes per version for a few thousand labels) or on the box's GPU offline, where it's slower and runs overnight.
+3. **Active learning:** show reviewers the suggestions the model is least sure about first, so each review teaches it the most.
+4. **Sharing across responses**, with consent: a consortium base model improved with labels from many responses (fAIr already does this with OSM labels), while each response keeps its own fine-tuned version. Labels go into the base model only with the data owner's agreement; imagery of displacement sites is sensitive.
+5. **Safeguards:** a version never replaces the previous one without better held-out scores; counts on page 1 still come only from accepted features; model cards (data, dates, scores, known failure modes) for every version.
+
+Rough size: 4–6 weeks for one ML engineer after the base model is chosen, plus GPU time. The labels the MVP already collects carry over unchanged.
+
 ### Access with an edit key
 
 - **Viewing** is open at unlisted URLs (`/r/<response>/<site>`), with `noindex`. A response marked private is hidden from the index page.
@@ -305,7 +322,7 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 - `docs/self-hosting.md`, `compose.box.yaml` and the edge snippet. Install on the kobo-in-a-box droplet next to Kobo, cut it off with `offline.sh on`, and run the MVP test there.
 - A demo response from the fictional sample site on the RISA site, for showing the tool without real data.
 
-**After the MVP**: a real segmentation model (spike on the Venezuela orthomosaic: precision and recall against hand-labelled shelters, time per hectare on CPU and GPU), and feeding accepted counts into people estimates and the AI analysis brief; pages 2 and 3; live sync between instances; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; imagery classes beyond shelters and buildings (water, debris, services).
+**After the MVP**: a real segmentation model (spike on the Venezuela orthomosaic: precision and recall against hand-labelled shelters, time per hectare on CPU and GPU), then fine-tuning it on reviewers' corrections (section 4, Learning from corrections; the MVP already collects the labels), and feeding accepted counts into people estimates and the AI analysis brief; pages 2 and 3; live sync between instances; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; imagery classes beyond shelters and buildings (water, debris, services).
 
 ---
 

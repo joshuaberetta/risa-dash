@@ -16,7 +16,7 @@ import FeaturePanel, { FeatureForm, type FeatureFields } from '../components/Fea
 import Header from '../components/Header'
 import LayerPanel from '../components/LayerPanel'
 import Legend from '../components/Legend'
-import { AnalyseButton, AnalysisProgress } from '../components/Analysis'
+import { AnalyseButton, AnalysisProgress, LearnPanel } from '../components/Analysis'
 import { siteTour } from '../tours'
 import { usePageTour } from '../tour'
 import { ProductsPanel } from '../components/Products'
@@ -49,6 +49,10 @@ export default function SitePage() {
   const [mode, setMode] = useState<DrawMode>('static')
   const [shapeEdit, setShapeEdit] = useState<PickedFeature | null>(null)
   const [measurement, setMeasurement] = useState<Measurement | null>(null)
+  // Drawing shelters the detection missed, straight into this analysis layer
+  const [addTo, setAddTo] = useState<string | null>(null)
+  const addToRef = useRef<string | null>(null)
+  addToRef.current = addTo
   const [tab, setTab] = useState<string | null>('summary')
   const [tableOpen, setTableOpen] = useState(false)
   const [focused, setFocused] = useState<{ id: string; geometries: GeoJSON.Geometry[] } | null>(null)
@@ -106,7 +110,14 @@ export default function SitePage() {
 
   const onReady = (map: MLMap) => {
     mapRef.current = map
-    drawRef.current = createDraw(map, (id, geometry) => setPending({ id, geometry }), setMeasurement)
+    drawRef.current = createDraw(map, (id, geometry) => {
+      const target = addToRef.current
+      if (!target) return setPending({ id, geometry })
+      // Missed shelters go straight in, as accepted; keep drawing the next one
+      api(`/layers/${target}/detections`, { body: { geometry, ai_class: 'shelter' } })
+        .then(() => { drawRef.current?.removeFeatures([id]); qc.invalidateQueries({ queryKey: ['site'] }); qc.invalidateQueries({ queryKey: ['detector'] }) })
+        .catch((e) => notifications.show({ color: 'red', message: String(e.message) }))
+    }, setMeasurement)
     fitted.current = false
     qc.invalidateQueries({ queryKey: ['site'] })
   }
@@ -130,6 +141,7 @@ export default function SitePage() {
   const setDrawMode = (m: DrawMode) => {
     const d = drawRef.current
     if (!d) return
+    if (m !== 'polygon') setAddTo(null)
     // Leaving measuring, or switching between distance and area, clears the measurement
     if (isMeasureMode(mode) && m !== mode) {
       clearMeasurements(d)
@@ -361,6 +373,15 @@ export default function SitePage() {
               </Tabs.Panel>
               <Tabs.Panel value="ai" data-tour="ai">
                 {canEdit && <div style={{ padding: '12px 12px 0' }}><AnalyseButton site={site} getViewBounds={viewBounds} onStarted={() => setTab('ai')} /></div>}
+                {layers.some((l) => l.kind === 'analysis' && l.status === 'ready') && (
+                  <LearnPanel slug={site.response.slug} canEdit={canEdit} drawing={!!addTo}
+                    onDrawMissed={() => {
+                      const target = layers.filter((l) => l.kind === 'analysis' && l.status === 'ready').sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]
+                      if (addTo) { setDrawMode('static'); return }
+                      setDrawMode('polygon')
+                      setAddTo(target.id)
+                    }} />
+                )}
                 <AnalysisPanel analysis={analysis} active={focused?.id || null} onFocus={focusRefs} />
               </Tabs.Panel>
             </Tabs>
