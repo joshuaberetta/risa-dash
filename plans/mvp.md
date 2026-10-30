@@ -23,7 +23,7 @@ The test for the MVP is the Venezuela response (MapAction is sharing the data). 
 | 5 | **Kobo data** | Connect a project on **kf.kobotoolbox.org, eu.kobotoolbox.org or any server on the instance's allow-list** (a private server, or `http://kf.kobo.local` on a box). Pull submissions, turn geopoints into features, map answers to RISA service type and status, sync on demand and on a schedule. Click a point to see the submission and its photos |
 | 6 | **Analysis layers** | Upload vector data (GeoJSON, GeoPackage, zipped Shapefile, KML, CSV with lat/lon). Draw and label features on the map: shelter blocks, services, routes, hazards, and the labelled polygons in MapAction's MA023. Site summary: services by type and status, routes by status, shelters per block |
 | 7 | **Styling** | RISA symbology by default: the reserved status set (`--st-ok #1F9A62`, `--st-partial #E9A23B`, `--st-no #A8281A`, `--st-unknown #8C939C`), always shown twice (colour plus line style or symbol shape), OCHA humanitarian icons. Per-layer edits: colour, opacity, label field |
-| 8 | **Page 1 product** | Save a view as a product and print it as RISA page 1: header band, map, side panel, footer (section 3). A3 or A4 landscape at 300 dpi. Every render is kept as a version, and the QR code points to the latest one |
+| 8 | **Page 1 product** | Save a view as a product and print it as RISA page 1: header band, map, side panel, footer (section 3). A3 or A4 landscape at 300 dpi. Every render is kept as a version, and the QR code points to the latest one. Optional locator maps; a second QR code to the feedback form |
 | 9 | **GIS export** | Per site or product: a GeoPackage with every vector layer and its styles embedded (opens styled in QGIS, reads in ArcGIS Pro), GeoJSON, CSV and the COGs |
 | 10 | **Response bundle** | Export a whole response (data, imagery, products) as one file and import it on another instance. This is how data moves between the cloud, an NDMA server and a box until there is real sync |
 | 11 | **Share** | Every site and product has a permalink that restores the view |
@@ -74,7 +74,7 @@ A management command, run online before deployment, fills a folder that the box 
 ./manage.py pack load /data/pack
 ```
 
-The boundaries folder uses the same layout as kobo-dash's `scripts/fetch_boundaries.py`, so a box needs only one copy. The locator inset uses Natural Earth (bundled, small) plus these boundaries. Fonts (glyphs), sprites and OCHA icons are part of the frontend build.
+The boundaries folder uses the same layout as kobo-dash's `scripts/fetch_boundaries.py`, so a box needs only one copy. The locator maps use the pack's basemap, so it needs low zooms (about 0–8) for the country overview, not only the response area; Natural Earth (bundled, small) plus these boundaries would let the overview fit the whole country instead of centring on the site. Fonts (glyphs), sprites and OCHA icons are part of the frontend build.
 
 ### Fit with kobo-in-a-box
 
@@ -167,6 +167,7 @@ Bandwidth decides the design. One site's orthomosaic is 1–5 GB and its raw pho
 | Hub → cloud or NDMA | Internet for the outbox's first tiers (page 1 ~1.4 MB, GeoPackage 5–50 MB, ~50 cm overviews 50–200 MB); full COGs by USB or courier, or on a good link | ~40 min at 10 Mbit/s; ~7 h at 1 Mbit/s, so never automatic |
 | Cloud → field | Content pack on USB (PMTiles extract, boundaries, pre-event COGs, model weights, container images) | 20–100 GB, under an hour to copy |
 | Product → people | Page 1 by WhatsApp or email; the QR code opens the live map | Seconds |
+| People → feedback | Page 1's feedback QR code or the online Feedback link opens a Kobo form (the box's Enketo on its Wi-Fi); it travels with the Kobo data through kobo-transfer | Seconds |
 
 What the dashboard needs for this:
 - **USB import and export page** (box only): the box mounts a USB drive read-only under a fixed path. The dashboard lists the bundles, GeoTIFFs and content packs on it and imports them as jobs. Export writes a bundle straight to the drive.
@@ -347,7 +348,7 @@ An MCP server over the same service functions as the API, so an AI assistant can
 |---|---|
 | `view` | `list_responses`, `get_site`, `get_site_summary`, `list_layers`, `query_features` (type, status, area), `get_kobo_status`, `get_detection_status`, `list_detector_versions`, `list_products`, `get_product`, `get_job` (progress and log), `preview_product` (PNG) |
 | `build` | `create_response`, `create_site` (boundary from a layer, a drawn area or a box), `import_from_drop_folder` (no multi-GB uploads through a chat), `add_layer_from_url`, `connect_kobo_project`, `set_field_map`, `sync_kobo`, `draw_feature`, `update_feature`, `set_layer_style`, `reorder_layers` |
-| `analysis` | `run_detection` (site or area), `get_review_queue` (counts by confidence, least certain first, with links to review them), `train_detector`, `draft_brief`, `draft_key_message`, `compare_visits`, `check_points_against_imagery` (Kobo points with nothing under them, shelters with no observation nearby) |
+| `analysis` | `run_detection` (site or area), `get_review_queue` (counts by confidence, least certain first, with links to review them), `train_detector`, `draft_brief`, `draft_key_message`, `compare_visits`, `summarise_feedback` (answers to the feedback form since a version, through kobo-mcp's read tools, grouped by site and topic), `check_points_against_imagery` (Kobo points with nothing under them, shelters with no observation nearby) |
 | `products` | `create_product`, `update_product` (title, version, key message, at-a-glance overrides, extent), `render_product`, `export_gpkg`, `export_bundle`, `sync_push` |
 | `support` | `get_health` (failed jobs, storage, Kobo reachability, last sync errors, model endpoints), `explain_job` (a failed job's log in plain words, with the likely cause), `retry_job`, `get_settings` (non-secret) |
 
@@ -474,8 +475,8 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 - Style editor on the presets. Legend from visible layers.
 
 **Phase 4 · Page 1 print (weeks 6–7)**
-- Product editor: frame the extent on a page-shaped overlay, header fields, key message, at-a-glance overrides, logos, sources, inset.
-- Page 1 layout at A3 and A4 landscape. Render job, versions, latest permalink and QR code.
+- Product editor: frame the extent on a page-shaped overlay, header fields, key message, at-a-glance overrides, logos, sources, locator maps (area, country overview; on the map or in the side panel).
+- Page 1 layout at A3 and A4 landscape. Render job, versions, latest permalink and QR code; the feedback QR code and the online Feedback link (`FEEDBACK_URL`, or per response).
 - Rebuild the Venezuela site and compare it with MA023 alongside MapAction.
 
 **Phase 5 · Export, bundles, self-hosting (weeks 7–8)**
@@ -550,6 +551,7 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 | A USB drive with site imagery is lost | Bundles encrypted to the response's key; the key never travels with the drive |
 | No GPU droplet available during a response (the box found 20–48 GB sizes out of stock) | Fall back to an H100 size, then to E4B on CPU for drafts; detection on the CPU worker for small areas; training waits |
 | gpt-oss-120b too slow on the hub's 32 GB card | Measure first; RTX PRO 6000 96 GB; or Gemma for questions with changes made by hand |
+| Feedback answers hold personal data (a name or phone number typed in a comment), unlike the observation-only RISA form | The form asks for contact details only as an optional question, with a note on why; answers stay in the data owner's Kobo project, with no copy in the dashboard; summaries leave contacts out |
 | Data protection (where displaced people's shelters and services are) | Observation-only by design; unlisted and `noindex`; private flag; `READ_ONLY_PUBLIC=false`; in-country hosting. Review with the consortium before the first live response |
 
 ## 10. Still open
@@ -560,4 +562,5 @@ Decided on 30/10/2026 (section 8): hub hardware, models, the hosted text model, 
 2. **With the kobo-in-a-box plan**: confirm this tool as R4's imagery path, and add the hub (with a GPU) to its hardware plan next to the W5 unit.
 3. **Repo org**: does the consortium agree to the `kobotoolbox` org?
 4. **Detector licence**: the weights must suit an AGPL tool that NDMAs redistribute on kits. Check RAMP/fAIr, the YOLO family (Ultralytics is AGPL) and RT-DETR (Apache 2.0) in the R11 spike.
-5. **Who funds and holds the hardware**: the consortium, the NDMA or a donor? Where are kits prepositioned between emergencies, and who refreshes their content packs?
+5. **The feedback form**: who writes it (a few questions: what is wrong or missing, where, how urgent, optional contact), in which languages, who reads the answers during a response, and how fast they reach the next update. Then set `FEEDBACK_URL` on the hosted instance and add the form to the box's RISA form pack (R1).
+6. **Who funds and holds the hardware**: the consortium, the NDMA or a donor? Where are kits prepositioned between emergencies, and who refreshes their content packs?

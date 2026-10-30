@@ -20,8 +20,22 @@ It is free and open-source software (AGPL-3.0, like KoboToolbox). The consortium
 - **Field data:** KoboCollect observations from the global or EU Kobo servers, a national authority's own server, or the field kit's local server, synced every few minutes, with photos.
 - **Mapping:** draw and tag shelter blocks, routes, services and hazards; measure distances and areas.
 - **RISA symbology:** status always shown twice, by colour and by shape or line style, so it reads in black and white and for colour-blind readers.
-- **The product:** RISA page 1 with the key message, at-a-glance figures, legend, sources and a QR code to the live map, rendered at 300 dpi and small enough to send over WhatsApp. Every version is kept.
+- **The product:** RISA page 1 with the key message, at-a-glance figures, legend, sources, optional locator maps (the area round the site and a country overview, as on MapAction's maps) and a QR code to the live map, rendered at 300 dpi and small enough to send over WhatsApp. Every version is kept.
+- **Feedback:** a second QR code on the printed map, and a Feedback link on the online map, open a short feedback form (see below).
 - **Open data:** a GeoPackage for QGIS and ArcGIS Pro, and the imagery as a cloud-optimised GeoTIFF.
+
+## Feedback from the people who use the maps
+
+A RISA map is only useful if it is right, and the people best placed to say what is wrong are the ones using it: camp management, cluster coordinators, the national authority's staff and the teams on the ground. So every product asks for feedback.
+
+- **On paper:** page 1 carries a second QR code, "Scan to give feedback", next to the one for the live map. Anyone holding a printout, or looking at a copy on WhatsApp, can scan it with a phone.
+- **Online:** the dashboard has a **Feedback** link on every response and site, going to the same form.
+- **A Kobo form:** the feedback form is an ordinary KoboToolbox form, so it works the way the rest of RISA does, offline included. On a field kit it is the kit's own Kobo, reachable from any phone on the kit's Wi-Fi. The consortium can set one form for every response, and a national authority can use its own for a response.
+- **It knows which map:** the link fills in the site, the map code and version, and whether it came from the printout or the web, so nobody has to type which map they mean and every comment can be traced to the version it is about.
+
+The form keeps to RISA's rule of recording observations, not people: contact details are an optional question, and the answers stay in the data owner's Kobo project.
+
+Feedback goes into the next update: a water point marked working that has stopped, a route that has reopened, a block that was missed. It also shows the consortium what users need from the product. The assistant can summarise it before each update ("what did people report since version 2?"), but a person decides what changes on the map.
 
 ## Imagery analysis, with people in the loop
 
@@ -88,6 +102,7 @@ Drone imagery is large and field links are slow. An orthomosaic of one site is 1
 | Hub → cloud or national server | The internet, smallest and most useful first: page 1, then the data, then lower-resolution imagery. Full imagery goes by USB drive or courier, or when a good connection appears | Page 1 (about 1.5 MB) takes seconds even on a weak mobile signal. A full orthomosaic takes about 40 minutes on a good satellite link and most of a day on mobile, so it is never sent automatically |
 | Before a mission | A **content pack** (offline maps, boundaries, pre-event satellite imagery, the AI models and the software) prepared online and carried on a USB drive | 20–100 GB, copied in under an hour |
 | To the people who need the map | Page 1 by WhatsApp or email; a QR code on page 1 opens the live map on the kit's Wi-Fi or online | Small enough for a weak signal |
+| Back from the people who use it | The feedback QR code on page 1, or the online Feedback link, opens a Kobo form: the kit's own on its Wi-Fi, or the online one | A few KB per answer; feedback from a kit reaches the hub and the cloud with the rest of the Kobo data |
 
 Everything that travels on a USB drive is a single file that can be checked: each part has a checksum, so a copy that breaks halfway can resume and a damaged file is caught. The files are **encrypted** with the response's key, because a lost USB drive with imagery of a displacement site is a protection risk. Importing the same file twice changes nothing.
 
@@ -98,7 +113,7 @@ Where phones fail or run out of battery, Kobo's paper-forms tool (Kobo field for
 Through an open standard for connecting AI assistants to tools (MCP), an AI assistant can work the dashboard the way a person does. On a kit this is the assistant Kobo-in-a-box already provides (OpenCode, running on the kit's own model); online, any compatible assistant can use it. Someone can ask, in plain language:
 
 - **To build**: "set up Site B from today's orthomosaic and the Kobo project", and it creates the site, maps the form, syncs and frames page 1.
-- **To run the analysis**: "detect shelters on the new imagery and tell me what needs checking", "what changed since the last visit?", "which Kobo points have nothing under them on the imagery?"
+- **To run the analysis**: "detect shelters on the new imagery and tell me what needs checking", "what changed since the last visit?", "which Kobo points have nothing under them on the imagery?", "what feedback came in on version 2?"
 - **To prepare the product**: draft the key message, fill the figures, preview page 1, and render it once the person confirms.
 - **For help**: "why doesn't my orthomosaic show?" It looks at what went wrong (a failed conversion, an expired Kobo connection, a form it couldn't read), explains it, and says what to do, citing the dashboard's guide. A **Help** button in the dashboard opens it on the page the person is looking at.
 
@@ -111,6 +126,7 @@ The MVP is running at **risa-dash.kobolabs.dev** with real drone imagery (IOM's 
 | Part | Status |
 |---|---|
 | Map, imagery, Kobo, drawing, measuring, page 1, exports | Working |
+| Locator maps and the feedback QR code and link | Working; the consortium's feedback form is still to be written in Kobo |
 | Self-hosting and the offline box | Designed and partly built (Docker, offline settings); offline basemaps and fonts still to bundle |
 | Imagery analysis and review | Working end to end, with a **simulated** detector (simple colour rules standing in for a model), so the review workflow can be tried now |
 | Learning from corrections | Working end to end on the simulated detector; corrections are kept as training data and can be exported |
