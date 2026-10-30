@@ -12,7 +12,9 @@ In the first days after an earthquake, flood or cyclone, coordinators need to kn
 
 The **RISA Dashboard** is a web tool that does most of that assembly on one map. A team uploads the orthomosaic, connects its Kobo project and adds any analysis layers; the dashboard shows them with RISA's standard symbols, works out the key figures, and prints **RISA page 1**, the Common Operational Picture, at A3 or A4 in minutes. The data can go on to QGIS or ArcGIS for deeper analysis at any time.
 
-It is free and open-source software (AGPL-3.0, like KoboToolbox). The consortium runs one instance; a national disaster management authority can run its own, so data stays in the country; and it runs fully offline on a Kobo-in-a-box field kit next to a local Kobo server, with no internet at all. Its AI runs on the kit too, on open models, so no imagery or field data goes to an outside AI company. Several kits can work together, one per site with a hub at base, as Kobo-in-a-box already does for survey data. And an AI assistant on the kit can set the dashboard up, run the analysis, prepare the map and help people when something goes wrong.
+It is **free and open-source software** (AGPL-3.0, like KoboToolbox), built only on open-source components and open data formats, so no one needs a licence, an account with a vendor or the consortium's permission to run it. The consortium runs one instance; a national disaster management authority can run its own, so data stays in the country; and it runs fully offline on a Kobo-in-a-box field kit next to a local Kobo server, with no internet at all. Its AI runs on the kit too, on open models, so no imagery or field data goes to an outside AI company. Several kits can work together, one per site with a hub at base, as Kobo-in-a-box already does for survey data. And an AI assistant on the kit can set the dashboard up, run the analysis, prepare the map and help people when something goes wrong.
+
+The organisation that owns the data chooses where it lives: on the consortium's instance, on its own servers in the country, or on a kit that never connects to anything. Moving between them, or leaving, takes files in open formats, not a migration project.
 
 ## What it does
 
@@ -23,6 +25,24 @@ It is free and open-source software (AGPL-3.0, like KoboToolbox). The consortium
 - **The product:** RISA page 1 with the key message, at-a-glance figures, legend, sources, optional locator maps (the area round the site and a country overview, as on MapAction's maps) and a QR code to the live map, rendered at 300 dpi and small enough to send over WhatsApp. Every version is kept.
 - **Feedback:** a second QR code on the printed map, and a Feedback link on the online map, open a short feedback form (see below).
 - **Open data:** a GeoPackage for QGIS and ArcGIS Pro, and the imagery as a cloud-optimised GeoTIFF.
+
+## Open source, wherever it needs to run
+
+The same software runs in four ways, chosen per response by whoever is responsible for the data:
+
+| Way to run it | Where the data is | Internet needed | Status |
+|---|---|---|---|
+| **The consortium's instance** (risa-dash.kobolabs.dev) | A cloud provider's data centre in Frankfurt, in the EU | Yes | Running |
+| **Self-hosted** by a national authority or an organisation | Its own server or cloud account, in the country if required | Only for its users to reach it | Built: one Docker set-up for every target |
+| **Offline on a field kit** (Kobo in a box) | The kit, in the team's hands | None | Built, not yet tried on a kit; offline map labels still to bundle |
+| **Federated**: several kits, a hub at base, and optionally the cloud | Each kit; then the hub; then the cloud, only what the focal point chooses | None between kits; a link only to reach the cloud | Planned |
+
+What makes this possible:
+
+- **Everything is open source**: the dashboard (AGPL-3.0), and everything it is built on (Django, PostgreSQL and PostGIS, GDAL, MapLibre, Typst, Chromium, KoboToolbox). The offline AI uses open-weight models. Nothing in it needs a commercial licence or a cloud service.
+- **AGPL-3.0** means anyone can run, study, change and share it, and anyone who offers a changed version as a service must publish their changes too. Improvements made by one national authority or partner come back to everyone.
+- **Open formats in and out**: GeoTIFF imagery, GeoPackage, GeoJSON, Shapefile and KML data, PDF products. Everything the dashboard holds can be taken to QGIS, ArcGIS or another instance.
+- **No lock-in to the consortium**: a national authority can start on the hosted instance in the first days and move to its own server later, or the other way round.
 
 ## Feedback from the people who use the maps
 
@@ -108,6 +128,30 @@ Everything that travels on a USB drive is a single file that can be checked: eac
 
 Where phones fail or run out of battery, Kobo's paper-forms tool (Kobo field forms, which runs on the same kit) can collect site-level information on paper, such as the population figures that site management provides and the RISA form doesn't collect. These forms are scanned and read on the kit and sent to Kobo.
 
+## Data protection and data sovereignty
+
+RISA records infrastructure and services, not people. But imagery of a displacement site, and a map of where its water, latrines and access routes are, can still put people at risk if it reaches the wrong hands. So the dashboard is designed for the data to stay with the organisation responsible for it, in the place it must stay, and to move only when a person decides it should.
+
+**Who controls the data.** The responding organisation or national authority that sets up a response controls its data. The field observations stay in its own Kobo project; the dashboard keeps a working copy of the points and answers it maps, and nothing else. Feedback answers go into a Kobo form the data owner chooses.
+
+**Where it lives.** On a field kit, nothing leaves the kit unless the team copies or syncs it. On a self-hosted instance, the data is wherever that organisation runs it. On the consortium's instance, the database and files are with a cloud provider in Frankfurt (EU); imagery is delivered through the provider's content network, and the site sits behind a common security and delivery service. A response whose data must not leave a country belongs on a national server or a kit, not on the hosted instance.
+
+**What it collects, and what it doesn't.**
+- No personal accounts, and no tracking or analytics. Editing a response needs a shared edit key, stored only as a hash.
+- Questions marked sensitive when a Kobo project is connected (names, phone numbers, anything about a person) are never copied to the dashboard.
+- Kobo access tokens are stored encrypted and sent only to their own Kobo server. Photos are fetched through the dashboard when someone opens them, not stored in it.
+- No imagery, observation or photo is sent to an outside AI company. Today's analysis is simulated; the planned models run on the kit, the hub or, for the hosted instance, a server rented from the same provider in the same region.
+
+**Who can see it.** Viewing a site is open to anyone with its link, so the map can be shared with partners in the first hours; links aren't listed by search engines. An instance can require the edit key for viewing too. Imagery and printed pages are served at long, unguessable addresses, so a file whose address has been shared can be opened by anyone who has it; for the most sensitive responses, a national server or a kit keeps even that inside the authority's network.
+
+**What reaches third parties online.** When the online basemaps are used, the viewer's browser loads map tiles (and, today, the map's label fonts) from the basemap provider, which sees the request and the area being viewed. Offline basemaps, or none, avoid this; a self-hosted instance can turn the online basemaps off.
+
+**Moving data safely.** Files that travel between kits, hubs and servers are checked part by part, and are to be **encrypted** to the response's key, so a lost USB drive exposes nothing (planned with federation). Only what the focal point chooses leaves a kit. For learning across responses, labels leave a response only with the data owner's consent, and where they may not leave a kit or a country, only what the model learnt needs to.
+
+**Keeping and deleting.** Layers, drawings and products can be deleted by anyone with the edit key, with their files; a whole response is removed by the instance's administrator. When a response closes, its full-resolution imagery is to move from the hosted instance to an offline archive held by the consortium and the national authority (planned).
+
+These choices follow the IASC Operational Guidance on Data Responsibility in Humanitarian Action: collect only what is needed, keep control with the responsible organisation, and share deliberately. Each deployment still needs its own data-sharing agreement and, for drone imagery of sites, a protection review before anything is shared widely.
+
 ## An assistant that can run the dashboard
 
 Through an open standard for connecting AI assistants to tools (MCP), an AI assistant can work the dashboard the way a person does. On a kit this is the assistant Kobo-in-a-box already provides (OpenCode, running on the kit's own model); online, any compatible assistant can use it. Someone can ask, in plain language:
@@ -127,7 +171,8 @@ The MVP is running at **risa-dash.kobolabs.dev** with real drone imagery (IOM's 
 |---|---|
 | Map, imagery, Kobo, drawing, measuring, page 1, exports | Working |
 | Locator maps and the feedback QR code and link | Working; the consortium's feedback form is still to be written in Kobo |
-| Self-hosting and the offline box | Designed and partly built (Docker, offline settings); offline basemaps and fonts still to bundle |
+| Self-hosting and the offline box | Built: one Docker set-up for the cloud, a national server and a kit, with offline basemaps and the user guide on the box. Not yet tried on a kit, and the map's label fonts still come from the internet |
+| Encrypted transfer files and an imagery archive | Planned, with several kits and a hub |
 | Imagery analysis and review | Working end to end, with a **simulated** detector (simple colour rules standing in for a model), so the review workflow can be tried now |
 | Learning from corrections | Working end to end on the simulated detector; corrections are kept as training data and can be exported |
 | A real segmentation model, and fine-tuning it on corrections | Planned: choose and test a model on the Venezuela and Mozambique orthomosaics, then a training service on a GPU |
@@ -216,8 +261,9 @@ Not counted above, and the largest running cost in practice: **people's time**. 
 ## Principles
 
 - **People decide.** AI output is a suggestion until reviewed; counts and products use reviewed data only.
-- **Open.** Free and open source; data in open formats; no lock-in to the hosted instance.
-- **In-country and offline.** Run where the data is: on a national server or a field kit with no internet, with AI on open models on the same machine.
+- **Open.** Free and open source, on open-source components only; data in open formats; no lock-in to the hosted instance or to any vendor.
+- **In-country and offline.** Run where the data is: on a national server or a field kit with no internet, alone or federated with a hub, with AI on open models on the same machine.
+- **The data owner decides.** The organisation responsible for a response chooses where its data lives and what leaves it; nothing is sent onward, to a partner, the cloud or an AI company, by default.
 - **Assistants follow the rules.** An AI assistant uses the dashboard with the same limits as a person, and stricter ones: it doesn't review, delete or publish on its own.
 - **Measured.** Every model version reports its accuracy on held-back reviews; every detection records which version made it.
 - **Observation, not people.** RISA records infrastructure and services, not personal data; imagery of displacement sites is still treated as sensitive.

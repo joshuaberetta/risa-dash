@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RISA Dashboard user guide: imagery, field data and page 1 for an emergency response</title>
-<meta name="description" content="How to use the RISA Dashboard in an emergency: create a response, add drone or satellite imagery and KoboCollect observations, map services and access, and print RISA page 1, online or fully offline on a field kit.">
+<meta name="description" content="How to use the RISA Dashboard in an emergency: create a response, add drone or satellite imagery and KoboCollect observations, map services and access, and print RISA page 1. Free and open source; runs online, self-hosted in the country, or fully offline on a field kit.">
 <link rel="icon" href="static/risa-mark.svg" type="image/svg+xml">
 <link rel="stylesheet" href="static/home.css">
 </head>
@@ -13,12 +13,12 @@
   <div class="wrap">
     <a class="header__brand" href="./"><img class="header__mark" src="static/risa-mark.svg" alt=""><span class="header__word">RISA <span>Dashboard</span></span><span class="header__product">User guide</span></a>
     <ul class="header__nav">
+      <li><a href="#run">Where it runs</a></li>
       <li><a href="#start">Getting started</a></li>
-      <li><a href="#imagery">Imagery</a></li>
       <li><a href="#kobo">Kobo data</a></li>
-      <li><a href="#map">The map</a></li>
       <li><a href="#page1">Page 1</a></li>
       <li><a href="#offline">Offline</a></li>
+      <li><a href="#privacy">Data protection</a></li>
       <li><a href="#checklist">Checklist</a></li>
     </ul>
     <a class="button button--filled button--m" href="/">Open the dashboard</a>
@@ -29,9 +29,10 @@
 <section class="banner">
   <div class="wrap">
     <h1>One map for a RISA response, and page 1 in under an hour</h1>
-    <p class="banner__lead">The RISA Dashboard puts drone and satellite imagery, KoboCollect observations and analysis layers for a displacement site on one map. It works out the key figures, prints <strong>RISA page 1</strong> (the Common Operational Picture) at A3 or A4, and hands the data on to QGIS or ArcGIS. It runs online, on a national authority's server, or on a field kit with no internet.</p>
+    <p class="banner__lead">The RISA Dashboard puts drone and satellite imagery, KoboCollect observations and analysis layers for a displacement site on one map. It works out the key figures, prints <strong>RISA page 1</strong> (the Common Operational Picture) at A3 or A4, and hands the data on to QGIS or ArcGIS. It's <strong>free and open source</strong>, and runs wherever the data must stay: online, on a national authority's own server, or on a field kit with no internet at all.</p>
     <div class="banner__buttons">
       <a class="button button--filled" href="#start">Get started</a>
+      <a class="button button--light" href="#run">Where it runs</a>
       <a class="button button--light" href="#checklist">Response checklist</a>
     </div>
     <div class="shot"><a href="static/shots/landing.jpg"><img src="static/shots/landing.jpg" width="1440" height="900" alt="A site in the dashboard: layers and the legend on the left, a drone orthomosaic of Aviation Camp, Port-au-Prince, in the middle with water points, latrines, access routes and blocks drawn on it, and on the right the summary: figures at a glance, which services still work, which routes are open, and the printed products."></a></div>
@@ -52,6 +53,7 @@
 <nav class="docs__nav" aria-label="On this page">
   <ul>
     <li><a href="#how">How it works</a></li>
+    <li><a href="#run">Where it runs</a></li>
     <li><a href="#start">Getting started</a></li>
     <li><a href="#imagery">Imagery</a></li>
     <li><a href="#kobo">Kobo data</a></li>
@@ -78,9 +80,43 @@
   <li><strong>Field observations</strong>A KoboCollect project on KoboToolbox (global, EU, a national server or a field kit), synced every 10 minutes, with photos.</li>
   <li><strong>RISA symbols</strong>Services, routes, shelters and hazards in RISA's standard symbols, each status shown twice: by colour and by line or shape.</li>
   <li><strong>Page 1</strong>The Common Operational Picture at A3 or A4: map, key message, figures, legend, sources and QR codes, rendered at 300 dpi.</li>
+  <li><strong>Free and open source</strong>AGPL-3.0, like KoboToolbox, built only on open-source software and open formats. No licence fees, no vendor accounts, no lock-in.</li>
+  <li><strong>Runs where your data must stay</strong>On the consortium's instance, self-hosted on your own server, fully offline on a field kit, or (planned) as a network of kits with a hub.</li>
 </ul>
 <p>Everything belongs to a <strong>response</strong> (an emergency, such as "Venezuela: earthquake, June 2026"), and each response has <strong>sites</strong>. A site has its own map, layers, figures and printed products.</p>
 <div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis (shelter detection) is <strong>simulated</strong>, a stand-in for a real model, and the analysis tab shows example output. Pages 2 and 3 of the RISA product are still to come.</p></div>
+</section>
+
+<section id="run">
+<h2>Where it runs</h2>
+<p>The RISA Dashboard is <strong>free and open-source software</strong>. The same software runs in four ways, and the organisation responsible for a response's data chooses which:</p>
+<div class="table-scroll"><table>
+  <thead><tr><th>Way to run it</th><th>Where the data is</th><th>Internet</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td><strong>The consortium's instance</strong></td><td><code>risa-dash.kobolabs.dev</code>, in a data centre in Frankfurt (EU)</td><td>Needed</td><td>Running</td></tr>
+    <tr><td><strong>Self-hosted</strong></td><td>A national authority's or an organisation's own server or cloud account, in the country if required</td><td>Only for its users to reach it</td><td>Built</td></tr>
+    <tr><td><strong>Offline on a field kit</strong></td><td>A Kobo in a box kit, next to its own KoboToolbox, in the team's hands</td><td>None</td><td>Built, not yet tried on a kit</td></tr>
+    <tr><td><strong>Federated</strong></td><td>A kit per site and a hub at base, then the cloud or a national server, only for what the focal point chooses to send</td><td>None between kits</td><td>Planned</td></tr>
+  </tbody>
+</table></div>
+
+<h4>Choosing in an emergency</h4>
+<ul>
+  <li><strong>Start fast:</strong> the consortium's instance needs nothing set up, so it suits the first hours when the data may be held in the EU.</li>
+  <li><strong>Data must stay in the country,</strong> or with the national authority: use its own instance, or a field kit. Ask the consortium if you need help setting one up.</li>
+  <li><strong>No reliable internet, or data too sensitive to put online:</strong> use a field kit. Everything in this guide works on it.</li>
+  <li><strong>Changing later is possible:</strong> export the data in open formats and add it to the other instance. Moving a whole response as one file is planned.</li>
+</ul>
+
+<h4>Why open source matters here</h4>
+<ul>
+  <li><strong>Anyone can run it.</strong> The licence is AGPL-3.0, like KoboToolbox. A national authority, an NGO or a university can run its own copy with no licence fee and no permission needed.</li>
+  <li><strong>Built on open components only:</strong> Django, PostgreSQL and PostGIS, GDAL, MapLibre, Typst, Chromium and KoboToolbox. The planned AI uses open-weight models. Nothing depends on a commercial service.</li>
+  <li><strong>Open formats in and out:</strong> GeoTIFF, GeoPackage, GeoJSON, Shapefile, KML and PDF. Your data goes to QGIS, ArcGIS or another instance at any time.</li>
+  <li><strong>Improvements are shared.</strong> Anyone who offers a changed version as a service must publish the changes, so what one team adds comes back to everyone.</li>
+  <li><strong>It can be checked.</strong> The <a href="https://github.com/joshuaberetta/risa-dash">source code is public</a>, so anyone can see exactly what the software does with data.</li>
+</ul>
+<p>To run your own, the <a href="https://github.com/joshuaberetta/risa-dash">README on GitHub</a> covers self-hosting with Docker and the settings for an offline kit.</p>
 </section>
 
 <section id="start">
@@ -289,6 +325,7 @@
   <li>Basemaps are offline extracts of the response area, loaded before the kit leaves.</li>
   <li>This guide, the fonts and the tours are on the kit too.</li>
 </ul>
+<p>Several kits will be able to work together (planned): a kit at each site, a hub at base that shows the whole response, still offline, and the cloud or a national server only when there's a link and the focal point chooses to send.</p>
 <p>On a thin link, send the small things first: page 1 (about 1.4 MB), then the GeoPackage (usually 5–50 MB). Full imagery travels by USB drive or courier, or waits for a good connection.</p>
 <div class="warning"><p>One gap today: the labels on the map's basemap (place and street names) still need an internet connection. The imagery, your data and the printed page don't.</p></div>
 </section>
@@ -299,7 +336,7 @@
 
 <h4>Before you deploy</h4>
 <ol class="checklist">
-  <li>Know which instance you'll use: the consortium's, a national authority's, or a field kit. Get its create key if it needs one.</li>
+  <li>Agree with the data owner where the data may live and who may see the map. That decides the instance: the consortium's, a national authority's own, or a field kit (see <a href="#run">Where it runs</a>). Get its create key if it needs one.</li>
   <li>Deploy the RISA form in KoboToolbox, and make an API token for an account that can see its data.</li>
   <li>For a kit: load the offline basemap of the area and any pre-event imagery before it leaves, and check that it opens with the internet off.</li>
   <li>Decide on the feedback form and test its link.</li>
@@ -328,14 +365,49 @@
 </section>
 
 <section id="privacy">
-<h2>Data protection</h2>
+<h2>Data protection and data sovereignty</h2>
+<p>RISA records infrastructure and services, not people. But imagery of a displacement site, and a map of where its water, latrines and access routes are, can still put people at risk if it reaches the wrong hands. Treat every response's imagery and map as sensitive.</p>
+
+<h4>Who controls the data</h4>
+<p>The organisation or national authority that sets up a response controls its data, and decides where it lives and who it's shared with. The field observations stay in its own Kobo project; the dashboard keeps a working copy of the points and answers it puts on the map, and nothing else.</p>
+
+<h4>Where it lives</h4>
 <ul>
-  <li><strong>Observations, not people.</strong> RISA records infrastructure and services. Use <strong>Left out (sensitive)</strong> for any question about a person, and the dashboard never stores it.</li>
-  <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server. They never reach the browser; photos are fetched through the server.</li>
-  <li><strong>Links are unlisted.</strong> Sites aren't indexed by search engines, but anyone with a link can view. If nothing should be public, the instance can require the edit key for viewing too, and a national authority can run its own instance so the data stays in the country.</li>
-  <li><strong>Photos</strong> can show faces and number plates. Check them before you share the link widely.</li>
-  <li>On a field kit, nothing leaves the kit unless your team copies or syncs it.</li>
+  <li><strong>On a field kit,</strong> nothing leaves the kit unless your team copies or syncs it.</li>
+  <li><strong>On a self-hosted instance,</strong> the data is wherever that organisation runs it.</li>
+  <li><strong>On the consortium's instance,</strong> the database and files are with DigitalOcean in Frankfurt (EU). Imagery is delivered through DigitalOcean's content network, and the site is behind Cloudflare, which handles its traffic and security. If a response's data must not leave a country, use a national instance or a kit instead.</li>
 </ul>
+
+<h4>What the dashboard keeps, and what it doesn't</h4>
+<ul>
+  <li><strong>No personal accounts, no tracking, no analytics.</strong> Your browser keeps only the edit key, your layer and basemap choices for each site, and which tours you've seen. The edit key is stored on the server only as a hash.</li>
+  <li><strong>Sensitive questions are left out.</strong> When you connect a Kobo project, list any question about a person (names, phone numbers, ages) under <strong>Left out (sensitive)</strong>. Those answers are never copied to the dashboard.</li>
+  <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server; they never reach a browser. <strong>Photos</strong> are fetched from Kobo when someone opens them, not stored in the dashboard.</li>
+  <li><strong>No AI company sees your data.</strong> The imagery analysis is simulated today and sends nothing anywhere. The planned models run on the kit, the hub, or a server rented from the same provider in the same region as the instance.</li>
+  <li><strong>Feedback</strong> goes into a Kobo form that the response's owner chooses, under their control.</li>
+</ul>
+
+<h4>Who can see it</h4>
+<ul>
+  <li><strong>Anyone with a site's link can view it,</strong> so you can share the map in the first hours. Links aren't listed by search engines.</li>
+  <li>An instance can require the edit key <strong>for viewing too</strong> (set by its administrator), and can hide a response from the home page list.</li>
+  <li>Imagery files and printed pages are served at long, unguessable addresses. Anyone who has one of those addresses can open the file, even if viewing needs the key. For the most sensitive responses, a national instance or a kit keeps even that inside your own network.</li>
+  <li><strong>Only people with the edit key can change anything.</strong> Share it with the people producing the maps, not with everyone who reads them.</li>
+</ul>
+
+<h4>What reaches other services online</h4>
+<p>The online basemaps (OpenFreeMap, Esri satellite imagery and OpenStreetMap) are loaded by each viewer's browser, so the basemap provider sees the request and the area of the map being viewed. The map's label fonts also come from OpenFreeMap today. To avoid this, choose an offline basemap or <strong>No basemap</strong>; an instance's administrator can turn the online basemaps off altogether. On a kit, none of this applies.</p>
+
+<h4>Good practice for teams</h4>
+<ul>
+  <li>Agree with the data owner, before deploying, which instance to use and who the map may be shared with. A data-sharing agreement and, for drone imagery of sites, a protection review should come before anything is shared widely.</li>
+  <li>Mark every question about a person as sensitive when you connect Kobo, and check the data table for anything personal that slipped into a label or a note.</li>
+  <li>Check photos for faces, documents and number plates before you share the site's link widely.</li>
+  <li>Keep the key message and labels to facts about places and services, never about individuals.</li>
+  <li>Delete layers you no longer need. Deleting a layer removes its files too; a whole response is removed by the instance's administrator.</li>
+  <li>Moving data on a USB drive? Treat the drive as sensitive. Encrypted transfer files are planned, so a lost drive exposes nothing.</li>
+</ul>
+<p>These practices follow the IASC Operational Guidance on Data Responsibility in Humanitarian Action: collect only what's needed, keep control with the responsible organisation, and share deliberately.</p>
 </section>
 
 <section id="help">
@@ -366,7 +438,19 @@
 </details>
 <details>
   <summary>Can we run our own copy?</summary>
-  <div><p>Yes. It's free and open-source software (AGPL-3.0, like KoboToolbox). It runs on a national authority's own server or fully offline on a field kit. The <a href="https://github.com/joshuaberetta/risa-dash">source code and self-hosting guide are on GitHub</a>.</p></div>
+  <div><p>Yes, with no licence fee and no permission needed. It's free and open-source software (AGPL-3.0, like KoboToolbox), built only on open-source components. It runs on a national authority's own server, in any cloud account, or fully offline on a field kit. The <a href="https://github.com/joshuaberetta/risa-dash">source code and self-hosting guide are on GitHub</a>.</p></div>
+</details>
+<details>
+  <summary>Does our data leave the country?</summary>
+  <div><p>Only if you use an instance outside it. On the consortium's instance, data is held in Frankfurt (EU). On a national instance it stays where that server is, and on a field kit it stays on the kit. See <a href="#run">Where it runs</a>.</p></div>
+</details>
+<details>
+  <summary>Is any of our data sent to an AI company?</summary>
+  <div><p>No. The imagery analysis is simulated today and runs on the dashboard's own server. The planned models are open-weight models on the kit, the hub, or a server from the same provider and region as the instance.</p></div>
+</details>
+<details>
+  <summary>Are we locked in to the consortium's instance?</summary>
+  <div><p>No. Export the data as a GeoPackage and the imagery as GeoTIFF, and add them to your own instance or to QGIS or ArcGIS. Moving a whole response as one file is planned.</p></div>
 </details>
 <details>
   <summary>Where do I get help with KoboToolbox itself?</summary>
@@ -382,7 +466,7 @@
   <div class="wrap">
     <div>
       <span class="footer__brand"><img src="static/risa-mark.svg" alt="">RISA Dashboard</span>
-      <p>Drone and satellite imagery, KoboCollect observations and analysis on one map, printed as RISA page 1. Free and open source, for the RISA consortium (HI/Atlas Logistique, MapAction, Kobo) and its partners.</p>
+      <p>Drone and satellite imagery, KoboCollect observations and analysis on one map, printed as RISA page 1. Free and open source (AGPL-3.0), to run online, on your own servers or fully offline. For the RISA consortium (HI/Atlas Logistique, MapAction, Kobo) and its partners.</p>
     </div>
     <div>
       <span class="footer__label">Dashboard</span>
@@ -395,7 +479,8 @@
       <span class="footer__label">On this page</span>
       <ul>
         <li><a href="#start">Getting started</a></li>
-        <li><a href="#page1">Page 1</a></li>
+        <li><a href="#run">Where it runs</a></li>
+        <li><a href="#privacy">Data protection</a></li>
         <li><a href="#checklist">Checklist</a></li>
         <li><a href="#help">Questions</a></li>
       </ul>
