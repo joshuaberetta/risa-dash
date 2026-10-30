@@ -82,4 +82,4 @@ All environment variables; see [`backend/config/settings.py`](backend/config/set
 | `STORAGE` | `filesystem` | or `s3` with `S3_*`, `MEDIA_PUBLIC_URL` |
 | `ONLINE_BASEMAPS` | `true` | `false` on an offline box |
 | `PRINT_BASE_URL` | `PUBLIC_URL` | Where the worker's Chromium opens the print route |
-| `FEEDBACK_URL` | empty | Feedback form (e.g. a Kobo form's web link): a QR code on printed maps and a Feedback link online. Responses can set their own. `{response}`, `{site}`, `{product}`, `{version}` and `{source}` are filled in |
+| `FEEDBACK_URL` | empty | Feedback form (e.g. a Kobo form's web link): a QR code on printed maps and a Feedback link online. Responses can set their own. `{response}`, `{site}`, `{product}`, `{version}` and `{source}` are filled in. The printed QR code points to the short `/f/<product>/<version>`, which redirects to the form, so it stays scannable at its printed size |

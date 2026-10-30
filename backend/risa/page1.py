@@ -227,7 +227,8 @@ def scale_bar(m_per_mm: float, max_mm: float = 40) -> dict:
     return {"mm": round(nice / m_per_mm, 2), "label": label, "ratio": f"1:{round(m_per_mm * 1000):,}"}
 
 
-def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, basemap_attribution: str) -> dict:
+def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, basemap_attribution: str,
+          version_n: int | None = None) -> dict:
     """Everything the template reads, as JSON. `map_state` comes from the map render:
     {zoom, lat, bearing, m_per_px} in CSS px of the frame, and `marker`: where the
     area locator's extent is on the overview, as fractions [x0, y0, x1, y1]."""
@@ -245,6 +246,12 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
     lang = site.response.language if site.response.language in LABELS else "en"
     m_per_mm = map_state["m_per_px"] * 96 / 25.4
     url = f"{settings.PUBLIC_URL}/r/{site.response.slug}/{site.slug}"
+    # The feedback QR code is printed small, and a form link with its prefilled values
+    # runs to 300+ characters: too dense to scan. So it points here, and /f/ redirects
+    # to the form with the values filled in (views.feedback).
+    feedback = ""
+    if site.response.feedback_link(site, product):
+        feedback = f"{settings.PUBLIC_URL}/f/{product.id}" + (f"/{version_n}" if version_n else "")
     return {
         "page": {**f["page"], "inset": list(f["inset"]), "overview": list(f["page"]["overview"]), "map": list(f["map"]),
                  "side_pad": list(SIDE_PAD), "locators": f["locators"]},
@@ -265,7 +272,7 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
         "disclaimer": p.get("disclaimer") or product.disclaimer,
         "credits": p.get("credits") or product.credits,
         "url": url,
-        "feedback": site.response.feedback_link(site, product, p.get("version_label") or product.version_label, "print"),
+        "feedback": feedback,
         "bearing": map_state.get("bearing", 0),
         "marker": map_state.get("marker"),
         "scale": scale_bar(m_per_mm),

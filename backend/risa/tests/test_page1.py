@@ -126,3 +126,42 @@ def test_feedback_link_fills_in_the_map(settings):
     assert url == "https://ee.kobotoolbox.org/x/abc?d[/a/site]=aviation-camp&d[/a/map]=MA023%20v3&d[/a/via]=print"
     # A response's own form wins over the instance's
     assert feedback_link("http://ee.kobo.local/x/def", site="s") == "http://ee.kobo.local/x/def"
+
+
+@pytest.mark.django_db
+def test_printed_feedback_qr_is_short_and_redirects_to_the_form(client, settings):
+    from django.utils import timezone
+
+    from risa.models import Product, ProductVersion, Response, Site
+
+    settings.PUBLIC_URL = "https://risa-dash.kobolabs.dev"
+    settings.FEEDBACK_URL = ""
+    r = Response(slug="ven-eq", name="Venezuela: earthquake")
+    r.set_edit_key()
+    r.save()
+    site = Site.objects.create(response=r, slug="estadio", name="Estadio")
+    p = Product.objects.create(site=site, code="MA023", version_label="Day 5 · v1.1")
+    ProductVersion.objects.create(product=p, n=2, snapshot={"product": {"version_label": "Day 4 · v1.0"}})
+    state = {"m_per_px": 0.1, "zoom": 17, "lat": 10, "bearing": 0}
+    now = timezone.now()
+
+    # No form anywhere: no QR code, and nothing to redirect to
+    assert page1.build(p, {}, state, now, False, "", 2)["feedback"] == ""
+    assert client.get(f"/f/{p.id}/2").status_code == 404
+
+    settings.FEEDBACK_URL = ("https://ee.kobotoolbox.org/x/K4RQ5LA8?d[/a4eqBo55HHWFKZZA7Ln5Ma/response]={response}"
+                             "&d[/a4eqBo55HHWFKZZA7Ln5Ma/site]={site}&d[/a4eqBo55HHWFKZZA7Ln5Ma/product]={product}"
+                             "&d[/a4eqBo55HHWFKZZA7Ln5Ma/version]={version}&d[/a4eqBo55HHWFKZZA7Ln5Ma/source]={source}")
+    short = page1.build(p, {}, state, now, False, "", 2)["feedback"]
+    assert short == f"https://risa-dash.kobolabs.dev/f/{p.id}/2"
+    assert len(short) < 84  # a version-5 QR code, about 0.3 mm a module on A3
+
+    # The version as printed (v1.0), not the product's current label
+    to = client.get(f"/f/{p.id}/2")
+    assert to.status_code == 302
+    assert to["Location"].startswith("https://ee.kobotoolbox.org/x/K4RQ5LA8?")
+    assert "response]=ven-eq&" in to["Location"] and "site]=estadio&" in to["Location"]
+    assert "product]=MA023&" in to["Location"] and "version]=Day%204%20%C2%B7%20v1.0&" in to["Location"]
+    assert to["Location"].endswith("source]=print")
+    # A draft preview has no version yet: the current label
+    assert "Day%205" in client.get(f"/f/{p.id}")["Location"]

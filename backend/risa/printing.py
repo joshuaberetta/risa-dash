@@ -118,7 +118,7 @@ def _compose(product: Product, snapshot: dict, version_n: int | None, draft: boo
     f = page1.frames(sp.get("page_size") or product.page_size, sp.get("locators") or product.locators)
     with ThreadPoolExecutor(max_workers=1) as pool:
         state = pool.submit(_render_maps, str(product.id), version_n, f, DRAFT_DPI if draft else PRINT_DPI, tmp).result()
-    data = page1.build(product, snapshot, state, timezone.localtime(), draft, _basemap_attribution(view))
+    data = page1.build(product, snapshot, state, timezone.localtime(), draft, _basemap_attribution(view), version_n)
     data["has_inset"] = bool(f["locators"]["area"]) and os.path.exists(os.path.join(tmp, "inset.jpg"))
     data["has_overview"] = bool(f["locators"]["overview"]) and os.path.exists(os.path.join(tmp, "overview.jpg"))
     root = Path(tmp)

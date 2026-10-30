@@ -9,9 +9,12 @@ from django.http import (
     Http404,
     HttpResponse,
     HttpResponsePermanentRedirect,
+    HttpResponseRedirect,
     StreamingHttpResponse,
 )
 from django.views.decorators.http import require_http_methods
+
+from .models import Product
 
 RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)$")
 
@@ -92,3 +95,16 @@ def guide(request):
     r["Cache-Control"] = "no-cache"
     return r
 
+
+def feedback(request, pid, n=None):
+    """A printed page's feedback QR code: on to the response's feedback form (or the
+    instance's), with the site, map code, version as printed and source filled in."""
+    product = Product.objects.select_related("site__response").filter(id=pid).first()
+    if not product:
+        raise Http404
+    version = product.versions.filter(n=n).first() if n else None
+    label = (version.snapshot.get("product", {}).get("version_label") if version else "") or product.version_label
+    url = product.site.response.feedback_link(product.site, product, label, "print")
+    if not url:
+        raise Http404
+    return HttpResponseRedirect(url)

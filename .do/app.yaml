@@ -36,6 +36,8 @@ services:
       - { key: S3_REGION, scope: RUN_TIME, value: fra1 }
       - { key: S3_PREFIX, scope: RUN_TIME, value: prod }
       - { key: MEDIA_PUBLIC_URL, scope: RUN_TIME, value: "https://risa-dash.fra1.cdn.digitaloceanspaces.com" }
+      # The consortium's feedback form ("RISA map feedback", en/fr/es/pt) on kf, with the map's details prefilled
+      - { key: FEEDBACK_URL, scope: RUN_TIME, value: "https://ee.kobotoolbox.org/x/K4RQ5LA8?d[/a4eqBo55HHWFKZZA7Ln5Ma/response]={response}&d[/a4eqBo55HHWFKZZA7Ln5Ma/site]={site}&d[/a4eqBo55HHWFKZZA7Ln5Ma/product]={product}&d[/a4eqBo55HHWFKZZA7Ln5Ma/version]={version}&d[/a4eqBo55HHWFKZZA7Ln5Ma/source]={source}" }
       - { key: SECRET_KEY, scope: RUN_TIME, type: SECRET }
       - { key: CREATE_KEY, scope: RUN_TIME, type: SECRET }
       - { key: S3_ACCESS_KEY_ID, scope: RUN_TIME, type: SECRET }

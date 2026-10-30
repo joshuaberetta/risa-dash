@@ -29,6 +29,7 @@ export default defineConfig({
       '/media': api,
       '/admin': api,
       '/static': api,
+      '/f/': api,
     },
     fs: { allow: ['..'] },
   },
