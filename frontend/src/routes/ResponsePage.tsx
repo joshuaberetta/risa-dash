@@ -1,10 +1,11 @@
 import { AppShell, Badge, Button, Card, Container, Group, Modal, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
-import { IconMapPin, IconPlus } from '@tabler/icons-react'
+import { IconMapPin, IconMessageCircle, IconPlus } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, setCurrentResponse, type ResponseT, type SiteT } from '../api'
 import { EditKeyButton } from '../components/EditKey'
+import { useConfigData } from '../hooks'
 import Header from '../components/Header'
 import { usePageTour } from '../tour'
 import { responseTour } from '../tours'
@@ -22,12 +23,13 @@ export default function ResponsePage() {
   setCurrentResponse(slug)
   const q = useQuery({ queryKey: ['response', slug], queryFn: () => api<ResponseT & { sites: SiteT[] }>(`/responses/${slug}`) })
   const [open, setOpen] = useState(false)
+  const [fbOpen, setFbOpen] = useState(false)
   const r = q.data
   usePageTour('response', responseTour, !!r)
   return (
     <AppShell header={{ height: 52 }}>
       <AppShell.Header>
-        <Header>
+        <Header feedback={r?.feedback}>
           <Text size="sm" c="dimmed" truncate>/ {r?.name}</Text>
         </Header>
       </AppShell.Header>
@@ -45,6 +47,7 @@ export default function ResponsePage() {
                 </div>
                 <Group>
                   <span data-tour="edit-key"><EditKeyButton slug={r.slug} canEdit={r.can_edit} /></span>
+                  {r.can_edit && <Button variant="default" leftSection={<IconMessageCircle size={16} />} onClick={() => setFbOpen(true)}>Feedback form</Button>}
                   {r.can_edit && <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-site">New site</Button>}
                 </Group>
               </Group>
@@ -58,6 +61,7 @@ export default function ResponsePage() {
               </SimpleGrid>
               {r.sites.length === 0 && <Text c="dimmed">No sites yet. {r.can_edit ? 'Add the first site you assessed.' : 'Unlock editing to add one.'}</Text>}
               <NewSite slug={r.slug} opened={open} onClose={() => setOpen(false)} />
+              {fbOpen && <FeedbackForm response={r} onClose={() => setFbOpen(false)} />}
             </>
           )}
         </Container>
@@ -95,6 +99,36 @@ function NewSite({ slug, opened, onClose }: { slug: string; opened: boolean; onC
         <TextInput label="Location (optional)" description="Latitude, longitude. Otherwise the map zooms to the first layer you add." placeholder="10.4917, -66.8792" value={f.latlon} onChange={(e) => setF({ ...f, latlon: e.currentTarget.value })} />
         {err && <Text c="red" size="sm">{err}</Text>}
         <Group justify="flex-end"><Button onClick={submit} disabled={!f.name}>Create site</Button></Group>
+      </Stack>
+    </Modal>
+  )
+}
+
+export const FEEDBACK_HELP = 'Printed maps carry a QR code to it, and the online map a Feedback link. A Kobo form\'s web link works well. {site}, {product}, {version} and {source} (print or web) are filled in, so they can prefill questions.'
+
+function FeedbackForm({ response, onClose }: { response: ResponseT; onClose: () => void }) {
+  const config = useConfigData()
+  const qc = useQueryClient()
+  const [url, setUrl] = useState(response.feedback_url)
+  const [err, setErr] = useState('')
+  const save = async () => {
+    try {
+      await api(`/responses/${response.slug}`, { method: 'PATCH', body: { feedback_url: url } })
+      qc.invalidateQueries({ queryKey: ['response', response.slug] })
+      qc.invalidateQueries({ queryKey: ['site'] })
+      onClose()
+    } catch (e) {
+      setErr(String((e as Error).message))
+    }
+  }
+  return (
+    <Modal opened onClose={onClose} title="Feedback form" size="lg">
+      <Stack>
+        <TextInput label="Link to the feedback form" description={FEEDBACK_HELP} data-autofocus
+          placeholder={config.feedback_url || 'https://ee.kobotoolbox.org/x/…'} value={url} onChange={(e) => setUrl(e.currentTarget.value)} />
+        {!url && <Text size="xs" c="dimmed">{config.feedback_url ? 'Blank: the instance\'s form is used.' : 'Blank: no feedback link or QR code.'}</Text>}
+        {err && <Text c="red" size="sm">{err}</Text>}
+        <Group justify="flex-end"><Button onClick={save}>Save</Button></Group>
       </Stack>
     </Modal>
   )

@@ -188,7 +188,7 @@ The layout follows page 1 of the RISA product (`~/code/risa/site/assets/product.
   - **Key message**: free text, a sentence or two.
   - **At a glance**: four figures computed from the data (people as an estimate marked TBC, shelters counted, water points working, access routes open). Each one can be overridden by hand and labelled TBC.
   - **Legend**, built from the visible layers: access routes by status, service symbols, working/partly/not working, hazards and site furniture.
-- **Footer**: sources (imagery platform, height, resolution and date; Kobo points and dates; basemap credits, taken from each layer's attribution), the disclaimer, "Produced with RISA", technical support credits, and the QR code.
+- **Footer**: sources (imagery platform, height, resolution and date; Kobo points and dates; basemap credits, taken from each layer's attribution), the disclaimer, "Produced with RISA", technical support credits, the QR code to the live map, and a second QR code to the feedback form when one is set (`FEEDBACK_URL`, or the response's own; the online map links to the same form).
 
 The brand stays **neutral** for now: Mantine defaults, a neutral band colour, system-safe bundled fonts. All brand values sit in one theme file (CSS variables plus a Mantine theme) that the chosen RISA direction can replace later. The reserved status colours and symbols are not part of the brand and don't change.
 

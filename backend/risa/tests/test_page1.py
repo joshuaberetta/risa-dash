@@ -101,10 +101,12 @@ def test_template_compiles(tmp_path, locators):
         "legend": {"routes": ["ok", "no"], "services": [{"type": "water", "label": "Water point"}], "statuses": ["ok"],
                    "areas": [{"type": "flood", "label": "Flood", "fill": "#2F74B529", "stroke": "#2F74B5"}]},
         "sources": "Prueba.", "disclaimer": "Descargo.", "credits": "Kobo", "url": "https://example.org/r/x/y",
+        "feedback": "https://ee.kobotoolbox.org/x/abc" if locators.get("country") else "",
         "bearing": 12, "scale": page1.scale_bar(3),
     }
     page1.write_assets(tmp_path, data)
     shutil.copy(TEMPLATE / "page1.typ", tmp_path / "page1.typ")
+    assert (tmp_path / "feedback.svg").exists() == bool(data["feedback"])
     for name in ("map.jpg", "inset.jpg", "overview.jpg"):
         (tmp_path / name).write_bytes(JPEG)
     out = tmp_path / "out.pdf"
@@ -112,3 +114,15 @@ def test_template_compiles(tmp_path, locators):
                         "--ignore-system-fonts", str(tmp_path / "page1.typ"), str(out)], capture_output=True, text=True)
     assert p.returncode == 0, p.stderr
     assert out.read_bytes()[:4] == b"%PDF"
+
+
+def test_feedback_link_fills_in_the_map(settings):
+    from risa.models import feedback_link
+
+    settings.FEEDBACK_URL = ""
+    assert feedback_link(site="x") == ""
+    settings.FEEDBACK_URL = "https://ee.kobotoolbox.org/x/abc?d[/a/site]={site}&d[/a/map]={product}&d[/a/via]={source}"
+    url = feedback_link(site="aviation-camp", product="MA023 v3", source="print")
+    assert url == "https://ee.kobotoolbox.org/x/abc?d[/a/site]=aviation-camp&d[/a/map]=MA023%20v3&d[/a/via]=print"
+    # A response's own form wins over the instance's
+    assert feedback_link("http://ee.kobo.local/x/def", site="s") == "http://ee.kobo.local/x/def"

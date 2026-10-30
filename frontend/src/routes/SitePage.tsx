@@ -251,7 +251,7 @@ export default function SitePage() {
   return (
     <AppShell header={{ height: 52 }} navbar={{ width: 310, breakpoint: 'sm' }} aside={{ width: 340, breakpoint: 'md' }}>
       <AppShell.Header>
-        <Header>
+        <Header feedback={site.response.feedback}>
           <Text size="sm" c="dimmed" truncate>
             / <Link to={`/r/${site.response.slug}`} style={{ color: 'inherit' }}>{site.response.name}</Link> / <b>{site.name}</b>
           </Text>

@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router'
 import { api, saveEditKey, type ResponseT } from '../api'
 import { ShowKey } from '../components/EditKey'
 import Header from '../components/Header'
+import { FEEDBACK_HELP } from './ResponsePage'
 import { useConfigData } from '../hooks'
 import { usePageTour } from '../tour'
 import { homeTour } from '../tours'
@@ -58,7 +59,7 @@ export default function Home() {
 function NewResponse({ opened, onClose }: { opened: boolean; onClose: () => void }) {
   const config = useConfigData()
   const nav = useNavigate()
-  const [f, setF] = useState({ name: '', hazard: '', country: '', glide: '', start_date: null as string | null, language: 'en' })
+  const [f, setF] = useState({ name: '', hazard: '', country: '', glide: '', start_date: null as string | null, language: 'en', feedback_url: '' })
   const [createKey, setCreateKey] = useState('')
   const [err, setErr] = useState('')
   const [made, setMade] = useState<{ slug: string; key: string } | null>(null)
@@ -92,6 +93,8 @@ function NewResponse({ opened, onClose }: { opened: boolean; onClose: () => void
             <DateInput label="Start date" value={f.start_date} onChange={(v) => setF({ ...f, start_date: v })} />
             <Select label="Product language" data={[{ value: 'en', label: 'English' }, { value: 'es', label: 'Español' }, { value: 'fr', label: 'Français' }, { value: 'pt', label: 'Português' }]} value={f.language} onChange={(v) => setF({ ...f, language: v || 'en' })} />
           </Group>
+          <TextInput label="Feedback form (optional)" description={FEEDBACK_HELP} placeholder={config.feedback_url || 'https://ee.kobotoolbox.org/x/…'}
+            value={f.feedback_url} onChange={(e) => setF({ ...f, feedback_url: e.currentTarget.value })} />
           {config.create_key_required && (
             <PasswordInput label="Instance create key" description="This instance needs a key to create responses" value={createKey} onChange={(e) => setCreateKey(e.currentTarget.value)} />
           )}

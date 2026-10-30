@@ -20,7 +20,7 @@ from ninja.errors import HttpError
 from . import exports, kobo, page1, storage
 from .access import can_edit, require_create, require_edit, require_view
 from .ingest import IngestError, kind_for
-from .models import Feature, KoboSource, Layer, Product, ProductVersion, Response, Site, Upload
+from .models import Feature, KoboSource, Layer, Product, ProductVersion, Response, Site, Upload, feedback_link
 from .summary import site_summary
 from .symbology import symbology
 
@@ -44,6 +44,7 @@ def response_dict(r: Response, request=None) -> dict:
     return {
         "id": r.id, "slug": r.slug, "name": r.name, "hazard": r.hazard, "country": r.country, "glide": r.glide,
         "start_date": r.start_date, "language": r.language, "private": r.private,
+        "feedback_url": r.feedback_url, "feedback": r.feedback_link(),
         "can_edit": can_edit(request, r) if request else False,
     }
 
@@ -150,6 +151,7 @@ def config(request):
         "chunk_size": settings.UPLOAD_CHUNK_SIZE,
         "source_url": settings.SOURCE_URL,
         "licence": "AGPL-3.0",
+        "feedback_url": feedback_link(source="web"),
     }
 
 
@@ -165,6 +167,7 @@ class ResponseIn(Schema):
     start_date: date | None = None
     language: str = "en"
     private: bool = False
+    feedback_url: str = ""
 
 
 class ResponsePatch(Schema):
@@ -175,6 +178,7 @@ class ResponsePatch(Schema):
     start_date: date | None = None
     language: str | None = None
     private: bool | None = None
+    feedback_url: str | None = None
 
 
 def unique_slug(base: str, qs, field="slug") -> str:
@@ -194,7 +198,8 @@ def list_responses(request):
 @api.post("/responses")
 def create_response(request, data: ResponseIn):
     require_create(request)
-    r = Response(**data.dict(exclude={"slug"}))
+    _check_feedback_url(data.feedback_url)
+    r = Response(**{**data.dict(exclude={"slug"}), "feedback_url": data.feedback_url.strip()})
     r.slug = unique_slug(data.slug or data.name, Response.objects)
     key = r.set_edit_key()
     r.save()
@@ -212,10 +217,16 @@ def get_response(request, slug: str):
 def patch_response(request, slug: str, data: ResponsePatch):
     r = get_object_or_404(Response, slug=slug)
     require_edit(request, r)
+    _check_feedback_url(data.feedback_url)
     for k, v in data.dict(exclude_unset=True).items():
-        setattr(r, k, v)
+        setattr(r, k, (v or "").strip() if k == "feedback_url" else v)
     r.save()
     return response_dict(r, request)
+
+
+def _check_feedback_url(url: str | None) -> None:
+    if url and not url.strip().startswith(("https://", "http://")):
+        raise HttpError(400, "The feedback form link must start with https:// (or http:// on a local network)")
 
 
 @api.post("/responses/{slug}/check-key")
@@ -258,7 +269,7 @@ def _site_full(request, s: Site) -> dict:
     layers = s.layers.select_related("kobo").annotate(n_features=Count("features")).order_by("-z_order", "created_at")
     return {
         **site_dict(s),
-        "response": response_dict(s.response, request),
+        "response": {**response_dict(s.response, request), "feedback": s.response.feedback_link(s)},
         "layers": [layer_dict(lyr) for lyr in layers],
         "products": [product_dict(p) for p in s.products.prefetch_related("versions")],
     }

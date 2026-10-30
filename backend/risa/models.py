@@ -1,7 +1,9 @@
 import hashlib
 import secrets
 import uuid
+from urllib.parse import quote
 
+from django.conf import settings
 from django.contrib.gis.db import models
 
 STATUS_CHOICES = [("ok", "Working"), ("partial", "Partly"), ("no", "Not working"), ("unknown", "Not assessed")]
@@ -13,6 +15,15 @@ def new_edit_key() -> str:
 
 def hash_key(key: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
+
+
+def feedback_link(template: str = "", **values: str) -> str:
+    """The feedback form's URL, with {response}, {site}, {product}, {version} and
+    {source} filled in (URL-encoded). Blank template: the instance's FEEDBACK_URL."""
+    url = (template or settings.FEEDBACK_URL).strip()
+    for k in ("response", "site", "product", "version", "source"):
+        url = url.replace("{" + k + "}", quote(values.get(k, ""), safe=""))
+    return url
 
 
 class Response(models.Model):
@@ -28,6 +39,7 @@ class Response(models.Model):
     language = models.CharField(max_length=8, default="en")
     edit_key_hash = models.CharField(max_length=64)
     private = models.BooleanField(default=False, help_text="Hidden from the index page")
+    feedback_url = models.CharField(max_length=500, blank=True, help_text="Feedback form; blank = the instance's FEEDBACK_URL")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -35,6 +47,10 @@ class Response(models.Model):
 
     def __str__(self):
         return self.name
+
+    def feedback_link(self, site=None, product=None, version: str = "", source: str = "web") -> str:
+        return feedback_link(self.feedback_url, response=self.slug, site=site.slug if site else "",
+                             product=(product.code or str(product.id)) if product else "", version=version, source=source)
 
     def set_edit_key(self, key: str | None = None) -> str:
         key = key or new_edit_key()

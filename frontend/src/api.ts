@@ -30,6 +30,8 @@ export interface Config {
   chunk_size: number
   source_url: string
   licence: string
+  /** The instance's feedback form, '' if none */
+  feedback_url: string
 }
 
 export interface ResponseT {
@@ -42,6 +44,10 @@ export interface ResponseT {
   start_date: string | null
   language: string
   private: boolean
+  /** The response's own feedback form ('' = the instance's) */
+  feedback_url: string
+  /** The link to open: the form with this response (and site) filled in; '' = none */
+  feedback: string
   can_edit: boolean
   sites?: SiteT[] | number
 }

@@ -125,6 +125,12 @@ export const siteTour = ({ showSummary, showAi }: { showSummary: () => void; sho
     side: 'bottom',
   },
   {
+    target: 'feedback',
+    title: 'Feedback',
+    body: 'Something missing, wrong or unclear on this map? Tell the team here. Printed maps carry a QR code to the same form.',
+    side: 'bottom',
+  },
+  {
     target: 'edit-key',
     title: 'Editing',
     body: 'No accounts: anyone with the response’s edit key can edit. Viewing is open to anyone with the link.',

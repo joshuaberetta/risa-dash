@@ -1,5 +1,5 @@
 import { Anchor, Badge, Button, Group, Text, Tooltip } from '@mantine/core'
-import { IconBrandGithub, IconRoute } from '@tabler/icons-react'
+import { IconBrandGithub, IconMessageCircle, IconRoute } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useConfigData } from '../hooks'
@@ -37,7 +37,10 @@ export function SourceLink({ withLabel = true }: { withLabel?: boolean }) {
   )
 }
 
-export default function Header({ children }: { children?: ReactNode }) {
+/** `feedback`: the response's form with the site filled in; otherwise the instance's. */
+export default function Header({ children, feedback }: { children?: ReactNode; feedback?: string }) {
+  const config = useConfigData()
+  const href = feedback || config.feedback_url
   return (
     <Group h="100%" px="md" justify="space-between" wrap="nowrap" gap="md">
       <Group gap="md" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
@@ -45,6 +48,12 @@ export default function Header({ children }: { children?: ReactNode }) {
         {children}
       </Group>
       <Group gap="sm" wrap="nowrap">
+        {href && (
+          <Tooltip label="Tell us what's missing, wrong or unclear on this map">
+            <Button component="a" href={href} target="_blank" rel="noopener" size="xs" variant="subtle" color="gray"
+              leftSection={<IconMessageCircle size={15} />} data-tour="feedback">Feedback</Button>
+          </Tooltip>
+        )}
         <Tooltip label="A walk through this page">
           <Button size="xs" variant="subtle" color="gray" leftSection={<IconRoute size={15} />} onClick={startTour} data-tour="tour">Tour</Button>
         </Tooltip>

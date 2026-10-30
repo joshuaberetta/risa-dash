@@ -37,6 +37,7 @@ LABELS = {
     "en": {"key_message": "Key message", "at_a_glance": "At a glance", "routes": "Access routes", "services": "Services",
            "areas": "Areas", "imagery": "Imagery", "sources": "Sources", "produced_with": "Produced with the",
            "method": "method", "support": "Technical support", "scan": "Scan for the live map", "tbc": "TBC",
+           "feedback": "Scan to give feedback",
            "scale_note": "at print size", "page": "Page 1", "no_features": "No mapped features yet",
            "status": {"ok": "Working", "partial": "Partly", "no": "Not working", "unknown": "Not assessed"},
            "route_status": {"ok": "Open", "partial": "Restricted", "no": "Closed", "unknown": "Not assessed"},
@@ -44,6 +45,7 @@ LABELS = {
     "es": {"key_message": "Mensaje clave", "at_a_glance": "En resumen", "routes": "Rutas de acceso", "services": "Servicios",
            "areas": "Áreas", "imagery": "Imágenes", "sources": "Fuentes", "produced_with": "Elaborado con el",
            "method": "método", "support": "Apoyo técnico", "scan": "Escanee para ver el mapa en vivo", "tbc": "POR CONF.",
+           "feedback": "Escanee para opinar",
            "scale_note": "a tamaño de impresión", "page": "Página 1", "no_features": "Aún sin elementos cartografiados",
            "status": {"ok": "Funciona", "partial": "Parcialmente", "no": "No funciona", "unknown": "No evaluado"},
            "route_status": {"ok": "Abierta", "partial": "Restringida", "no": "Cerrada", "unknown": "No evaluada"},
@@ -51,6 +53,7 @@ LABELS = {
     "fr": {"key_message": "Message clé", "at_a_glance": "En bref", "routes": "Voies d'accès", "services": "Services",
            "areas": "Zones", "imagery": "Imagerie", "sources": "Sources", "produced_with": "Réalisé avec la",
            "method": "méthode", "support": "Appui technique", "scan": "Scannez pour la carte en direct", "tbc": "À CONF.",
+           "feedback": "Scannez pour donner votre avis",
            "scale_note": "à la taille d'impression", "page": "Page 1", "no_features": "Aucun élément cartographié",
            "status": {"ok": "Fonctionne", "partial": "Partiellement", "no": "Ne fonctionne pas", "unknown": "Non évalué"},
            "route_status": {"ok": "Ouverte", "partial": "Restreinte", "no": "Fermée", "unknown": "Non évaluée"},
@@ -262,6 +265,7 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
         "disclaimer": p.get("disclaimer") or product.disclaimer,
         "credits": p.get("credits") or product.credits,
         "url": url,
+        "feedback": site.response.feedback_link(site, product, p.get("version_label") or product.version_label, "print"),
         "bearing": map_state.get("bearing", 0),
         "marker": map_state.get("marker"),
         "scale": scale_bar(m_per_mm),
@@ -269,9 +273,11 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
 
 
 def write_assets(root, data: dict) -> None:
-    """data.json, qr.svg and one SVG per legend symbol, next to the template."""
+    """data.json, qr.svg (and feedback.svg) and one SVG per legend symbol, next to the template."""
     (root / "data.json").write_text(json.dumps(data, ensure_ascii=False))
     (root / "qr.svg").write_text(qr_svg(data["url"]))
+    if data.get("feedback"):
+        (root / "feedback.svg").write_text(qr_svg(data["feedback"]))
     sym_dir = root / "sym"
     sym_dir.mkdir(exist_ok=True)
     for s in data["legend"]["services"]:

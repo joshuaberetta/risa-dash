@@ -163,6 +163,10 @@ TYPST_BIN = env("TYPST_BIN", "typst")
 # Linked from every page. AGPL-3.0: an instance running modified code should point
 # this at its own source.
 SOURCE_URL = env("SOURCE_URL", "https://github.com/joshuaberetta/risa-dash")
+# Feedback form for maps and the dashboard (e.g. a Kobo form's web link). Responses can
+# set their own. {response}, {site}, {product}, {version} and {source} (print or web)
+# are filled in, so the form can be prefilled with which map the feedback is about.
+FEEDBACK_URL = env("FEEDBACK_URL")
 
 SYMBOLOGY_FILE = Path(env("SYMBOLOGY_FILE", str(REPO_DIR / "symbology" / "risa.json")))
 

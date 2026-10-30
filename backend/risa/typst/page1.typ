@@ -1,6 +1,6 @@
 // RISA page 1: Common Operational Picture.
 //
-// Reads data.json, map.jpg, inset.jpg, overview.jpg, qr.svg and sym/*.svg from the same folder,
+// Reads data.json, map.jpg, inset.jpg, overview.jpg, qr.svg, feedback.svg and sym/*.svg from the same folder,
 // all written by risa/page1.py. The map frame size comes from data.page, the same
 // numbers the worker used to render map.jpg, so the image fits exactly.
 //
@@ -195,12 +195,15 @@
 // ---- footer -------------------------------------------------------------------
 #let footer = block(width: 100%, height: P.foot * mm, stroke: (top: 0.5pt + rule), inset: (x: 0.55 * P.band * mm, y: 0pt), {
   set text(size: 0.7em, fill: muted)
-  grid(columns: (1fr, auto, auto, auto), column-gutter: 6mm, align: horizon,
+  let qr(file, label) = grid(columns: (auto, auto), column-gutter: 0.6em, align: horizon,
+    image(file, width: 0.75 * P.foot * mm), box(width: 5.5em, label))
+  let feedback = d.at("feedback", default: "") != ""
+  grid(columns: (1fr, auto, auto, auto) + (if feedback { (auto,) } else { () }), column-gutter: 6mm, align: horizon,
     par(leading: 0.35em, [*#L.sources:* #d.sources \ #d.disclaimer]),
     align(center, [#L.produced_with \ #text(size: 1.5em, weight: 800, fill: ink, "RISA") #L.method]),
     [#L.support \ #text(weight: 700, fill: ink, d.credits)],
-    grid(columns: (auto, auto), column-gutter: 0.6em, align: horizon,
-      image("qr.svg", width: 0.75 * P.foot * mm), box(width: 5.5em, L.scan)),
+    qr("qr.svg", L.scan),
+    ..(if feedback { (qr("feedback.svg", L.feedback),) } else { () }),
   )
 })
 
