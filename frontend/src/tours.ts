@@ -27,6 +27,12 @@ export const homeTour = (): TourStep[] => [
     side: 'top',
   },
   {
+    target: 'guide',
+    title: 'The user guide',
+    body: 'Everything needed in a response, step by step: setting up, imagery, Kobo data, page 1, working offline, and a checklist for day one.',
+    side: 'bottom',
+  },
+  {
     target: 'tour',
     title: 'Tours',
     body: 'Every page has its own tour. Run one again from here, or add ?tour to a link to start it for a demo.',

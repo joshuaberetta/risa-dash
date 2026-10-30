@@ -47,7 +47,8 @@ export default function Home() {
           <Text size="sm" c="dimmed" mt={48} pt="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }} data-tour="about">
             RISA Dashboard is free and open-source software under the {config.licence} licence, the same as KoboToolbox.
             Anyone can run it, including fully offline or on their own servers.{' '}
-            <Anchor href={config.source_url} target="_blank" rel="noopener" size="sm">Source code, documentation and self-hosting guide on GitHub</Anchor>.
+            New to it? Read the <Anchor href="/guide/" size="sm">user guide</Anchor>.{' '}
+            <Anchor href={config.source_url} target="_blank" rel="noopener" size="sm">Source code and self-hosting guide on GitHub</Anchor>.
           </Text>
         </Container>
         <NewResponse opened={open} onClose={() => setOpen(false)} />

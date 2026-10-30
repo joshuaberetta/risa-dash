@@ -1,5 +1,5 @@
-import { Anchor, Badge, Button, Group, Text, Tooltip } from '@mantine/core'
-import { IconBrandGithub, IconMessageCircle, IconRoute } from '@tabler/icons-react'
+import { ActionIcon, Anchor, Badge, Button, Group, Text, Tooltip } from '@mantine/core'
+import { IconBook, IconBrandGithub, IconMessageCircle, IconRoute } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useConfigData } from '../hooks'
@@ -7,7 +7,7 @@ import { startTour } from '../tour'
 
 export function Logo() {
   return (
-    <Anchor component={Link} to="/" underline="never" c="inherit">
+    <Anchor component={Link} to="/" underline="never" c="inherit" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
       <Group gap={8} wrap="nowrap">
         <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
           <rect width="32" height="32" rx="6" fill="#18202e" />
@@ -37,6 +37,21 @@ export function SourceLink({ withLabel = true }: { withLabel?: boolean }) {
   )
 }
 
+/** A labelled button on wide screens, its icon alone on narrower ones, so the bar fits. */
+function HeaderButton({ label, tip, icon, tour, href, external, onClick }: {
+  label: string; tip: string; icon: ReactNode; tour: string; href?: string; external?: boolean; onClick?: () => void
+}) {
+  const link = href ? { component: 'a' as const, href, ...(external ? { target: '_blank', rel: 'noopener' } : {}) } : { onClick }
+  return (
+    <Tooltip label={tip}>
+      <span data-tour={tour}>
+        <Button {...link} size="xs" variant="subtle" color="gray" leftSection={icon} visibleFrom="lg">{label}</Button>
+        <ActionIcon {...link} variant="subtle" color="gray" aria-label={label} hiddenFrom="lg">{icon}</ActionIcon>
+      </span>
+    </Tooltip>
+  )
+}
+
 /** `feedback`: the response's form with the site filled in; otherwise the instance's. */
 export default function Header({ children, feedback }: { children?: ReactNode; feedback?: string }) {
   const config = useConfigData()
@@ -49,14 +64,12 @@ export default function Header({ children, feedback }: { children?: ReactNode; f
       </Group>
       <Group gap="sm" wrap="nowrap">
         {href && (
-          <Tooltip label="Tell us what's missing, wrong or unclear on this map">
-            <Button component="a" href={href} target="_blank" rel="noopener" size="xs" variant="subtle" color="gray"
-              leftSection={<IconMessageCircle size={15} />} data-tour="feedback">Feedback</Button>
-          </Tooltip>
+          <HeaderButton label="Feedback" tip="Tell us what's missing, wrong or unclear on this map" icon={<IconMessageCircle size={15} />}
+            tour="feedback" href={href} external />
         )}
-        <Tooltip label="A walk through this page">
-          <Button size="xs" variant="subtle" color="gray" leftSection={<IconRoute size={15} />} onClick={startTour} data-tour="tour">Tour</Button>
-        </Tooltip>
+        <HeaderButton label="Guide" tip="How to use the dashboard in a response: setup, imagery, Kobo, page 1, offline" icon={<IconBook size={15} />}
+          tour="guide" href="/guide/" />
+        <HeaderButton label="Tour" tip="A walk through this page" icon={<IconRoute size={15} />} tour="tour" onClick={startTour} />
         <SourceLink />
       </Group>
     </Group>

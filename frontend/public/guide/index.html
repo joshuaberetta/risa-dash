@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISA Dashboard user guide: imagery, field data and page 1 for an emergency response</title>
+<meta name="description" content="How to use the RISA Dashboard in an emergency: create a response, add drone or satellite imagery and KoboCollect observations, map services and access, and print RISA page 1, online or fully offline on a field kit.">
+<link rel="icon" href="static/risa-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="static/home.css">
+</head>
+<body>
+<header class="header">
+  <div class="wrap">
+    <a class="header__brand" href="./"><img class="header__mark" src="static/risa-mark.svg" alt=""><span class="header__word">RISA <span>Dashboard</span></span><span class="header__product">User guide</span></a>
+    <ul class="header__nav">
+      <li><a href="#start">Getting started</a></li>
+      <li><a href="#imagery">Imagery</a></li>
+      <li><a href="#kobo">Kobo data</a></li>
+      <li><a href="#map">The map</a></li>
+      <li><a href="#page1">Page 1</a></li>
+      <li><a href="#offline">Offline</a></li>
+      <li><a href="#checklist">Checklist</a></li>
+    </ul>
+    <a class="button button--filled button--m" href="/">Open the dashboard</a>
+  </div>
+</header>
+
+<main>
+<section class="banner">
+  <div class="wrap">
+    <h1>One map for a RISA response, and page 1 in under an hour</h1>
+    <p class="banner__lead">The RISA Dashboard puts drone and satellite imagery, KoboCollect observations and analysis layers for a displacement site on one map. It works out the key figures, prints <strong>RISA page 1</strong> (the Common Operational Picture) at A3 or A4, and hands the data on to QGIS or ArcGIS. It runs online, on a national authority's server, or on a field kit with no internet.</p>
+    <div class="banner__buttons">
+      <a class="button button--filled" href="#start">Get started</a>
+      <a class="button button--light" href="#checklist">Response checklist</a>
+    </div>
+    <div class="shot"><a href="static/shots/landing.jpg"><img src="static/shots/landing.jpg" width="1440" height="900" alt="A site in the dashboard: layers and the legend on the left, a drone orthomosaic of Aviation Camp, Port-au-Prince, in the middle with water points, latrines, access routes and blocks drawn on it, and on the right the summary: figures at a glance, which services still work, which routes are open, and the printed products."></a></div>
+  </div>
+</section>
+
+<section class="steps" aria-label="How it works">
+  <div class="wrap">
+    <ol>
+      <li><h3>Create a response and its sites</h3><p>One response per emergency, with a site for each camp, collective centre or settlement. You get an edit key for your team; there are no accounts.</p></li>
+      <li><h3>Add imagery and field data</h3><p>Upload the orthomosaic, connect the KoboCollect project, add analysis layers or draw on the map. Every point carries its status: working, partly working or not working.</p></li>
+      <li><h3>Print page 1 and share it</h3><p>Frame the map, check the key message and figures, and render the PDF. It's small enough for WhatsApp, and its QR code opens the live map.</p></li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap docs">
+<nav class="docs__nav" aria-label="On this page">
+  <ul>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#start">Getting started</a></li>
+    <li><a href="#imagery">Imagery</a></li>
+    <li><a href="#kobo">Kobo data</a></li>
+    <li><a href="#layers">Other layers</a></li>
+    <li><a href="#map">The map</a></li>
+    <li><a href="#figures">Figures and table</a></li>
+    <li><a href="#ai">Imagery analysis</a></li>
+    <li><a href="#page1">Page 1</a></li>
+    <li><a href="#share">Share and export</a></li>
+    <li><a href="#offline">Offline and low bandwidth</a></li>
+    <li><a href="#checklist">Checklist</a></li>
+    <li><a href="#privacy">Data protection</a></li>
+    <li><a href="#help">Questions</a></li>
+  </ul>
+</nav>
+
+<article class="prose">
+
+<section id="how">
+<h2>How it works</h2>
+<p>A RISA (Rapid Infrastructure and Service Assessment) team needs three things fast: a current picture of a site, answers to two questions (<em>Can we reach people?</em> and <em>Which services still work?</em>), and a printed map that decision makers can act on. The dashboard does most of the assembly, so the team can spend its time in the field rather than in GIS software.</p>
+<ul class="features">
+  <li><strong>Imagery</strong>Drone orthomosaics and satellite scenes of any size, uploaded once and shown sharp at every zoom, with no tile server.</li>
+  <li><strong>Field observations</strong>A KoboCollect project on KoboToolbox (global, EU, a national server or a field kit), synced every 10 minutes, with photos.</li>
+  <li><strong>RISA symbols</strong>Services, routes, shelters and hazards in RISA's standard symbols, each status shown twice: by colour and by line or shape.</li>
+  <li><strong>Page 1</strong>The Common Operational Picture at A3 or A4: map, key message, figures, legend, sources and QR codes, rendered at 300 dpi.</li>
+</ul>
+<p>Everything belongs to a <strong>response</strong> (an emergency, such as "Venezuela: earthquake, June 2026"), and each response has <strong>sites</strong>. A site has its own map, layers, figures and printed products.</p>
+<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis (shelter detection) is <strong>simulated</strong>, a stand-in for a real model, and the analysis tab shows example output. Pages 2 and 3 of the RISA product are still to come.</p></div>
+</section>
+
+<section id="start">
+<h2>Getting started</h2>
+
+<h3>Open the dashboard</h3>
+<p>Open the address your team uses:</p>
+<ul>
+  <li><strong>The consortium's instance:</strong> <code>https://risa-dash.kobolabs.dev</code>.</li>
+  <li><strong>A national authority's own server:</strong> the address they give you.</li>
+  <li><strong>A field kit (Kobo in a box):</strong> join the kit's Wi-Fi and open <code>risa.kobo.local</code>. It needs no internet.</li>
+</ul>
+<p>The home page lists the responses. Open the sample response to try everything on real drone imagery with test data before you need it. Each page has a short tour that starts the first time you open it; run it again with <strong>Tour</strong> at the top.</p>
+
+<h3>Create a response</h3>
+<ol>
+  <li>On the home page, choose <strong>New response</strong>.</li>
+  <li>Give it a name people will recognise (for example <em>Venezuela: earthquake, June 2026</em>), the hazard, the country's three-letter code (<code>VEN</code>), the GLIDE number if there is one, and the start date.</li>
+  <li>Choose the <strong>product language</strong>. Page 1's headings and legend follow it: English, Spanish or French. Portuguese uses the English headings for now. Everything you type on the page can be in any language.</li>
+  <li>If your team has a feedback form, paste its link (see <a href="#page1">Page 1</a>). You can add one later.</li>
+  <li>Some instances need a <strong>create key</strong> to start a response. Ask whoever runs the instance.</li>
+</ol>
+<figure><a href="static/shots/new-response.jpg"><img src="static/shots/new-response.jpg" width="1440" height="900" alt="The New response form: name, hazard, country, GLIDE number, start date, product language and an optional feedback form."></a><figcaption>Creating a response.</figcaption></figure>
+
+<h3>Keep the edit key safe</h3>
+<p>When the response is created, the dashboard shows its <strong>edit key once</strong>. Copy it and put it where your team keeps shared credentials. It's saved in the browser you used, but nowhere you can look it up again.</p>
+<ul>
+  <li><strong>Viewing</strong> is open to anyone with the link, so you can send the site's address to partners straight away. Links aren't listed by search engines.</li>
+  <li><strong>Editing</strong> (adding sites, uploading, connecting Kobo, drawing, reviewing and printing) needs the key. On another computer, choose <strong>Unlock editing</strong> and paste it.</li>
+  <li>If the key leaks or is lost, the instance's administrator can issue a new one.</li>
+</ul>
+<div class="warning"><p>Anyone with the edit key can change or delete the response's data. Share it with the people producing the maps, not with everyone who reads them.</p></div>
+
+<h3>Add a site</h3>
+<p>Open the response and choose <strong>New site</strong>. Give it its local name, the place, its kind (camp or displacement site, collective centre, informal settlement) and, if you have it, a latitude and longitude. Without a location, the map zooms to the first imagery or data you add.</p>
+</section>
+
+<section id="imagery">
+<h2>Imagery</h2>
+<p>Imagery is the base of a RISA map: a drone orthomosaic flown on the day, or a satellite scene of the area. In the site's <strong>Layers</strong> panel, choose <strong>Add</strong>.</p>
+<figure><a href="static/shots/layers.jpg"><img src="static/shots/layers.jpg" width="1440" height="800" alt="The Add menu in the Layers panel: Upload a file, Connect a Kobo project, Imagery by URL. Below it, the layers with their switches and opacity sliders, and the map's drawing and measuring tools."></a><figcaption>Adding a layer. The drawing and measuring tools are at the top left of the map.</figcaption></figure>
+
+<h4>Upload a drone orthomosaic or satellite scene</h4>
+<ol>
+  <li>Choose <strong>Upload a file</strong> and pick the GeoTIFF exported from WebODM, DroneDeploy, Pix4D, DJI Terra or your satellite provider.</li>
+  <li>Fill in the date it was captured and the source (for example <em>Drone orthomosaic, DJI Mini 4 Pro, 120 m AGL</em>). Both go into page 1's sources, so fill them in now.</li>
+  <li>The upload goes in 8 MB parts and <strong>retries by itself if the connection drops</strong>; keep the page open until it finishes. Files up to 8 GB work.</li>
+  <li>The server then converts it for the web, which takes a few minutes for a large orthomosaic. The black or white border round a drone image is made transparent. The layer shows when it's ready.</li>
+</ol>
+<p>Over a slow or metered link, don't upload multi-gigabyte imagery through the internet: upload it on the field kit over its Wi-Fi or by cable, and send only page 1 and the GeoPackage out (see <a href="#offline">Offline and low bandwidth</a>).</p>
+
+<h4>Imagery by URL</h4>
+<p>When you're online, <strong>Imagery by URL</strong> adds a scene without downloading it: an XYZ tile address (such as OpenAerialMap), a WMS service, or a Cloud-Optimised GeoTIFF (for example from Maxar Open Data or Copernicus EMS). Add the credit and capture date, as for an upload.</p>
+
+<h4>Working with layers</h4>
+<ul>
+  <li>Turn a layer on and off with its switch, and fade it with the slider under it.</li>
+  <li>The <strong>⋯</strong> menu moves a layer up or down, renames it, downloads it, or deletes it. <strong>Zoom to layer</strong> (the target icon) frames it.</li>
+  <li><strong>Basemap</strong>, at the top, picks the map behind everything: online basemaps when connected, or the offline extracts loaded on a kit.</li>
+</ul>
+</section>
+
+<section id="kobo">
+<h2>Field data from Kobo</h2>
+<p>Teams record observations with KoboCollect: a water point, its status, a photo, where it is. The dashboard reads them straight from KoboToolbox, so a new submission is on the map within minutes.</p>
+
+<h4>Connect a project</h4>
+<ol>
+  <li>In <strong>Layers</strong>, choose <strong>Add › Connect a Kobo project</strong>.</li>
+  <li>Choose the server: the global or EU KoboToolbox server, or another one the instance allows (a national server, or <code>http://kf.kobo.local</code> on a kit). The administrator adds other servers.</li>
+  <li>Paste an <strong>API token</strong>: in KoboToolbox, <em>Account settings › Security › API key</em>. Use an account that can view the project's data, ideally one made for the dashboard rather than a person's.</li>
+  <li>Pick the project. Its points come from the form's first location question.</li>
+</ol>
+<figure><a href="static/shots/kobo.jpg"><img src="static/shots/kobo.jpg" width="1440" height="900" alt="The Connect a Kobo project dialog: the server, the API token, with a note that it is stored encrypted and only sent to that server, and the project."></a><figcaption>Connecting a Kobo project. The token stays on the server.</figcaption></figure>
+
+<h4>Map the form to RISA</h4>
+<p>The dashboard guesses which questions give the <strong>type</strong> (water point, latrine block, health post…) and the <strong>status</strong>, from the question names and choices, in English, Spanish or French. Check its guess with <strong>⋯ › Map form to RISA</strong>:</p>
+<ul>
+  <li>the location question, the type and status questions, and the label to show;</li>
+  <li>which answer means which RISA type and status. An answer that isn't mapped shows as <strong>Not assessed</strong> (grey), never as a status;</li>
+  <li><strong>Left out (sensitive):</strong> questions that must never be copied onto this server, such as names or phone numbers.</li>
+</ul>
+
+<h4>Syncing</h4>
+<p>The dashboard checks for new submissions every 10 minutes. After a team comes back into range, use <strong>⋯ › Sync now</strong> to bring them in straight away. If a sync fails (an expired token, a deleted form), the layer shows <strong>sync error</strong>; hover over it to see why.</p>
+</section>
+
+<section id="layers">
+<h2>Other layers</h2>
+<p>Partners often bring their own data: a site plan from site management, a flood extent, routes digitised in QGIS. <strong>Upload a file</strong> takes:</p>
+<ul>
+  <li>GeoJSON, GeoPackage, a zipped Shapefile, KML or KMZ, or a CSV with latitude and longitude columns.</li>
+  <li>Columns called <code>type</code>, <code>status</code> and <code>label</code> (or their Spanish and French equivalents) are matched to RISA's types and statuses, so the features get RISA symbols.</li>
+</ul>
+<p>Give each layer a source and date. They become page 1's sources line.</p>
+</section>
+
+<section id="map">
+<h2>The map</h2>
+
+<h3>RISA symbols and statuses</h3>
+<p>Status is always shown twice, by colour and by line or shape, so the map still reads in black and white, on a bad screen, or for colour-blind readers.</p>
+<div class="table-scroll"><table>
+  <thead><tr><th>Status</th><th>Routes</th><th>Services</th><th>Means</th></tr></thead>
+  <tbody>
+    <tr><td><span class="status-key"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="6" fill="#1F9A62"/></svg>Working</span></td><td>Solid line</td><td>Filled symbol</td><td>Open, or working normally</td></tr>
+    <tr><td><span class="status-key"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="#fff" stroke="#E9A23B" stroke-width="1.5"/><path d="M7 1.5a5.5 5.5 0 0 1 0 11z" fill="#E9A23B"/></svg>Partly</span></td><td>Dashed line</td><td>Half-filled symbol</td><td>Restricted or partly working: light vehicles only, queues, broken taps</td></tr>
+    <tr><td><span class="status-key"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="#fff" stroke="#A8281A" stroke-width="1.5"/><path d="M3 11 11 3" stroke="#A8281A" stroke-width="1.5"/></svg>Not working</span></td><td>Dotted line</td><td>Crossed-out symbol</td><td>Closed or not working</td></tr>
+    <tr><td><span class="status-key"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" fill="#fff" stroke="#8C939C" stroke-width="1.5"/></svg>Not assessed</span></td><td>Grey</td><td>Outline only</td><td>No status recorded yet</td></tr>
+  </tbody>
+</table></div>
+<p>These colours are reserved for status; nothing else on the map uses them. The <strong>legend</strong> is built from what's on the map, and page 1 uses the same one.</p>
+
+<h3>Look at a feature</h3>
+<p>Click any point, line or area to see its type, status, label, the Kobo answers behind it and its photos.</p>
+<figure><a href="static/shots/feature.jpg"><img src="static/shots/feature.jpg" width="1440" height="900" alt="Water point WP-06 selected on the map: its status Working, its type, Edit, Edit shape and Delete buttons, its photo and a note, and its recorded answers."></a><figcaption>A selected feature, with its observation and photo.</figcaption></figure>
+
+<h3>Draw and measure</h3>
+<p>The tools at the top left of the map draw <strong>points</strong>, <strong>lines</strong> and <strong>areas</strong>. Give each a RISA type, a status and a label: a closed route, a flooded area, a shelter block, a distribution point the form missed. Select a drawn feature to change it, reshape it or delete it. Drawing needs the edit key; anyone can <strong>measure</strong> a distance or an area.</p>
+<p>Once the map shows the site well, <strong>Save view as site default</strong> (at the bottom of the left panel) makes everyone open it there.</p>
+</section>
+
+<section id="figures">
+<h2>Figures and the data table</h2>
+
+<h3>The summary</h3>
+<div class="figures">
+<figure><a href="static/shots/summary.jpg"><img src="static/shots/summary.jpg" width="680" height="1696" alt="The summary panel: four figures at a glance, a table of services by status, the access routes with their status badges, and the printed products."></a><figcaption>The summary, built from the map.</figcaption></figure>
+<div>
+<p>The <strong>Summary</strong> tab on the right answers the RISA questions from the data on the map:</p>
+<ul>
+  <li><strong>At a glance:</strong> people (an estimate, marked TBC), shelters counted on imagery, water points working, access routes open. These go onto page 1.</li>
+  <li><strong>Which services still work?</strong> Each service type, by status.</li>
+  <li><strong>Can we reach people?</strong> Each access route, its status and note.</li>
+</ul>
+<p>A figure with no data behind it shows a dash. Shelters counted on imagery counts shelters drawn by hand and detected shelters a person has accepted; suggestions waiting for review don't count.</p>
+</div>
+</div>
+
+<h3>The data table</h3>
+<p><strong>Data table</strong>, at the top, opens every record of a Kobo or vector layer under the map, with its photos, a search box and a status filter. Click a row to frame the feature on the map. It's the quickest way to check what came in from the field before you print.</p>
+<figure><a href="static/shots/table.jpg"><img src="static/shots/table.jpg" width="1440" height="900" alt="The data table under the map: a layer picker, search and status filter, then one row per observation with its photo, label, type, status, date and a note."></a><figcaption>Checking the observations in the data table.</figcaption></figure>
+</section>
+
+<section id="ai">
+<h2>Imagery analysis</h2>
+<div class="note"><p>The detector is <strong>simulated</strong> for now. It uses simple colour rules on the real imagery and stands in for a real model, so the review workflow can be tried and improved. Don't report its counts as findings.</p></div>
+<p>Counting shelters on an orthomosaic by hand takes hours. In the <strong>AI analysis</strong> tab, <strong>Detect shelters on imagery</strong> finds shelters and buildings in the current view or the whole image, groups shelters into blocks and outlines the site.</p>
+<ul>
+  <li><strong>Every result is a suggestion</strong>, drawn dashed until a person accepts it. Accept or reject one at a time, or use <strong>⋯ › Review by confidence…</strong> to accept or reject everything above or below a level.</li>
+  <li>Re-tag or reshape a suggestion like a drawn feature, and use <strong>Draw missed shelters</strong> for any it missed.</li>
+  <li>Only <strong>accepted</strong> shelters count in the figures and on page 1.</li>
+  <li><strong>Learn from corrections:</strong> each accept, reject, reshape and missed shelter is kept. After 20 reviews each way, it trains a detector version for this response and reports its accuracy on reviews it didn't train on. <strong>Download training data</strong> exports the imagery and labels for training a real model.</li>
+</ul>
+<figure><a href="static/shots/ai.jpg"><img src="static/shots/ai.jpg" width="1440" height="900" alt="The AI analysis tab beside the map: Detect shelters on imagery, Learn from corrections with counts of accepted and rejected suggestions, and the example situation brief. On the map, detected shelters are outlined in violet and grouped into labelled blocks with dashed outlines."></a><figcaption>Detected shelters waiting for review.</figcaption></figure>
+</section>
+
+<section id="page1">
+<h2>RISA page 1</h2>
+<p>Page 1 is the Common Operational Picture: one landscape page that a site manager, a cluster coordinator or a national authority can read in a minute.</p>
+
+<h4>Make it</h4>
+<ol>
+  <li>Turn on the layers you want and frame the site on the map.</li>
+  <li>In <strong>Printed products</strong> (under the summary), choose <strong>Page 1 from this view</strong>.</li>
+  <li>Fill in the page:
+    <ul>
+      <li><strong>A3 or A4</strong>;</li>
+      <li><strong>Title</strong>, <strong>Map code</strong> and <strong>Version</strong> (for example <em>Initial assessment · Day 4 · v1.0</em>);</li>
+      <li><strong>Leading authority</strong>, shown first in the header (RISA is credited as the method);</li>
+      <li>the <strong>Key message</strong>: one or two sentences on what matters most, such as <em>Blocks B1 and B2 are flooded. Use R1 (light vehicles) or R3.</em>;</li>
+      <li><strong>At a glance</strong>: the four figures, filled in from the data. Change any of them by hand, and tick <strong>TBC</strong> for an estimate;</li>
+      <li><strong>Sources</strong> (leave blank to build them from each layer's credit and date), the <strong>Disclaimer</strong> and <strong>Technical support</strong>;</li>
+      <li>optional <strong>locator maps</strong>: the area round the site, and a country overview joined to it, on the map's corner or at the top of the side panel.</li>
+    </ul>
+  </li>
+  <li><strong>Update preview</strong> shows a draft of the page. If you move the map, <strong>Use the map's current view and layers</strong> takes the new frame.</li>
+  <li><strong>Render PDF</strong>. The server makes the page at 300 dpi; an A3 is about 1.4 MB, small enough for WhatsApp or email.</li>
+</ol>
+<figure><a href="static/shots/product.jpg"><img src="static/shots/product.jpg" width="1440" height="900" alt="The page 1 editor: the key message, at-a-glance figures, sources, disclaimer and technical support on the left, with Update preview and Render PDF; on the right, a draft of the A3 page with its header band, the map with a locator inset, the key message, figures, legend, sources and QR code."></a><figcaption>The page 1 editor and its preview.</figcaption></figure>
+
+<h4>Versions and QR codes</h4>
+<ul>
+  <li>Every render is kept as a version. Change the version label for each update, so readers can tell an old print from a new one.</li>
+  <li>The page's <strong>QR code opens the live map</strong>, so someone holding an old print can see today's situation.</li>
+  <li>When the response has a <strong>feedback form</strong>, a second QR code and the <strong>Feedback</strong> button online open it. A KoboToolbox web form works well, and on a kit it's the kit's own Kobo. The link can carry <code>{site}</code>, <code>{product}</code>, <code>{version}</code> and <code>{source}</code> (print or web) to prefill questions, so you know which map a comment is about. Set it on the response page with <strong>Feedback form</strong>.</li>
+</ul>
+</section>
+
+<section id="share">
+<h2>Share and export</h2>
+<ul>
+  <li><strong>The site's link</strong> opens the live map for anyone, with no sign-in. Send it alongside the PDF.</li>
+  <li><strong>The PDF</strong> is the product to circulate. Open the latest version from the PDF icon next to the product.</li>
+  <li><strong>Export › GeoPackage</strong> has every vector layer of the site in one file that opens in QGIS and ArcGIS Pro, for deeper analysis or a partner's own maps.</li>
+  <li>Each imagery layer's <strong>⋯ › Download COG</strong> gives the converted imagery, which QGIS and ArcGIS read directly; <strong>Download original</strong> gives the file as uploaded.</li>
+</ul>
+</section>
+
+<section id="offline">
+<h2>Offline and low bandwidth</h2>
+<p>RISA teams often work where there's no reliable internet. The dashboard runs on a <strong>Kobo in a box</strong> field kit, next to KoboToolbox, with nothing reaching the internet:</p>
+<ul>
+  <li>Phones and laptops join the kit's Wi-Fi. KoboCollect sends submissions to the kit's Kobo (<code>http://kc.kobo.local</code>), and the dashboard (<code>risa.kobo.local</code>) reads them from there.</li>
+  <li>Imagery goes onto the kit by cable or over its Wi-Fi, so gigabytes never cross a satellite link.</li>
+  <li>Basemaps are offline extracts of the response area, loaded before the kit leaves.</li>
+  <li>This guide, the fonts and the tours are on the kit too.</li>
+</ul>
+<p>On a thin link, send the small things first: page 1 (about 1.4 MB), then the GeoPackage (usually 5–50 MB). Full imagery travels by USB drive or courier, or waits for a good connection.</p>
+<div class="warning"><p>One gap today: the labels on the map's basemap (place and street names) still need an internet connection. The imagery, your data and the printed page don't.</p></div>
+</section>
+
+<section id="checklist">
+<h2>Response checklist</h2>
+<p>What to do, in order, so that page 1 goes out within the hour once the imagery and observations are in.</p>
+
+<h4>Before you deploy</h4>
+<ol class="checklist">
+  <li>Know which instance you'll use: the consortium's, a national authority's, or a field kit. Get its create key if it needs one.</li>
+  <li>Deploy the RISA form in KoboToolbox, and make an API token for an account that can see its data.</li>
+  <li>For a kit: load the offline basemap of the area and any pre-event imagery before it leaves, and check that it opens with the internet off.</li>
+  <li>Decide on the feedback form and test its link.</li>
+  <li>Run through the sample response once, so the first real page 1 isn't the first page 1.</li>
+</ol>
+
+<h4>On day one</h4>
+<ol class="checklist">
+  <li>Create the response and save the edit key where the team can find it.</li>
+  <li>Add the site, with its location if you have one.</li>
+  <li>Upload the orthomosaic, or add satellite imagery by URL, with its capture date and source.</li>
+  <li>Connect the Kobo project and check <strong>Map form to RISA</strong>: types and statuses right, sensitive questions left out.</li>
+  <li>Draw what the form doesn't cover: the site boundary, blocks, routes and their status, flooded areas.</li>
+  <li>Check the data table and the summary. Do the figures make sense?</li>
+  <li>Make page 1: frame, key message, figures (TBC where estimated), version label. Render it.</li>
+  <li>Send the PDF and the site link, and note the version you sent.</li>
+</ol>
+
+<h4>For each update</h4>
+<ol class="checklist">
+  <li>Sync the Kobo layer, and add new imagery as a new layer with its date.</li>
+  <li>Update route and service statuses, and the key message.</li>
+  <li>Change the version label (<em>Day 5 · v1.1</em>) and render a new version. The QR code always opens the latest.</li>
+  <li>Read the feedback that came in and fix what's wrong on the map.</li>
+</ol>
+</section>
+
+<section id="privacy">
+<h2>Data protection</h2>
+<ul>
+  <li><strong>Observations, not people.</strong> RISA records infrastructure and services. Use <strong>Left out (sensitive)</strong> for any question about a person, and the dashboard never stores it.</li>
+  <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server. They never reach the browser; photos are fetched through the server.</li>
+  <li><strong>Links are unlisted.</strong> Sites aren't indexed by search engines, but anyone with a link can view. If nothing should be public, the instance can require the edit key for viewing too, and a national authority can run its own instance so the data stays in the country.</li>
+  <li><strong>Photos</strong> can show faces and number plates. Check them before you share the link widely.</li>
+  <li>On a field kit, nothing leaves the kit unless your team copies or syncs it.</li>
+</ul>
+</section>
+
+<section id="help">
+<h2>Questions</h2>
+<details>
+  <summary>My orthomosaic doesn't show.</summary>
+  <div><p>A large file takes a few minutes to convert after the upload finishes. If the layer says <strong>failed</strong>, hover over it for the reason. The usual causes are a file with no georeferencing (export it as a GeoTIFF, not a plain TIFF or JPEG) or an incomplete upload. An upload retries each part by itself while the connection comes and goes; if the page was closed or the computer slept, start the upload again.</p></div>
+</details>
+<details>
+  <summary>Kobo points are missing or in the wrong place.</summary>
+  <div><p>Use <strong>Sync now</strong>, then check <strong>Map form to RISA</strong>: the location question must be the one with the point, and a submission without a location can't go on the map. Points far away often have latitude and longitude swapped, or were recorded before the GPS had a fix.</p></div>
+</details>
+<details>
+  <summary>Everything from Kobo is grey.</summary>
+  <div><p>Grey means <strong>Not assessed</strong>: the status question isn't mapped, or its answers aren't. Open <strong>Map form to RISA</strong> and match each answer to a status.</p></div>
+</details>
+<details>
+  <summary>I can't edit anything.</summary>
+  <div><p>Choose <strong>Unlock editing</strong> and paste the response's edit key. Ask whoever created the response. It's kept in the browser, so a private window or a cleared browser needs it again.</p></div>
+</details>
+<details>
+  <summary>Can we print in Spanish or French?</summary>
+  <div><p>Yes. Set the response's product language, and page 1's headings and legend follow it. Titles, the key message and sources are whatever you type.</p></div>
+</details>
+<details>
+  <summary>Can we work on the map in QGIS?</summary>
+  <div><p>Yes. <strong>Export › GeoPackage</strong> gives every vector layer, and <strong>Download COG</strong> the imagery. Edited layers come back in with <strong>Upload a file</strong>.</p></div>
+</details>
+<details>
+  <summary>Can we run our own copy?</summary>
+  <div><p>Yes. It's free and open-source software (AGPL-3.0, like KoboToolbox). It runs on a national authority's own server or fully offline on a field kit. The <a href="https://github.com/joshuaberetta/risa-dash">source code and self-hosting guide are on GitHub</a>.</p></div>
+</details>
+<details>
+  <summary>Where do I get help with KoboToolbox itself?</summary>
+  <div><p>The <a href="https://support.kobotoolbox.org">KoboToolbox Help Center</a> and the <a href="https://community.kobotoolbox.org">community forum</a>. On a field kit, the KoboToolbox user guide is on the kit's home page at <code>kobo.local</code>.</p></div>
+</details>
+</section>
+
+</article>
+</div>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div>
+      <span class="footer__brand"><img src="static/risa-mark.svg" alt="">RISA Dashboard</span>
+      <p>Drone and satellite imagery, KoboCollect observations and analysis on one map, printed as RISA page 1. Free and open source, for the RISA consortium (HI/Atlas Logistique, MapAction, Kobo) and its partners.</p>
+    </div>
+    <div>
+      <span class="footer__label">Dashboard</span>
+      <ul>
+        <li><a href="/">Open the dashboard</a></li>
+        <li><a href="https://github.com/joshuaberetta/risa-dash">Source code</a></li>
+      </ul>
+    </div>
+    <div>
+      <span class="footer__label">On this page</span>
+      <ul>
+        <li><a href="#start">Getting started</a></li>
+        <li><a href="#page1">Page 1</a></li>
+        <li><a href="#checklist">Checklist</a></li>
+        <li><a href="#help">Questions</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

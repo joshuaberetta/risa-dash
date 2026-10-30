@@ -4,7 +4,13 @@ import re
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
+from django.http import (
+    FileResponse,
+    Http404,
+    HttpResponse,
+    HttpResponsePermanentRedirect,
+    StreamingHttpResponse,
+)
 from django.views.decorators.http import require_http_methods
 
 RANGE_RE = re.compile(r"bytes=(\d*)-(\d*)$")
@@ -72,3 +78,17 @@ def spa(request):
     r["X-Robots-Tag"] = "noindex"
     r["Cache-Control"] = "no-cache"
     return r
+
+
+def guide(request):
+    """The user guide, a static page in the built frontend (frontend/public/guide/). Its
+    assets are relative, so it needs the trailing slash; WhiteNoise serves them."""
+    if not request.path.endswith("/"):
+        return HttpResponsePermanentRedirect(request.path + "/")
+    index = settings.FRONTEND_DIST / "guide" / "index.html"
+    if not index.exists():
+        return HttpResponse("Frontend not built.", content_type="text/plain", status=404)
+    r = HttpResponse(index.read_bytes(), content_type="text/html")
+    r["Cache-Control"] = "no-cache"
+    return r
+
