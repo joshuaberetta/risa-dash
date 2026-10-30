@@ -25,6 +25,7 @@ The organisation that owns the data chooses where it lives: on the consortium's 
 - **The product:** RISA page 1 with the key message, at-a-glance figures, legend, sources, optional locator maps (the area round the site and a country overview, as on MapAction's maps) and a QR code to the live map, rendered at 300 dpi and small enough to send over WhatsApp. Every version is kept.
 - **Feedback:** a second QR code on the printed map, and a Feedback link on the online map, open a short feedback form (see below).
 - **Open data:** a GeoPackage for QGIS and ArcGIS Pro, and the imagery as a cloud-optimised GeoTIFF.
+- **Sharing and embedding:** anyone with a site's link can open the live map. Planned: an embeddable map for partners' dashboards and websites, such as the Virtual OSOCC, so people see the latest map where they already work (see below).
 
 ## Open source, wherever it needs to run
 
@@ -56,6 +57,19 @@ A RISA map is only useful if it is right, and the people best placed to say what
 The form keeps to RISA's rule of recording observations, not people: contact details are an optional question, and the answers stay in the data owner's Kobo project.
 
 Feedback goes into the next update: a water point marked working that has stopped, a route that has reopened, a block that was missed. It also shows the consortium what users need from the product. The assistant can summarise it before each update ("what did people report since version 2?"), but a person decides what changes on the map.
+
+## On partners' dashboards and websites
+
+Coordinators don't come looking for a new website in the first days of a response. They work in the places they already use: the Virtual OSOCC, the national authority's emergency operations dashboard, cluster and sector pages, partners' situation reports and their own internal dashboards. The RISA map should appear there, and always be the latest version, instead of a PDF that someone must remember to replace.
+
+Today, a site's link opens the live map for anyone, with no sign-in, and page 1's QR code opens the same map. The dashboard can't yet be shown inside another website: it blocks that on purpose, as protection against pages that hide it in a frame to trick someone with the edit key. What's outstanding:
+
+- **An embed view** for each site: the map, its legend and the key figures, read-only and without the editing tools, with a link to the full dashboard. It fits a small frame and works on a phone.
+- **Share this view:** a link that carries what's on the screen (area, zoom, layers, basemap), and the code to paste into another site (an iframe), so a partner shows the map as the team framed it, not the default.
+- **Embedding only where it's meant to be:** only the embed view may be shown inside another site; the editing pages never can. An instance can limit embedding to a list of sites, for example only the national authority's and the Virtual OSOCC's.
+- **The data owner turns it on:** embedding is off until the response's focal point allows it, because an embedded map is seen by everyone who can see the host page. A private response can't be embedded, and turning embedding off takes the map out of every page that shows it.
+- **For platforms that can't embed pages:** a fixed link to the latest page 1, as a PDF and as an image, that always points to the newest version, so it can be posted once (on the Virtual OSOCC, ReliefWeb, HDX or in a WhatsApp group) and stays current.
+- **Offline:** on a kit, the embed view works on the kit's own network, for example in a local coordination dashboard.
 
 ## Imagery analysis, with people in the loop
 
@@ -144,6 +158,8 @@ RISA records infrastructure and services, not people. But imagery of a displacem
 
 **Who can see it.** Viewing a site is open to anyone with its link, so the map can be shared with partners in the first hours; links aren't listed by search engines. An instance can require the edit key for viewing too. Imagery and printed pages are served at long, unguessable addresses, so a file whose address has been shared can be opened by anyone who has it; for the most sensitive responses, a national server or a kit keeps even that inside the authority's network.
 
+**Embedding (planned).** An embedded map is seen by everyone who can see the page that holds it, so embedding is off until the response's focal point turns it on, and can be limited to named sites. It shows only what the shared link already shows, never the edit key or the editing tools.
+
 **What reaches third parties online.** When the online basemaps are used, the viewer's browser loads map tiles (and, today, the map's label fonts) from the basemap provider, which sees the request and the area being viewed. Offline basemaps, or none, avoid this; a self-hosted instance can turn the online basemaps off.
 
 **Moving data safely.** Files that travel between kits, hubs and servers are checked part by part, and are to be **encrypted** to the response's key, so a lost USB drive exposes nothing (planned with federation). Only what the focal point chooses leaves a kit. For learning across responses, labels leave a response only with the data owner's consent, and where they may not leave a kit or a country, only what the model learnt needs to.
@@ -171,6 +187,8 @@ The MVP is running at **risa-dash.kobolabs.dev** with real drone imagery (IOM's 
 |---|---|
 | Map, imagery, Kobo, drawing, measuring, page 1, exports | Working |
 | Locator maps and the feedback QR code and link | Working; the consortium's feedback form is still to be written in Kobo |
+| Sharing a site's live map by link | Working |
+| Embedding in partners' dashboards and websites (e.g. the Virtual OSOCC) | Planned: an embed view, links that keep the view, a per-response switch and a list of allowed sites, and a fixed link to the latest page 1. About 1–2 weeks of development |
 | Self-hosting and the offline box | Built: one Docker set-up for the cloud, a national server and a kit, with offline basemaps and the user guide on the box. Not yet tried on a kit, and the map's label fonts still come from the internet |
 | Encrypted transfer files and an imagery archive | Planned, with several kits and a hub |
 | Imagery analysis and review | Working end to end, with a **simulated** detector (simple colour rules standing in for a model), so the review workflow can be tried now |

@@ -84,7 +84,7 @@
   <li><strong>Runs where your data must stay</strong>On the consortium's instance, self-hosted on your own server, fully offline on a field kit, or (planned) as a network of kits with a hub.</li>
 </ul>
 <p>Everything belongs to a <strong>response</strong> (an emergency, such as "Venezuela: earthquake, June 2026"), and each response has <strong>sites</strong>. A site has its own map, layers, figures and printed products.</p>
-<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis (shelter detection) is <strong>simulated</strong>, a stand-in for a real model, and the analysis tab shows example output. Pages 2 and 3 of the RISA product are still to come.</p></div>
+<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis (shelter detection) is <strong>simulated</strong>, a stand-in for a real model, and the analysis tab shows example output. Embedding the map in other websites is planned. Pages 2 and 3 of the RISA product are still to come.</p></div>
 </section>
 
 <section id="run">
@@ -314,6 +314,15 @@
   <li><strong>Export › GeoPackage</strong> has every vector layer of the site in one file that opens in QGIS and ArcGIS Pro, for deeper analysis or a partner's own maps.</li>
   <li>Each imagery layer's <strong>⋯ › Download COG</strong> gives the converted imagery, which QGIS and ArcGIS read directly; <strong>Download original</strong> gives the file as uploaded.</li>
 </ul>
+<h3>On partners' dashboards and websites (planned)</h3>
+<p>The map is meant to appear where coordinators already work: the Virtual OSOCC, the national authority's operations dashboard, cluster pages and partners' own dashboards, always showing the latest data. This isn't possible yet: for now the dashboard can't be shown inside another website. To come:</p>
+<ul>
+  <li><strong>An embed view</strong> of each site: the map, legend and key figures, read-only, with a link to the full dashboard.</li>
+  <li><strong>Share this view</strong>: a link that keeps the area, layers and basemap on your screen, and the code to paste into another site.</li>
+  <li><strong>Allow embedding</strong> on the response page, for the focal point to turn on. It's off by default, because an embedded map is seen by everyone who can see the page it's on. An instance can also limit it to named sites.</li>
+  <li><strong>A link to the latest page 1</strong>, as a PDF and an image, for places that take only links or images. Post it once and it always opens the newest version.</li>
+</ul>
+<p>Until then, post the site's link and the latest PDF.</p>
 </section>
 
 <section id="offline">
@@ -431,6 +440,10 @@
 <details>
   <summary>Can we print in Spanish or French?</summary>
   <div><p>Yes. Set the response's product language, and page 1's headings and legend follow it. Titles, the key message and sources are whatever you type.</p></div>
+</details>
+<details>
+  <summary>Can we show the map on our own dashboard or on the Virtual OSOCC?</summary>
+  <div><p>Not yet. An embed view is planned, which a response's focal point will turn on (see <a href="#share">Share and export</a>). For now, post the site's link, which opens the live map for anyone, and attach the latest page 1 PDF.</p></div>
 </details>
 <details>
   <summary>Can we work on the map in QGIS?</summary>
