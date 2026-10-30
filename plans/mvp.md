@@ -1,6 +1,6 @@
 # RISA Dashboard: MVP plan
 
-Status: draft, not started. Decisions of 29/10/2026 included (section 8).
+Status: draft, not started. Decisions of 29 and 30/10/2026 included (section 8).
 
 A web tool for RISA responses. It puts drone imagery, satellite imagery, KoboCollect observations and analysis layers on one interactive map, prints page 1 of the RISA product (the Common Operational Picture) to PDF, and exports the data for QGIS and ArcGIS. During a response the web tool is the main interface, and the PDF is the reference for low-connectivity settings. It turns the "Interactive version" mock on the RISA product page (`~/code/risa/site/themes/*/product.html`) into a working product.
 
@@ -49,8 +49,8 @@ One codebase and one set of images, three ways to run it. **Nothing is required 
 | Kobo | `ALLOWED_SERVERS=https://kf.kobotoolbox.org,https://eu.kobotoolbox.org` | Plus their own server | `http://kf.kobo.local` |
 | Basemap | Bundled PMTiles extracts, optional Esri imagery | Bundled PMTiles extracts | Content pack PMTiles |
 | Install | Push to `main` | `docker compose up -d` | Compose services added by the box's install (W9 pattern) |
-| AI models | Detector on a GPU droplet on demand; text model on the same droplet (llama-server) or a provider, if the consortium agrees | Their own llama-server (optional `ai` compose profile), or AI features off | The box's llama-server and GPU, shared with Kobo's AI |
-| Assistant | MCP at `/mcp`, any MCP client | MCP at `/mcp` | MCP at `mcp.kobo.local/risa`, OpenCode on the box's agent model |
+| AI models | A GPU droplet on demand runs the detector, training and Gemma 4 through llama-server, then is destroyed; no outside AI provider | Their own llama-server (optional `ai` compose profile), the hub between emergencies, or AI features off | The box's llama-server; the hub's GPU for training |
+| Assistant | MCP at `/mcp`; people bring their own MCP client, so no hosted agent model | MCP at `/mcp` | MCP at `mcp.kobo.local/risa`, OpenCode on the box's agent model |
 | Federation | Receives from hubs and NDMA servers | Hub or receiver | Field kit or hub |
 
 ### Kobo servers
@@ -90,20 +90,45 @@ The boundaries folder uses the same layout as kobo-dash's `scripts/fetch_boundar
 
 Every AI feature calls a model the instance runs or is pointed at. None needs a cloud AI provider, and no imagery, photo or field data leaves the instance unless an operator configures an outside endpoint.
 
-| Job | Model on a box | Runs as | Without it |
-|---|---|---|---|
-| Shelter and building detection | The chosen detector (section 4), ONNX, weights in the content pack | Worker job, ONNX Runtime on CPU or the box GPU (ROCm or Vulkan, to test on the W5 unit) | The simulated detector, or drawing by hand |
-| Learning from corrections | Same model, PyTorch | A `trainer` job on the box GPU, overnight on mains or solar; a GPU droplet on the hosted instance | The previous version stays in use |
-| Situation brief, key message draft, wording of findings | The box's batch model: Gemma 4 26B-A4B, or gpt-oss-120b on the 128 GB unit, through llama-server's OpenAI-compatible API | Worker job, queued behind Kobo's batch work | Computed figures and rule-based findings only; the key message is typed |
-| Photo checks (R11 track A): photo matches the category, blurred or dark, faces to blur, hazard hints | Gemma 4 with image input, plus a small face detector | Worker job after each Kobo sync | No hints; photos shown as they are |
-| Search across guides and SOPs | bge-m3, through the box's kobo-knowledge | Box-wide service | The assistant answers from the dashboard's own docs only |
-| Assistant | The box's agent model (gpt-oss-120b for changes, Gemma 4 26B for questions, per W4) | OpenCode, through the MCP server | The dashboard works as before |
+Model choices follow what kobo-in-a-box (`STATUS.md`, W2 and W4) and kobo-field-forms (`plans/poc-plan.md`, milestone 8) measured in October 2026, on droplets with the internet blocked:
+
+| Job | Field kit | Hub (GPU) | Evidence so far | Without it |
+|---|---|---|---|---|
+| Shelter and building detection | The chosen detector (section 4), ONNX Runtime on CPU or the iGPU | Same, on the GPU | None yet: R11 spike. A small detector over ~25 cm tiles should take minutes per km² on CPU | The simulated detector, or drawing by hand |
+| Learning from corrections | No: labels go to the hub | PyTorch on the GPU, minutes per version | None yet | The previous version stays in use |
+| Situation brief, key message, wording of findings | Gemma 4 E4B, thinking off through the chat template | Gemma 4 26B-A4B | E4B: KPI qual 3/3 in its strict format, 6–17 s per answer on 8 vCPU; `--reasoning-budget 0` leaks reasoning and fails | Computed figures and rule-based findings only; the key message is typed |
+| Photo checks (R11 track A): photo matches the category, blurred or dark, faces to blur, hazard hints | Gemma 4 E4B with its `mmproj`, plus a small face detector, queued after each Kobo sync | Same, faster | kobo-field-forms: E4B + mmproj on llama.cpp CPU (`s-8vcpu-16gb-amd`) read handwriting at 73–87% correct, but its wrong readings were confident (3–6% wrong and unflagged) until every reading was checked against the layout; then 0% | No hints; photos shown as they are |
+| Search across guides and SOPs | bge-m3 through kobo-knowledge | Same | Box 3i design; evals to port | The assistant answers from the dashboard's own docs only |
+| Assistant | Gemma 4 26B-A4B on the recommended kit, `view` and `support` profiles only; none on the budget kit (too slow, per PLAN.md) | gpt-oss-120b, all profiles | W4: gpt-oss-120b 24/30 with every write right; Gemma 4 26B 22/30, 0/2 writes, needs thinking off; both refused every delete; minutes per step without a GPU | The dashboard works as before |
+
+**From kobo-field-forms: never trust the model's confidence on its own.** Every model output is checked against something the dashboard already knows, and a failed check is flagged for a person:
+- a photo check must name a category from the form, and when it disagrees with the observation it only adds a flag;
+- every number in a brief must match a computed figure;
+- a detection must fall inside the area that was analysed and be a plausible shelter size.
+
+The measure that matters is **wrong and unflagged**, as in kff's e2e: the R11 spike and the evaluation report it next to accuracy.
 
 - **Settings**: `LLM_BASE_URL` (OpenAI-compatible: the box's llama-server, a GPU droplet, or a provider), `LLM_MODEL`, `VLM_MODEL`, `DETECTOR_WEIGHTS`, `AI_FEATURES` (which of the above are on). Empty `LLM_BASE_URL` turns the text features off and everything else still works.
 - **Without a box**: an optional `ai` compose profile adds llama-server with a Gemma 4 GGUF from the content pack, for an NDMA server or a laptop with a GPU.
-- **Same prompts everywhere**: the hosted instance should use the same open models as the box (llama-server on the GPU droplet), so a brief drafted online and one drafted offline read alike and are measured on one test set. A provider is a fallback, only with the consortium's agreement on what it may see.
+- **Same models everywhere** (decided): the hosted instance runs the same open models as the box, through llama-server on a GPU droplet started on demand (section 5). A brief drafted online then reads like one drafted offline, both are measured on one test set, and no outside AI provider sees the imagery. If no GPU droplet is available, text drafts fall back to Gemma 4 E4B on CPU, which the box measured as usable for batch work.
 - **Text models draft, people decide**: the brief and key message are drafts, marked with the model's name, edited and accepted before they reach page 1, as detections are. Figures are never written by the model: it gets the computed summary and the text is checked so every number in it matches a computed figure, or the draft is rejected.
-- **Tiers** (kobo-in-a-box PLAN.md): the 128 GB unit runs everything; 64 GB runs the detector and Gemma 4 26B; the 16 GB Kobo-only tier runs the dashboard with AI off.
+- **Tiers** (kobo-in-a-box PLAN.md): the hub runs everything. A recommended field kit (Strix Halo, 128 GB) runs detection, E4B and a read-only Gemma 4 26B assistant. A budget kit (64–96 GB) runs detection and E4B. The 16 GB Kobo-only tier runs the dashboard with AI off.
+
+### Hardware
+
+Prices and the full kit lists are in the concept note, section "Costs". Field kits use kobo-in-a-box's tiers unchanged.
+
+| | Field kit (per site) | Hub (per response or region, at base) |
+|---|---|---|
+| Computer | Budget: Ryzen mini PC, 64–96 GB. Recommended: Ryzen AI Max+ 395, 128 GB | x86 workstation, 128 GB RAM, **NVIDIA RTX 5090 32 GB** |
+| Why | Kobo, the dashboard, detection on CPU or iGPU, E4B for drafts and photo checks | CUDA for PyTorch training and WebODM (both untested on ROCm/Strix Halo); gpt-oss-120b for the assistant's changes |
+| Storage | 4 TB NVMe | 2 × 4 TB NVMe plus an 8 TB backup disk (R4's nightly backup) |
+| Power | Battery and solar, 45–65 W TDP | Mains or generator with a UPS; 500–800 W under load |
+| About | $2,100–3,400 (budget), $3,300–5,000 (recommended), as a full kit | $6,700–9,300, as a full set |
+
+- **gpt-oss-120b on 32 GB of VRAM** runs with the MoE experts in system RAM (llama.cpp `--n-cpu-moe`). W4 measured it fully on an H100, so speed has to be measured on the hub, with `w4-run.py` and this plan's evaluation. If prompt processing is too slow for OpenCode's ~21k-token turns, use an RTX PRO 6000 (96 GB), which holds the whole model (about $6,000–7,000 more). The alternative is Gemma 4 26B for questions only, with changes made by hand.
+- **Between emergencies**, the hub is the NDMA's in-country self-hosted server, the "Self-hosted" column in the table at the start of this section. It travels to the base when a response starts.
+- **First purchase**: one hub, to measure training time per detector version, gpt-oss-120b's speed with offloaded experts, and WebODM time for a 500–1,500 photo site (R4 spike). It is tested alongside the box's W5 Strix Halo unit.
 
 ### Federated: field kits, a hub, the cloud
 
@@ -125,10 +150,31 @@ What moves, and how:
 - **The dashboard's own data** (sites, drawn and uploaded features, imagery, review decisions and labels, detector versions, products and their versions) travels as the **response bundle, made incremental**: a changeset of everything since the peer last confirmed. IDs are UUIDs already; synced rows add `origin` (the instance that made them) and a revision. Import is idempotent, as kobo-transfer is: sending again changes nothing.
 - **Ownership instead of merging.** Each site is owned by one instance, normally the kit that assesses it; others hold read-only copies until ownership is handed over explicitly (the kit leaves, the hub takes over). Response-wide products belong to the hub. With no user accounts this avoids edit conflicts rather than resolving them.
 - **One direction for data, the other for setup.** Data flows kit → hub → cloud. Setup flows hub → kits before and during the mission: the response and its sites, field maps, symbology, the content pack and new detector versions.
-- **Transport**: the bundle file (USB, or the drop folder), or an HTTP push between instances on the LAN or over the link, with a per-peer sync key and resumable parts, like uploads. Order follows the R8 outbox: changes and PDFs first, then vectors and labels, then reduced-resolution imagery, then full-resolution COGs. Never on by default: the focal point chooses what leaves.
+- **Transport (decided): files first, the network second, one format.** For the pilot, bundles move as files: USB SSD, the drop folder, or copied over the LAN. An HTTP push between peers comes after the pilot and carries the same bundle, so it only replaces the carrier. Push uses a per-peer sync key and resumable parts, like uploads. Order follows the R8 outbox: changes and PDFs first, then vectors and labels, then reduced-resolution imagery, then full-resolution COGs. Never on by default: the focal point chooses what leaves. See "Moving data in the field" below.
 - **Learning across kits**: labels from every kit's reviews reach the hub, the hub (the one with a GPU) trains the response's detector on all of them, and the new version goes back to the kits. Held-out scores are reported per site as well as overall, so a version that is better on average but worse at one site shows up before it is sent.
 - **Across responses and organisations**: labels go into a shared base model only with the data owner's consent (section 4). Where labels may not leave, an option to study is sharing model updates instead of labels (federated averaging), so no imagery or labels leave the kit or the country. A research option, not a commitment.
 - **The hub's view** shows each site with where and when it came from ("Site B, from kit 2, as of 14:20"), and a response-wide summary across sites.
+
+### Moving data in the field
+
+Bandwidth decides the design. One site's orthomosaic is 1–5 GB and its raw photos 5–30 GB. A Starlink Mini uploads maybe 5–20 Mbit/s when it is up, and mobile data often less than 1. So imagery moves over the LAN or by hand, and the internet carries only small, urgent files.
+
+| Step | Carrier | Rough time for a 3 GB COG |
+|---|---|---|
+| Drone → kit | SD card or USB SSD into the kit (USB import) or the drone laptop, then the drop folder over Ethernet | ~1 min (USB 3 SSD or gigabit) |
+| Laptops ↔ kit | Kit Wi-Fi: QGIS and browsers read the COG with range requests, so nothing is copied | Only the tiles on screen |
+| Kit → hub | The kit itself, or a USB SSD with its bundle, plugged in at base; Ethernet when co-located | Minutes |
+| Hub → cloud or NDMA | Internet for the outbox's first tiers (page 1 ~1.4 MB, GeoPackage 5–50 MB, ~50 cm overviews 50–200 MB); full COGs by USB or courier, or on a good link | ~40 min at 10 Mbit/s; ~7 h at 1 Mbit/s, so never automatic |
+| Cloud → field | Content pack on USB (PMTiles extract, boundaries, pre-event COGs, model weights, container images) | 20–100 GB, under an hour to copy |
+| Product → people | Page 1 by WhatsApp or email; the QR code opens the live map | Seconds |
+
+What the dashboard needs for this:
+- **USB import and export page** (box only): the box mounts a USB drive read-only under a fixed path. The dashboard lists the bundles, GeoTIFFs and content packs on it and imports them as jobs. Export writes a bundle straight to the drive.
+- **Bundles that survive bad copies**: a manifest with a SHA-256 checksum per part, written last. Import checks it and copies resume part by part. Importing the same bundle again changes nothing.
+- **Encrypted bundles**: anything written for a USB drive or the outbox is encrypted to the response's key (age, X25519). Keys are exchanged when kits are prepared at the hub. A lost drive then exposes nothing. The key is not the edit key, and it stays on the instances.
+- **Reduced-resolution imagery as its own tier**: when the COG is made, the worker also writes a ~50 cm COG, so the outbox can send a usable layer over a thin link long before the full one.
+- **Container images in the content pack** (`docker save` tarballs), because a box can't pull from GHCR offline.
+- **Paper fallback for site-level data**: kobo-field-forms runs on the same box and prints, scans and reads a form offline. It suits the site-level form for population figures from site management (R6 notes the RISA form doesn't collect them). Those answers reach the dashboard through Kobo, like any other submission.
 
 ---
 
@@ -346,7 +392,19 @@ App Platform app `risa-dash`, region `fra`, deploys on every push to `main`, the
 | Database | Managed PostgreSQL 16 | Enable `postgis` | $15 |
 | Storage | Spaces + CDN | CORS for range requests from the app origin | $5 + transfer |
 
-About **$60–85/month**. Backups: managed Postgres daily, and Spaces versioning on `products/`. Sentry is optional through `SENTRY_DSN`, never on a box.
+About **$60–100/month** always on, with the database at $15–30 as it grows. Backups: managed Postgres daily, and Spaces versioning on `products/`. Sentry is optional through `SENTRY_DSN`, never on a box.
+
+**Usage pattern**: many emergencies a year, each used hard by a small team for a few weeks, with little public traffic. So nothing is sized for load. The variable costs are storage and GPU time, and both follow active responses:
+
+| Variable | Rule | Approx. cost |
+|---|---|---|
+| Imagery storage | 50–150 GB per response at full resolution; Spaces at $0.02/GB-month above 250 GB | $1–3 per response-month online |
+| Archive | When a response closes, plus 6 months: full-resolution COGs and uploads move to an archived bundle (copies held by the consortium and the NDMA). Products, vectors and the ~50 cm COG stay online | Keeps storage roughly flat |
+| Transfer | 1 TB a month included, then $0.01/GB | Rarely above the allowance |
+| GPU droplet | Created by a worker job through the DO API when detection, training or drafting is queued, and destroyed when the queue has been idle for 15 minutes. It runs the same image with the detector and llama-server (Gemma 4 26B-A4B). An L40S or RTX 6000 Ada (48 GB) at about $1.60/h; an H100 at about $3.40/h when those are out of stock, which the box hit in October | 1–3 h a day for 2–4 weeks: about $50–300 per response |
+| Assistant | No hosted agent model: people use their own MCP client | $0 |
+
+For about ten responses a year: **about $1,500–4,500 a year** in hosting. Developer time for updates, security and support is not included: plan for a few days a month, more during a large response. The GPU droplet needs a DO token scoped to droplets in the app's secrets, and it stays in `fra1`, the same region as the instance.
 
 If a multi-GB orthomosaic exceeds the worker's memory, run that conversion on a temporary Droplet, or ask the drone team for a COG from WebODM.
 
@@ -433,13 +491,15 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 | A | **Offline complete**: bundle glyphs, `pack build`/`pack load`, `compose.box.yaml`, edge snippet, drop-folder import; the MVP test on the box with the internet cut | 1 week | Box W9 |
 | B | **Local models**: `risa/llm` client and settings; brief and key-message drafts with number checks; photo checks on Kobo sync (R11 track A); the chosen detector through ONNX on the box GPU | 2–3 weeks, plus the ML work below | Box llama-server; R11 spike |
 | C | **MCP and assistant**: tools by profile, activity log, skills, the user guide in kobo-knowledge, the Help entry, the 20–30 task evaluation on the box's models | 2–3 weeks | Box W4 and 3i |
-| D | **Federation**: instance ID, `origin`/`owner`, incremental bundles, HTTP push between peers, the hub's view, detector versions sent to kits; tested with two kits and a hub, with the links between them cut and restored | 3–4 weeks | Bundles (Phase 5); box hub work (R9) |
+| D | **Federation**: instance ID, `origin`/`owner`, incremental, checksummed and encrypted bundles, USB import and export, the ~50 cm imagery tier; then HTTP push between peers, the hub's view, detector versions sent to kits; tested with two kits and a hub, with the links between them cut and restored | 3–4 weeks | Bundles (Phase 5); box hub work (R9) |
 
 **Also after the MVP**: a real segmentation model (spike on the Venezuela orthomosaic: precision and recall against hand-labelled shelters, time per hectare on CPU and GPU), then fine-tuning it on reviewers' corrections (section 4, Learning from corrections; the MVP already collects the labels), and feeding accepted counts into people estimates and the AI analysis brief; pages 2 and 3; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; imagery classes beyond shelters and buildings (water, debris, services).
 
 ---
 
-## 8. Decisions (29/10/2026)
+## 8. Decisions
+
+### 29/10/2026
 
 | Question | Decision |
 |---|---|
@@ -450,6 +510,22 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 | Test data | MapAction shares the Venezuela orthomosaic and Kobo export |
 | Kobo servers | kf, eu, or a custom server through an allow-list, as kobo-dash does |
 | Operators | The RISA consortium for now. Must be self-hostable by NDMAs and others, and run fully offline as on kobo-in-a-box |
+
+### 30/10/2026
+
+| Question | Decision |
+|---|---|
+| Hub hardware | A workstation with an NVIDIA GPU (RTX 5090 32 GB, 128 GB RAM); RTX PRO 6000 96 GB if gpt-oss-120b is too slow with offloaded experts. Field kits use the box's tiers; budget kits are fine |
+| Text and vision models | Gemma 4 E4B on kits, Gemma 4 26B-A4B on the hub, thinking off; gpt-oss-120b for the assistant's changes on the hub only (per W2, W4 and kobo-field-forms) |
+| Text model on the hosted instance | The same open models on an on-demand GPU droplet in the instance's region; no outside AI provider |
+| Assistant online | No hosted agent model; people connect their own MCP client |
+| One assistant or several | One OpenCode per box with kobo-mcp, kobo-knowledge and this server, plus a **RISA agent** in it that gets only the RISA profiles, the knowledge search and kobo-mcp's read tools. Prompts stay short, and data questions still work. The evaluation checks this |
+| Federation transport | Files first (USB, drop folder, LAN copy) for the pilot; HTTP push afterwards, carrying the same bundle |
+| Bundles on USB | Checksummed and resumable, encrypted to the response's key |
+| Venezuela data | Kept on the test droplet and the box, not on Spaces, until MapAction agrees in writing. The hosted demo keeps using the Haiti sample |
+| The box's RISA imagery path (R4) | This tool. A separate `postgis/postgis` container rather than changing the box's Postgres, so box and dashboard upgrade independently (about 200 MB RAM) |
+| Hostnames on the box | `risa.kobo.local`, and `mcp.kobo.local/risa` for the MCP server |
+| Repo and images | Move to the `kobotoolbox` GitHub org when the consortium agrees; images on GHCR for amd64 and arm64, and as tarballs in the content pack for offline installs |
 
 ---
 
@@ -470,16 +546,18 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 | Tool definitions make local agents too slow (OpenCode resends ~21k tokens a turn) | Profiles; short descriptions with a measured token budget; narrow skills |
 | Federated instances disagree about the same site | One owner per site, explicit handover, read-only copies elsewhere; idempotent imports; per-site "as of" shown on the hub |
 | Labels or imagery leave a kit or the country without agreement | Sync never on by default; the focal point chooses what leaves; labels into a shared model only with consent; model-update sharing studied as an alternative |
+| A model's wrong answers look as sure as its right ones (kobo-field-forms: 3–6% wrong and unflagged before checks) | Every output checked against known data; failed checks flagged; "wrong and unflagged" measured in the spike and the evaluation |
+| A USB drive with site imagery is lost | Bundles encrypted to the response's key; the key never travels with the drive |
+| No GPU droplet available during a response (the box found 20–48 GB sizes out of stock) | Fall back to an H100 size, then to E4B on CPU for drafts; detection on the CPU worker for small areas; training waits |
+| gpt-oss-120b too slow on the hub's 32 GB card | Measure first; RTX PRO 6000 96 GB; or Gemma for questions with changes made by hand |
 | Data protection (where displaced people's shelters and services are) | Observation-only by design; unlisted and `noindex`; private flag; `READ_ONLY_PUBLIC=false`; in-country hosting. Review with the consortium before the first live response |
 
 ## 10. Still open
 
-1. **Venezuela data**: who at MapAction sends the orthomosaic and Kobo export, and is it OK to keep them on Spaces (or should they stay on the box/droplet only)?
-2. **The box**: should this tool be the box's RISA imagery path (R4), and should the box Postgres become a PostGIS image so it can be shared? To agree with the kobo-in-a-box plan.
-3. **Hostname on the box**: `risa.kobo.local`, alongside `dash.` and `mcp.`?
-4. **Repo and images**: which GitHub org, and is GHCR fine for the published images that NDMAs pull?
-5. ~~Licence~~: decided, AGPL-3.0 like KoboToolbox KPI.
-6. **Text model on the hosted instance**: the box's open models on a GPU droplet (same results online and offline), or a provider, and what it may see under the data agreement?
-7. **The hub's hardware**: training detector versions for every kit needs the GPU unit at the hub; can field kits be the budget tier, as for Kobo?
-8. **One assistant or several**: one OpenCode with kobo-mcp, kobo-knowledge and this MCP server together (simpler, longer prompt), or a RISA agent profile with only the RISA tools? To measure in the evaluation.
-9. **Federation transport first**: bundle files only (USB, drop folder) for the pilot, with HTTP push between peers after, or both from the start?
+Decided on 30/10/2026 (section 8): hub hardware, models, the hosted text model, the assistant, federation transport, Venezuela data storage, the box imagery path, hostnames, images. The licence is AGPL-3.0, like KoboToolbox KPI.
+
+1. **Venezuela data**: who at MapAction sends the orthomosaic and Kobo export, and when?
+2. **With the kobo-in-a-box plan**: confirm this tool as R4's imagery path, and add the hub (with a GPU) to its hardware plan next to the W5 unit.
+3. **Repo org**: does the consortium agree to the `kobotoolbox` org?
+4. **Detector licence**: the weights must suit an AGPL tool that NDMAs redistribute on kits. Check RAMP/fAIr, the YOLO family (Ultralytics is AGPL) and RT-DETR (Apache 2.0) in the R11 spike.
+5. **Who funds and holds the hardware**: the consortium, the NDMA or a donor? Where are kits prepositioned between emergencies, and who refreshes their content packs?
