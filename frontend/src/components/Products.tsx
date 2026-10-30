@@ -161,7 +161,7 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
             ))}
           </Stack>
         </ScrollArea>
-        <Box style={{ flex: 1, height: '100%', overflow: 'auto', background: '#e4e7eb', borderRadius: 4, padding: 16 }}>
+        <Box style={{ flex: 1, height: '100%', overflow: 'auto', background: 'var(--mantine-color-gray-2)', borderRadius: 8, padding: 16 }}>
           {p.preview?.url ? (
             <img src={p.preview.url} alt="Preview of page 1" style={{ display: 'block', width: '100%', maxWidth: 1400, margin: '0 auto', boxShadow: '0 2px 12px rgba(0,0,0,.15)', background: '#fff', opacity: p.preview.status === 'processing' ? 0.5 : 1 }} />
           ) : (

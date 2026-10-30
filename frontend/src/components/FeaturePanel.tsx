@@ -16,7 +16,7 @@ export interface FeatureFields {
 
 export function StatusBadge({ config, status }: { config: Config; status: string }) {
   const s = config.symbology.status[(status || 'unknown') as Status] || config.symbology.status.unknown
-  return <Badge variant="outline" color={s.color} styles={{ root: { color: config.symbology.ink } }}
+  return <Badge variant="outline" color={s.color} styles={{ root: { color: config.symbology.ink, flexShrink: 0 } }}
     leftSection={<span style={{ width: 8, height: 8, borderRadius: 4, background: s.color, display: 'inline-block' }} />}>{s.short}</Badge>
 }
 

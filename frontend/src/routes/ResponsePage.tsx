@@ -30,7 +30,7 @@ export default function ResponsePage() {
     <AppShell header={{ height: 52 }}>
       <AppShell.Header>
         <Header feedback={r?.feedback}>
-          <Text size="sm" c="dimmed" truncate>/ {r?.name}</Text>
+          <Text size="sm" c="dimmed" truncate className="crumbs">/ <b>{r?.name}</b></Text>
         </Header>
       </AppShell.Header>
       <AppShell.Main>

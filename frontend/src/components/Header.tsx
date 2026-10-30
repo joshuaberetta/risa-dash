@@ -10,12 +10,12 @@ export function Logo() {
     <Anchor component={Link} to="/" underline="never" c="inherit">
       <Group gap={8} wrap="nowrap">
         <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
-          <rect width="32" height="32" rx="6" fill="#1D232B" />
+          <rect width="32" height="32" rx="6" fill="#18202e" />
           <circle cx="11" cy="12" r="4" fill="#1F9A62" />
           <circle cx="21" cy="12" r="4" fill="#E9A23B" />
           <circle cx="16" cy="21" r="4" fill="#A8281A" />
         </svg>
-        <Text fw={700} size="sm">RISA Dashboard</Text>
+        <Text fw={700} size="sm">RISA <Text span inherit fw={400} c="dimmed">Dashboard</Text></Text>
         <Badge size="xs" variant="light" color="gray">MVP</Badge>
       </Group>
     </Anchor>
