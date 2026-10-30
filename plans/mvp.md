@@ -4,7 +4,7 @@ Status: draft, not started. Decisions of 29/10/2026 included (section 8).
 
 A web tool for RISA responses. It puts drone imagery, satellite imagery, KoboCollect observations and analysis layers on one interactive map, prints page 1 of the RISA product (the Common Operational Picture) to PDF, and exports the data for QGIS and ArcGIS. During a response the web tool is the main interface, and the PDF is the reference for low-connectivity settings. It turns the "Interactive version" mock on the RISA product page (`~/code/risa/site/themes/*/product.html`) into a working product.
 
-The consortium runs it first, at **https://risa-dash.kobolabs.dev**. It must also be **self-hostable** by an NDMA or anyone else who needs the data held in-country, and run **fully offline** on a kobo-in-a-box (`~/code/kobo-in-a-box`, see `RISA-PLAN.md` R4, R5 and R8) next to a local Kobo server.
+The consortium runs it first, at **https://risa-dash.kobolabs.dev**. It must also be **self-hostable** by an NDMA or anyone else who needs the data held in-country, and run **fully offline** on a kobo-in-a-box (`~/code/kobo-in-a-box`, see `RISA-PLAN.md` R4, R5, R8, R9 and R11) next to a local Kobo server, with its AI features on **local models** (section 2, Local AI models). Several offline instances can work as a **federation** (field kits, a hub, the cloud), as the box does for Kobo data (section 2, Federated). An **MCP server** lets an AI assistant, such as OpenCode on the box's local model, set up and run the dashboard and its analysis, and act as its support desk (section 4, MCP server).
 
 Stack: Django + GeoDjango on the backend, React + Vite + Mantine on the frontend. No user accounts: a shared edit key per response.
 
@@ -31,7 +31,7 @@ The test for the MVP is the Venezuela response (MapAction is sharing the data). 
 
 ### Not in the MVP
 
-User accounts and roles. Pages 2 and 3 of the product (key findings, hotspot); the layout engine is built so they can be added next. Live sync between instances (the bundle covers it for now). Kobo webhooks (polling first). Interface translations; text on the printed product is free text, so Spanish and French maps work from day one. A real segmentation model (the MVP ships the review workflow with a simulated detector), in-browser photogrammetry.
+User accounts and roles. Pages 2 and 3 of the product (key findings, hotspot); the layout engine is built so they can be added next. Live sync between instances (the bundle covers it for now; federation is planned in section 2). Local text and vision models, the MCP server and the assistant (planned in sections 2 and 4, built after the MVP; the MVP's settings and API are shaped so they fit). Kobo webhooks (polling first). Interface translations; text on the printed product is free text, so Spanish and French maps work from day one. A real segmentation model (the MVP ships the review workflow with a simulated detector), in-browser photogrammetry.
 
 ---
 
@@ -49,6 +49,9 @@ One codebase and one set of images, three ways to run it. **Nothing is required 
 | Kobo | `ALLOWED_SERVERS=https://kf.kobotoolbox.org,https://eu.kobotoolbox.org` | Plus their own server | `http://kf.kobo.local` |
 | Basemap | Bundled PMTiles extracts, optional Esri imagery | Bundled PMTiles extracts | Content pack PMTiles |
 | Install | Push to `main` | `docker compose up -d` | Compose services added by the box's install (W9 pattern) |
+| AI models | Detector on a GPU droplet on demand; text model on the same droplet (llama-server) or a provider, if the consortium agrees | Their own llama-server (optional `ai` compose profile), or AI features off | The box's llama-server and GPU, shared with Kobo's AI |
+| Assistant | MCP at `/mcp`, any MCP client | MCP at `/mcp` | MCP at `mcp.kobo.local/risa`, OpenCode on the box's agent model |
+| Federation | Receives from hubs and NDMA servers | Hub or receiver | Field kit or hub |
 
 ### Kobo servers
 
@@ -78,6 +81,54 @@ The boundaries folder uses the same layout as kobo-dash's `scripts/fetch_boundar
 - **R5 (live RISA dashboard)** and **R4 (imagery)**: this tool covers most of R4's "share, tile, serve" for orthomosaics, and R5's map. kobo-dash stays the Kobo-wide analysis dashboard. Propose to the box plan that RISA imagery goes in through this tool, and that it writes MBTiles for QField alongside the COG (after the MVP).
 - **R8 (dissemination)**: the products list doubles as the "RISA products" page on the LAN. The outbox can push the PDF and GeoPackage first and the imagery last.
 - **Footprint**: the box also runs Kobo and the local models, so keep this small. About 1 GB RAM for web and worker at rest. Chromium runs only during a render, and GDAL's cache is capped (`GDAL_CACHEMAX`) so COG conversion stays inside a memory limit. Images are built for amd64 and arm64.
+- **R4 drop folder**: the worker watches the box's imagery drop folder (read-only mount, e.g. `/srv/risa/drop`), so a 5 GB orthomosaic copied over SMB is imported without a browser upload. The import is offered in the dashboard ("New imagery in the drop folder") and through the MCP server.
+- **Shared box services, not copies**: the dashboard uses the box's llama-server, GPU, kobo-knowledge and OpenCode when they're there, and runs without them when they aren't (a laptop with Docker, a 16 GB Kobo-only kit). It never starts its own large model on a box.
+- **Hostnames and landing page**: `risa.kobo.local` for the dashboard and `mcp.kobo.local/risa` for its MCP server, next to `dash.` and `mcp.`; a tile on the landing page; `firstboot.sh` generates `SECRET_KEY`, `TOKEN_KEY` and the instance ID.
+- **R2, R6, R7, R9, R11**: the dashboard's GeoPackage export can be R2's output (or R2's QA checks run against it); R6's agent skills call the dashboard's MCP tools; the dashboard's user guide joins R7's RISA collection in the knowledge base; R9 (multi-site) is the federation below; R11 track B (orthomosaics) is the imagery analysis in section 4, and track A (ground photos) runs on Kobo photos the dashboard already syncs.
+
+### Local AI models
+
+Every AI feature calls a model the instance runs or is pointed at. None needs a cloud AI provider, and no imagery, photo or field data leaves the instance unless an operator configures an outside endpoint.
+
+| Job | Model on a box | Runs as | Without it |
+|---|---|---|---|
+| Shelter and building detection | The chosen detector (section 4), ONNX, weights in the content pack | Worker job, ONNX Runtime on CPU or the box GPU (ROCm or Vulkan, to test on the W5 unit) | The simulated detector, or drawing by hand |
+| Learning from corrections | Same model, PyTorch | A `trainer` job on the box GPU, overnight on mains or solar; a GPU droplet on the hosted instance | The previous version stays in use |
+| Situation brief, key message draft, wording of findings | The box's batch model: Gemma 4 26B-A4B, or gpt-oss-120b on the 128 GB unit, through llama-server's OpenAI-compatible API | Worker job, queued behind Kobo's batch work | Computed figures and rule-based findings only; the key message is typed |
+| Photo checks (R11 track A): photo matches the category, blurred or dark, faces to blur, hazard hints | Gemma 4 with image input, plus a small face detector | Worker job after each Kobo sync | No hints; photos shown as they are |
+| Search across guides and SOPs | bge-m3, through the box's kobo-knowledge | Box-wide service | The assistant answers from the dashboard's own docs only |
+| Assistant | The box's agent model (gpt-oss-120b for changes, Gemma 4 26B for questions, per W4) | OpenCode, through the MCP server | The dashboard works as before |
+
+- **Settings**: `LLM_BASE_URL` (OpenAI-compatible: the box's llama-server, a GPU droplet, or a provider), `LLM_MODEL`, `VLM_MODEL`, `DETECTOR_WEIGHTS`, `AI_FEATURES` (which of the above are on). Empty `LLM_BASE_URL` turns the text features off and everything else still works.
+- **Without a box**: an optional `ai` compose profile adds llama-server with a Gemma 4 GGUF from the content pack, for an NDMA server or a laptop with a GPU.
+- **Same prompts everywhere**: the hosted instance should use the same open models as the box (llama-server on the GPU droplet), so a brief drafted online and one drafted offline read alike and are measured on one test set. A provider is a fallback, only with the consortium's agreement on what it may see.
+- **Text models draft, people decide**: the brief and key message are drafts, marked with the model's name, edited and accepted before they reach page 1, as detections are. Figures are never written by the model: it gets the computed summary and the text is checked so every number in it matches a computed figure, or the draft is rejected.
+- **Tiers** (kobo-in-a-box PLAN.md): the 128 GB unit runs everything; 64 GB runs the detector and Gemma 4 26B; the 16 GB Kobo-only tier runs the dashboard with AI off.
+
+### Federated: field kits, a hub, the cloud
+
+The same three modes as kobo-in-a-box (concept note, "Three ways to run it"):
+
+```
+  field kit A (site A) ──┐
+  field kit B (site B) ──┼── cable / LAN / USB ──▶  hub kit at base  ──(when online)──▶  consortium instance
+  field kit C (site C) ──┘                          response-wide view                  or the NDMA's server
+                    ◀── response setup, field maps, content pack, detector versions ──
+```
+
+1. **Standalone**: one instance does everything, and nothing leaves it.
+2. **Networked**: a kit per site, each with its own dashboard; a hub at base combines them and shows the whole response, still offline.
+3. **Connected**: the hub (or any kit) syncs to the consortium instance or the NDMA's server when a link appears.
+
+What moves, and how:
+- **Kobo data doesn't go through the dashboard.** kobo-transfer already copies submissions kit → hub → cloud (safe to repeat, with attachments and validation statuses). Each instance's Kobo layer points at its own local Kobo, so the hub's dashboard reads the hub's combined project, where each kit marks its submissions with its site identifier. The field map travels with the response settings.
+- **The dashboard's own data** (sites, drawn and uploaded features, imagery, review decisions and labels, detector versions, products and their versions) travels as the **response bundle, made incremental**: a changeset of everything since the peer last confirmed. IDs are UUIDs already; synced rows add `origin` (the instance that made them) and a revision. Import is idempotent, as kobo-transfer is: sending again changes nothing.
+- **Ownership instead of merging.** Each site is owned by one instance, normally the kit that assesses it; others hold read-only copies until ownership is handed over explicitly (the kit leaves, the hub takes over). Response-wide products belong to the hub. With no user accounts this avoids edit conflicts rather than resolving them.
+- **One direction for data, the other for setup.** Data flows kit → hub → cloud. Setup flows hub → kits before and during the mission: the response and its sites, field maps, symbology, the content pack and new detector versions.
+- **Transport**: the bundle file (USB, or the drop folder), or an HTTP push between instances on the LAN or over the link, with a per-peer sync key and resumable parts, like uploads. Order follows the R8 outbox: changes and PDFs first, then vectors and labels, then reduced-resolution imagery, then full-resolution COGs. Never on by default: the focal point chooses what leaves.
+- **Learning across kits**: labels from every kit's reviews reach the hub, the hub (the one with a GPU) trains the response's detector on all of them, and the new version goes back to the kits. Held-out scores are reported per site as well as overall, so a version that is better on average but worse at one site shows up before it is sent.
+- **Across responses and organisations**: labels go into a shared base model only with the data owner's consent (section 4). Where labels may not leave, an option to study is sharing model updates instead of labels (federated averaging), so no imagery or labels leave the kit or the country. A research option, not a commitment.
+- **The hub's view** shows each site with where and when it came from ("Site B, from kit 2, as of 14:20"), and a response-wide summary across sites.
 
 ---
 
@@ -109,6 +160,10 @@ The brand stays **neutral** for now: Mantine defaults, a neutral band colour, sy
                                    (data + job queue)          COGs, uploads, PDFs, GeoPackages, PMTiles
                                              │
                                    Kobo: kf / eu / allow-listed server (http://kf.kobo.local on a box)
+
+ AI assistant (OpenCode, any MCP client) ──▶ web: /mcp (same services as the API)
+ worker ──▶ LLM_BASE_URL: llama-server (the box's, a GPU droplet's, or none) · detector (ONNX)
+ web ◀──▶ peers: hub / field kits / consortium instance (incremental bundles)
 ```
 
 The same images and settings run all three targets. Cloud and self-hosted installs differ only in env vars.
@@ -165,6 +220,16 @@ ProductVersion product, n, rendered_at, pdf_key, snapshot (JSON)
 Asset         logos (NDMA, partners)
 Export        target, format [gpkg|geojson|csv|bundle], file_key, created_at
 Job           kind, target, status, progress, log
+```
+
+After the MVP, for federation and the assistant:
+
+```
+Instance      id (UUID, made at first boot), name, role [standalone|kit|hub|cloud]
+Peer          instance, url, sync_key_hash, last_sent_rev, last_received_rev, direction
+Site          + origin (Instance), owner (Instance)
+(synced rows) + origin, rev
+Activity      response, at, actor [browser|assistant], client, action, target, before/after
 ```
 
 IDs are UUIDs, so bundles from different instances merge without collisions. `risa_type` and `risa_status` are columns because the symbology, legend, at-a-glance figures and later page 2 all use them.
@@ -226,6 +291,41 @@ The people reviewing the detection are labelling training data as they go. Every
 
 Rough size: 4–6 weeks for one ML engineer after the base model is chosen, plus GPU time. The labels the MVP already collects carry over unchanged.
 
+### MCP server: an assistant that builds, runs and supports the dashboard
+
+An MCP server over the same service functions as the API, so an AI assistant can set up a response, run the analysis, prepare page 1 and help people when something goes wrong. Streamable HTTP at `/mcp`, served by the web process (no new container): `http://risa.kobo.local/mcp`, or `mcp.kobo.local/risa` behind the box's edge. On the box it is registered in OpenCode next to kobo-mcp and kobo-knowledge, running on the box's agent model with no internet; online, any MCP client can use it.
+
+**Tools, in profiles** (`MCP_TOOL_PROFILES`, as kobo-mcp's `TOOL_PROFILES`), so a local model only sees what its job needs and the prompt stays short:
+
+| Profile | Tools |
+|---|---|
+| `view` | `list_responses`, `get_site`, `get_site_summary`, `list_layers`, `query_features` (type, status, area), `get_kobo_status`, `get_detection_status`, `list_detector_versions`, `list_products`, `get_product`, `get_job` (progress and log), `preview_product` (PNG) |
+| `build` | `create_response`, `create_site` (boundary from a layer, a drawn area or a box), `import_from_drop_folder` (no multi-GB uploads through a chat), `add_layer_from_url`, `connect_kobo_project`, `set_field_map`, `sync_kobo`, `draw_feature`, `update_feature`, `set_layer_style`, `reorder_layers` |
+| `analysis` | `run_detection` (site or area), `get_review_queue` (counts by confidence, least certain first, with links to review them), `train_detector`, `draft_brief`, `draft_key_message`, `compare_visits`, `check_points_against_imagery` (Kobo points with nothing under them, shelters with no observation nearby) |
+| `products` | `create_product`, `update_product` (title, version, key message, at-a-glance overrides, extent), `render_product`, `export_gpkg`, `export_bundle`, `sync_push` |
+| `support` | `get_health` (failed jobs, storage, Kobo reachability, last sync errors, model endpoints), `explain_job` (a failed job's log in plain words, with the likely cause), `retry_job`, `get_settings` (non-secret) |
+
+**Rules**, carrying over "AI proposes, a person decides":
+- **Review stays with people.** No tool accepts or rejects detection suggestions. The assistant can run detection and report the queue, not clear it. The same goes for drafts: `draft_key_message` writes a draft the person accepts in the product editor.
+- **Rendering a version** (what the QR code points to) and `sync_push` need confirmation in the client (OpenCode `ask`). Previews are free. Delete tools aren't exposed at all.
+- **Keys and tokens**: the assistant sends the response's edit key, as the browser does; without one it is read-only. Kobo tokens never pass through a chat: `connect_kobo_project` uses a connection the user has already authorised in the dashboard (or, on the box, kobo-mcp's sign-in).
+- **Logged and undoable**: every change made through MCP is in the response's activity log as "via assistant", with the client, and features and styles can be put back from it.
+- **Small enough for local models**: short tool descriptions, measured the way kobo-in-a-box PLAN.md 3h measures kobo-mcp's (target under about 4k tokens for `view,build,analysis`), because OpenCode resends them every turn.
+
+**Skills** (OpenCode skills, kobo-in-a-box R6), narrow, with the heavy work in the tools:
+1. *Set up a site*: from the drop folder's orthomosaic and a Kobo project, create the site, map the form, sync, frame page 1.
+2. *Daily update*: sync Kobo, import new imagery, run detection on it, report the review queue, draft the key message, preview page 1.
+3. *QA before printing*: points outside the boundary, unmapped answers, Kobo points with no shelter under them, figures still marked TBC.
+4. *What changed since the last visit* (RISA step 6).
+
+**As a support bot**, the same assistant is the dashboard's help desk, with no internet:
+- **Knowledge**: a user guide for the dashboard (to write, `docs/guide/` in English, Spanish and French, starting from the walkthrough text in `tours.ts` and the README), indexed in the box's kobo-knowledge as a `risa-dashboard` collection next to R7's SOP collection, so answers cite pages that open offline.
+- **Look before answering**: "my orthomosaic doesn't show" → `get_health` and `explain_job` find the failed COG job and say why (no georeferencing, not a GeoTIFF) and what to do; "Kobo points are missing" → last sync error, field map, submissions with no geopoint.
+- **From the dashboard**: a **Help** entry in the header opens the assistant (OpenCode web, later OpenWork) with the current response, site or product in the first message. Shown only when `ASSISTANT_URL` is set. Online, it can point to Kobo's support bot with the same guide indexed.
+- **Configuration, not code**: on the 128 GB unit, the coding agent can also write configuration in its workspace (a field-map preset for a new form, a symbology variant, page-1 defaults for an NDMA) and load it through tools after a person checks it. It does not change the running dashboard's code.
+
+**Measured, as W4 was**: 20–30 tasks (set-up, update, product, QA, and support questions with faults planted: a broken upload, a revoked Kobo token, an unmapped form), scored on tools used, answers and the dashboard's state, on gpt-oss-120b and Gemma 4 26B, with the internet blocked. Following W4, changes only on gpt-oss-120b; Gemma for questions and support.
+
 ### Access with an edit key
 
 - **Viewing** is open at unlisted URLs (`/r/<response>/<site>`), with `noindex`. A response marked private is hidden from the index page.
@@ -267,6 +367,9 @@ risa-dashboard/
     risa/print/           Playwright render job
     risa/pack/            offline content pack build/load
     risa/symbology/       RISA styles defined once → MapLibre JSON, QML, legend CSS
+    risa/llm/             OpenAI-compatible client, prompts, number checks on drafts (after MVP)
+    risa/mcp/             MCP server: tools by profile, skills (after MVP)
+    risa/sync/            instances, peers, incremental bundles (after MVP)
     pyproject.toml        uv
   frontend/
     src/api/              generated client
@@ -282,6 +385,7 @@ risa-dashboard/
     .env.example
   .do/app.yaml
   docs/self-hosting.md
+  docs/guide/             user guide (en, es, fr), also indexed for the assistant
   plans/
 ```
 
@@ -322,7 +426,16 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 - `docs/self-hosting.md`, `compose.box.yaml` and the edge snippet. Install on the kobo-in-a-box droplet next to Kobo, cut it off with `offline.sh on`, and run the MVP test there.
 - A demo response from the fictional sample site on the RISA site, for showing the tool without real data.
 
-**After the MVP**: a real segmentation model (spike on the Venezuela orthomosaic: precision and recall against hand-labelled shelters, time per hectare on CPU and GPU), then fine-tuning it on reviewers' corrections (section 4, Learning from corrections; the MVP already collects the labels), and feeding accepted counts into people estimates and the AI analysis brief; pages 2 and 3; live sync between instances; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; imagery classes beyond shelters and buildings (water, debris, services).
+**After the MVP: offline AI, assistant and federation.** In this order, each tested on the kobo-in-a-box droplet with `offline.sh on`:
+
+| | Work | Rough size | Depends on |
+|---|---|---|---|
+| A | **Offline complete**: bundle glyphs, `pack build`/`pack load`, `compose.box.yaml`, edge snippet, drop-folder import; the MVP test on the box with the internet cut | 1 week | Box W9 |
+| B | **Local models**: `risa/llm` client and settings; brief and key-message drafts with number checks; photo checks on Kobo sync (R11 track A); the chosen detector through ONNX on the box GPU | 2–3 weeks, plus the ML work below | Box llama-server; R11 spike |
+| C | **MCP and assistant**: tools by profile, activity log, skills, the user guide in kobo-knowledge, the Help entry, the 20–30 task evaluation on the box's models | 2–3 weeks | Box W4 and 3i |
+| D | **Federation**: instance ID, `origin`/`owner`, incremental bundles, HTTP push between peers, the hub's view, detector versions sent to kits; tested with two kits and a hub, with the links between them cut and restored | 3–4 weeks | Bundles (Phase 5); box hub work (R9) |
+
+**Also after the MVP**: a real segmentation model (spike on the Venezuela orthomosaic: precision and recall against hand-labelled shelters, time per hectare on CPU and GPU), then fine-tuning it on reviewers' corrections (section 4, Learning from corrections; the MVP already collects the labels), and feeding accepted counts into people estimates and the AI analysis brief; pages 2 and 3; Kobo webhooks; MBTiles for QField and KoboCollect; a `.qgz` project export; accounts (Kobo OAuth); interface translations; the RISA brand when chosen; imagery classes beyond shelters and buildings (water, debris, services).
 
 ---
 
@@ -352,6 +465,11 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 | Open write access gets abused | Edit key, rate limits, upload size limits, cleanup of abandoned uploads |
 | Kobo forms vary | RISA preset, mapping screen, unmapped answers shown as "Not assessed" |
 | Segmentation counts read as fact (a model, or today the simulation, is wrong in ways people don't see) | Suggestions are dashed and labelled; only accepted features count; confidence and model are kept on every feature and in exports; the simulation is marked everywhere |
+| A text model invents or changes figures in the brief or key message | It gets the computed summary; every number in a draft must match a computed figure or the draft is rejected; drafts are accepted by a person |
+| The assistant acts wrongly on a smaller local model (W4: Gemma 4 26B got 0/2 changes right) | Changes only on gpt-oss-120b; Gemma on read-only and support profiles; no review, delete or publish without confirmation; every change logged and undoable |
+| Tool definitions make local agents too slow (OpenCode resends ~21k tokens a turn) | Profiles; short descriptions with a measured token budget; narrow skills |
+| Federated instances disagree about the same site | One owner per site, explicit handover, read-only copies elsewhere; idempotent imports; per-site "as of" shown on the hub |
+| Labels or imagery leave a kit or the country without agreement | Sync never on by default; the focal point chooses what leaves; labels into a shared model only with consent; model-update sharing studied as an alternative |
 | Data protection (where displaced people's shelters and services are) | Observation-only by design; unlisted and `noindex`; private flag; `READ_ONLY_PUBLIC=false`; in-country hosting. Review with the consortium before the first live response |
 
 ## 10. Still open
@@ -361,3 +479,7 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 3. **Hostname on the box**: `risa.kobo.local`, alongside `dash.` and `mcp.`?
 4. **Repo and images**: which GitHub org, and is GHCR fine for the published images that NDMAs pull?
 5. ~~Licence~~: decided, AGPL-3.0 like KoboToolbox KPI.
+6. **Text model on the hosted instance**: the box's open models on a GPU droplet (same results online and offline), or a provider, and what it may see under the data agreement?
+7. **The hub's hardware**: training detector versions for every kit needs the GPU unit at the hub; can field kits be the budget tier, as for Kobo?
+8. **One assistant or several**: one OpenCode with kobo-mcp, kobo-knowledge and this MCP server together (simpler, longer prompt), or a RISA agent profile with only the RISA tools? To measure in the evaluation.
+9. **Federation transport first**: bundle files only (USB, drop folder) for the pilot, with HTTP push between peers after, or both from the start?
