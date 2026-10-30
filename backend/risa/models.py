@@ -192,6 +192,8 @@ class Product(models.Model):
         default="The boundaries and names shown on this map do not imply official endorsement or acceptance."
     )
     credits = models.CharField(max_length=300, default="HI/Atlas Logistique · MapAction · Kobo")
+    # {area, country, place}: which locator maps to print and where; empty = page1.DEFAULT_LOCATORS
+    locators = models.JSONField(default=dict, blank=True)
     # Draft render for the editor: the real Typst output at low resolution
     preview_key = models.CharField(max_length=500, blank=True)
     preview_status = models.CharField(max_length=20, blank=True)

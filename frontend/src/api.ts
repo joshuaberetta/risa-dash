@@ -130,6 +130,8 @@ export interface ProductT {
   sources: string
   disclaimer: string
   credits: string
+  /** Locator maps on page 1: the area round the site, a country overview, and where they go */
+  locators: { area: boolean; country: boolean; place: 'map' | 'side' }
   updated_at: string
   versions: ProductVersionT[]
   preview: { status: '' | 'processing' | 'ready' | 'failed'; error: string; at: string | null; url: string | null }

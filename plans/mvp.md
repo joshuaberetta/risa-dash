@@ -183,7 +183,7 @@ What the dashboard needs for this:
 The layout follows page 1 of the RISA product (`~/code/risa/site/assets/product.js` `page1()`, `product.css` `.pd-page--1`) at A3 landscape, with A4 as an option:
 
 - **Header band**: the national authority's logo first (RISA is credited as the method), the title ("Common Operational Picture" by default), site and place, and the version (e.g. "Initial assessment · Day 4 · v1.0"), date and time, and page "1 of 1".
-- **Map**, about 80% of the width: the product's extent and layers, with a scale bar, north arrow, grid labels and a locator inset in a corner.
+- **Map**, about 80% of the width: the product's extent and layers, with a scale bar, north arrow, grid labels and optional locator maps (the area round the site, and a country overview joined to it by leader lines, as on MapAction's MA023), on the map's corner or at the top of the side panel.
 - **Side panel**, about 19 em:
   - **Key message**: free text, a sentence or two.
   - **At a glance**: four figures computed from the data (people as an estimate marked TBC, shelters counted, water points working, access routes open). Each one can be overridden by hand and labelled TBC.

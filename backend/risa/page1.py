@@ -21,10 +21,17 @@ from .symbology import symbology
 
 # Page sizes and the fixed parts of the layout, in mm
 LAYOUT = {
-    "A3": {"w": 420, "h": 297, "band": 24, "foot": 15, "side": 84, "base": 9.5, "inset": (54, 40)},
-    "A4": {"w": 297, "h": 210, "band": 18, "foot": 12, "side": 66, "base": 7.2, "inset": (40, 30)},
+    "A3": {"w": 420, "h": 297, "band": 24, "foot": 15, "side": 84, "base": 9.5, "inset": (54, 40), "overview": (40, 30)},
+    "A4": {"w": 297, "h": 210, "band": 18, "foot": 12, "side": 66, "base": 7.2, "inset": (40, 30), "overview": (30, 22.5)},
 }
 INSET_OFFSET = 4  # mm from the map frame's top left
+SIDE_PAD = (4.5, 4)  # the side panel's inner margin (x, y), as in page1.typ
+LOCATOR_GAP = 7  # mm between the area locator and the overview, room for the leader lines
+
+# Locator maps: the area round the site (on by default, as before) and an optional
+# country overview with the area marked, as on MapAction's maps. On the map's top left
+# corner, or at the top of the side panel.
+DEFAULT_LOCATORS = {"area": True, "country": False, "place": "map"}
 
 LABELS = {
     "en": {"key_message": "Key message", "at_a_glance": "At a glance", "routes": "Access routes", "services": "Services",
@@ -60,11 +67,39 @@ ANALYSIS_LABELS = {"shelter": "Shelter (detected)", "building": "Building (detec
 AREA_STYLE = {"block": ("#C8A86B73", "#8C939C"), "other": ("#3B5B7A4D", "#8C939C")}
 
 
-def frames(page_size: str) -> dict:
-    """The map frame and the inset, in mm, for a page size."""
+def locators(value: dict | None) -> dict:
+    """A product's locator settings, with defaults and nothing else."""
+    v = {**DEFAULT_LOCATORS, **{k: x for k, x in (value or {}).items() if k in DEFAULT_LOCATORS}}
+    return {"area": bool(v["area"]), "country": bool(v["country"]), "place": "side" if v["place"] == "side" else "map"}
+
+
+def _locator_frames(L: dict, loc: dict) -> dict:
+    """Where each locator goes, in mm from the top left of its container: the map
+    frame, or the side panel's content box. The overview sits under the area locator."""
+    if loc["place"] == "side":
+        cw = L["side"] - 2 * SIDE_PAD[0]
+        area, over, x = (cw, round(cw * 0.62, 1)), (round(cw * 0.6, 1), round(cw * 0.45, 1)), 0
+    else:
+        area, over, x = L["inset"], L["overview"], INSET_OFFSET
+    out = {"place": loc["place"], "area": None, "overview": None}
+    y = x
+    if loc["area"]:
+        out["area"] = {"x": x, "y": y, "w": area[0], "h": area[1]}
+        y += area[1] + LOCATOR_GAP
+    if loc["country"]:
+        out["overview"] = {"x": x, "y": y, "w": over[0], "h": over[1]}
+        y += over[1] + LOCATOR_GAP
+    w = max((f["x"] + f["w"] for f in (out["area"], out["overview"]) if f), default=0)
+    out["size"] = [w, max(0, y - LOCATOR_GAP)]
+    return out
+
+
+def frames(page_size: str, locator_settings: dict | None = None) -> dict:
+    """The map frame and the locator maps, in mm, for a page size."""
     L = LAYOUT.get(page_size, LAYOUT["A3"])
     map_w, map_h = L["w"] - L["side"], L["h"] - L["band"] - L["foot"]
-    return {"page": L, "map": (map_w, map_h), "inset": L["inset"]}
+    return {"page": L, "map": (map_w, map_h), "inset": L["inset"],
+            "locators": _locator_frames(L, locators(locator_settings))}
 
 
 # ---- symbols as SVG (same drawing as frontend/src/map/symbols.ts) -------------------
@@ -191,10 +226,11 @@ def scale_bar(m_per_mm: float, max_mm: float = 40) -> dict:
 
 def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, basemap_attribution: str) -> dict:
     """Everything the template reads, as JSON. `map_state` comes from the map render:
-    {zoom, lat, bearing, m_per_px} in CSS px of the frame."""
+    {zoom, lat, bearing, m_per_px} in CSS px of the frame, and `marker`: where the
+    area locator's extent is on the overview, as fractions [x0, y0, x1, y1]."""
     p = {**snapshot.get("product", {})}
     view = p.get("view") or product.view
-    f = frames(p.get("page_size") or product.page_size)
+    f = frames(p.get("page_size") or product.page_size, p.get("locators") or product.locators)
     layers = visible_layers(product, view)
     summary = snapshot.get("summary") or {}
     glance = []
@@ -207,7 +243,8 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
     m_per_mm = map_state["m_per_px"] * 96 / 25.4
     url = f"{settings.PUBLIC_URL}/r/{site.response.slug}/{site.slug}"
     return {
-        "page": {**f["page"], "inset": list(f["inset"]), "inset_offset": INSET_OFFSET, "map": list(f["map"])},
+        "page": {**f["page"], "inset": list(f["inset"]), "overview": list(f["page"]["overview"]), "map": list(f["map"]),
+                 "side_pad": list(SIDE_PAD), "locators": f["locators"]},
         "lang": lang,
         "labels": LABELS[lang],
         "colors": {**COLORS, "ink": symbology()["ink"], "status": {k: v["color"] for k, v in symbology()["status"].items()}},
@@ -226,6 +263,7 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
         "credits": p.get("credits") or product.credits,
         "url": url,
         "bearing": map_state.get("bearing", 0),
+        "marker": map_state.get("marker"),
         "scale": scale_bar(m_per_mm),
     }
 

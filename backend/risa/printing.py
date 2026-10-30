@@ -1,5 +1,5 @@
 """
-Print a product: headless Chromium renders only the map (and the locator inset) at
+Print a product: headless Chromium renders only the map (and the locator maps) at
 the frame's exact size, and Typst lays out the page around them (risa/typst/page1.typ).
 Vector text, a JPEG map, and a layout shared with our other Typst documents.
 
@@ -56,7 +56,20 @@ def _render_maps(product_id: str, version_n: int | None, frames: dict, dpi: int,
     base = f"{settings.PRINT_BASE_URL}/print/map/{product_id}"
     v = f"&v={version_n}" if version_n else ""
     mw, mh = frames["map"]
-    iw, ih = frames["inset"]
+    loc = frames["locators"]
+
+    def locator(browser, f: dict, url: str, out: str) -> dict | None:
+        ctx = browser.new_context(viewport={"width": round(f["w"] * CSS_PX_PER_MM), "height": round(f["h"] * CSS_PX_PER_MM)},
+                                  device_scale_factor=max(2, dpi / 96))
+        try:
+            return _shoot(ctx.new_page(), url, os.path.join(tmp, out), timeout_s=60) or {}
+        except Exception:
+            # The page still prints without it (e.g. no basemap offline)
+            log.warning("Locator %s failed for %s", out, product_id, exc_info=True)
+            return None
+        finally:
+            ctx.close()
+
     with sync_playwright() as p:
         browser = p.chromium.launch(args=CHROMIUM_ARGS)
         try:
@@ -66,16 +79,17 @@ def _render_maps(product_id: str, version_n: int | None, frames: dict, dpi: int,
             page.on("console", lambda m: log.info("map: %s", m.text) if m.type in ("error", "warning") else None)
             state = _shoot(page, f"{base}?part=main{v}", os.path.join(tmp, "map.jpg"))
             ctx.close()
-            ctx = browser.new_context(viewport={"width": round(iw * CSS_PX_PER_MM), "height": round(ih * CSS_PX_PER_MM)},
-                                      device_scale_factor=max(2, dpi / 96))
-            bounds = ",".join(f"{x:.6f}" for x in state["bounds"])
-            try:
-                _shoot(ctx.new_page(), f"{base}?part=inset&bounds={bounds}&zoom={state['zoom']:.2f}{v}",
-                       os.path.join(tmp, "inset.jpg"), timeout_s=60)
-            except Exception:
-                # The page still prints without a locator (e.g. no basemap offline)
-                log.warning("Inset failed for %s", product_id, exc_info=True)
-            ctx.close()
+            fmt = lambda b: ",".join(f"{x:.6f}" for x in b)  # noqa: E731
+            mark, centre = state["bounds"], f"{(state['bounds'][0] + state['bounds'][2]) / 2:.6f},{state['lat']:.6f}"
+            if loc["area"]:
+                area = locator(browser, loc["area"], f"{base}?part=inset&bounds={fmt(mark)}&zoom={state['zoom']:.2f}{v}", "inset.jpg")
+                # The overview marks the area locator's extent, so the leader lines join them
+                if area and area.get("bounds"):
+                    mark = area["bounds"]
+            if loc["overview"]:
+                over = locator(browser, loc["overview"], f"{base}?part=overview&bounds={fmt(mark)}&centre={centre}{v}", "overview.jpg")
+                if over:
+                    state["marker"] = over.get("marker")
         finally:
             browser.close()
     return state
@@ -99,13 +113,14 @@ def _basemap_attribution(view: dict) -> str:
 
 
 def _compose(product: Product, snapshot: dict, version_n: int | None, draft: bool, tmp: str) -> None:
-    view = snapshot.get("product", {}).get("view") or product.view
-    size = snapshot.get("product", {}).get("page_size") or product.page_size
-    f = page1.frames(size)
+    sp = snapshot.get("product", {})
+    view = sp.get("view") or product.view
+    f = page1.frames(sp.get("page_size") or product.page_size, sp.get("locators") or product.locators)
     with ThreadPoolExecutor(max_workers=1) as pool:
         state = pool.submit(_render_maps, str(product.id), version_n, f, DRAFT_DPI if draft else PRINT_DPI, tmp).result()
     data = page1.build(product, snapshot, state, timezone.localtime(), draft, _basemap_attribution(view))
-    data["has_inset"] = os.path.exists(os.path.join(tmp, "inset.jpg"))
+    data["has_inset"] = bool(f["locators"]["area"]) and os.path.exists(os.path.join(tmp, "inset.jpg"))
+    data["has_overview"] = bool(f["locators"]["overview"]) and os.path.exists(os.path.join(tmp, "overview.jpg"))
     root = Path(tmp)
     page1.write_assets(root, data)
     shutil.copy(TEMPLATE_DIR / "page1.typ", root / "page1.typ")
@@ -130,7 +145,8 @@ def render(version: ProductVersion) -> None:
 def render_preview(product: Product) -> None:
     """The current, unsaved-as-a-version product at low resolution, as a PNG."""
     layer_ids = [lyr["id"] for lyr in product.view.get("layers", []) if lyr.get("visible", True)] or None
-    snapshot = {"product": {"view": product.view, "page_size": product.page_size, "glance": product.glance},
+    snapshot = {"product": {"view": product.view, "page_size": product.page_size, "glance": product.glance,
+                            "locators": page1.locators(product.locators)},
                 "summary": site_summary(product.site, layer_ids)}
     snapshot = json.loads(json.dumps(snapshot, default=str))
     with tempfile.TemporaryDirectory() as tmp:

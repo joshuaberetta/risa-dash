@@ -1,6 +1,6 @@
 // RISA page 1: Common Operational Picture.
 //
-// Reads data.json, map.jpg, inset.jpg, qr.svg and sym/*.svg from the same folder,
+// Reads data.json, map.jpg, inset.jpg, overview.jpg, qr.svg and sym/*.svg from the same folder,
 // all written by risa/page1.py. The map frame size comes from data.page, the same
 // numbers the worker used to render map.jpg, so the image fits exactly.
 //
@@ -73,13 +73,35 @@
   text(size: 0.68em, fill: muted, [#d.scale.ratio #L.scale_note])
 })
 
+// Locator maps: the area round the site, and a country overview under it with the
+// area's extent marked and joined to it by leader lines (as on MapAction's maps).
+// Positions are in mm from the top left of the container (map frame or side panel).
+#let LC = P.at("locators", default: (place: "map", area: none, overview: none, size: (0, 0)))
+#let loc-area = if d.at("has_inset", default: false) { LC.area } else { none }
+#let loc-over = if d.at("has_overview", default: false) { LC.overview } else { none }
+#let loc-box(f, file) = place(top + left, dx: f.x * mm, dy: f.y * mm,
+  block(width: f.w * mm, height: f.h * mm, clip: true, stroke: 0.6pt + ink, fill: white,
+    image(file, width: 100%, height: 100%, fit: "cover")))
+#let leader(a, b) = {
+  place(top + left, line(start: a, end: b, stroke: (paint: white, thickness: 1.8pt, cap: "round")))
+  place(top + left, line(start: a, end: b, stroke: 0.6pt + ink))
+}
+#let locators = {
+  if loc-area != none { loc-box(loc-area, "inset.jpg") }
+  if loc-over != none { loc-box(loc-over, "overview.jpg") }
+  let m = d.at("marker", default: none)
+  if loc-area != none and loc-over != none and m != none {
+    let (a, o) = (loc-area, loc-over)
+    let on-over(fx, fy) = ((o.x + fx * o.w) * mm, (o.y + fy * o.h) * mm)
+    leader((a.x * mm, (a.y + a.h) * mm), on-over(m.at(0), m.at(1)))
+    leader(((a.x + a.w) * mm, (a.y + a.h) * mm), on-over(m.at(2), m.at(1)))
+  }
+}
+#let has-locators = loc-area != none or loc-over != none
+
 #let map-frame = block(width: map-w, height: map-h, clip: true, stroke: (right: 0.5pt + rule), {
   image("map.jpg", width: map-w, height: map-h, fit: "cover")
-  if d.at("has_inset", default: true) {
-    place(top + left, dx: P.inset_offset * mm, dy: P.inset_offset * mm,
-      block(width: P.inset.at(0) * mm, height: P.inset.at(1) * mm, clip: true, stroke: 0.6pt + ink,
-        fill: white, image("inset.jpg", width: 100%, height: 100%, fit: "cover")))
-  }
+  if has-locators and LC.place == "map" { locators }
   place(top + right, dx: -5mm, dy: 4mm, north)
   place(bottom + left, dx: 4mm, dy: -4mm, scalebar)
   if d.draft {
@@ -152,7 +174,11 @@
   }
 })
 
-#let side = block(width: side-w, height: map-h, inset: (x: 4.5mm, y: 4mm), clip: true, {
+#let side = block(width: side-w, height: map-h, inset: (x: P.side_pad.at(0) * mm, y: P.side_pad.at(1) * mm), clip: true, {
+  if has-locators and LC.place == "side" {
+    block(width: LC.size.at(0) * mm, height: LC.size.at(1) * mm, locators)
+    v(0.9em)
+  }
   if d.key_message != "" {
     block(stroke: (left: 0.8mm + ink), inset: (left: 0.8em, y: 0.1em), {
       eyebrow(L.key_message)

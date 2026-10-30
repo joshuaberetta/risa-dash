@@ -69,13 +69,15 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
     if (canEdit && !product.preview?.status) api(`/products/${product.id}/preview`, { method: 'POST' }).then(() => qc.invalidateQueries({ queryKey: ['site'] }))
   }, [product.id])
   const glance = p.glance?.length === 4 ? p.glance : DEFAULT_GLANCE
+  const loc: ProductT['locators'] = p.locators || { area: true, country: false, place: 'map' }
+  const setLoc = (patch: Partial<ProductT['locators']>) => set({ locators: { ...loc, ...patch } })
 
   const save = async (extra: Partial<ProductT> = {}) => {
     const body = { ...p, ...extra }
     const out = await api<ProductT>(`/products/${p.id}`, { method: 'PATCH', body: {
       title: body.title, code: body.code, version_label: body.version_label, page_size: body.page_size, view: body.view,
       key_message: body.key_message, glance: body.glance, authority: body.authority, sources: body.sources,
-      disclaimer: body.disclaimer, credits: body.credits,
+      disclaimer: body.disclaimer, credits: body.credits, locators: body.locators,
     } })
     setP({ ...out })
     setDirty(false)
@@ -106,6 +108,15 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
         <ScrollArea w={360} h="100%" offsetScrollbars>
           <Stack gap="sm">
             <SegmentedControl data={['A3', 'A4']} value={p.page_size} onChange={(v) => set({ page_size: v as 'A3' | 'A4' })} disabled={!canEdit} />
+            <Stack gap={6}>
+              <Text size="sm" fw={500}>Locator maps</Text>
+              <Checkbox size="xs" label="Area round the site" checked={loc.area} onChange={(e) => setLoc({ area: e.currentTarget.checked })} disabled={!canEdit} />
+              <Checkbox size="xs" label="Country overview" description="About 1,500 km across, with the area marked and joined to it"
+                checked={loc.country} onChange={(e) => setLoc({ country: e.currentTarget.checked })} disabled={!canEdit} />
+              <SegmentedControl size="xs" value={loc.place} onChange={(v) => setLoc({ place: v as 'map' | 'side' })}
+                data={[{ label: 'On the map', value: 'map' }, { label: 'In the side panel', value: 'side' }]}
+                disabled={!canEdit || (!loc.area && !loc.country)} />
+            </Stack>
             <TextInput label="Title" value={p.title} onChange={(e) => set({ title: e.currentTarget.value })} disabled={!canEdit} />
             <Group grow>
               <TextInput label="Map code" placeholder="MA023" value={p.code} onChange={(e) => set({ code: e.currentTarget.value })} disabled={!canEdit} />

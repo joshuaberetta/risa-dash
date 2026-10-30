@@ -3,7 +3,8 @@
 // for window.__printReady, screenshots it, and Typst places the image on the page.
 //
 //   /print/map/:id?v=3&part=main
-//   /print/map/:id?part=inset&bounds=w,s,e,n&zoom=17
+//   /print/map/:id?part=inset&bounds=w,s,e,n&zoom=17          area round the site
+//   /print/map/:id?part=overview&bounds=w,s,e,n&centre=lon,lat  country overview
 
 import { useQuery } from '@tanstack/react-query'
 import maplibregl, { type Map as MLMap } from 'maplibre-gl'
@@ -18,7 +19,9 @@ declare global {
   interface Window {
     __printReady?: boolean
     __printError?: string
-    __mapState?: { zoom: number; lat: number; bearing: number; m_per_px: number; bounds: number[] }
+    /** Main map: zoom, lat, bearing, m_per_px, bounds. Locators: bounds, and on the
+     *  overview the marker's box as fractions of the image [x0, y0, x1, y1] */
+    __mapState?: Record<string, unknown>
     /** The map canvas as a JPEG data URL, at the device pixel ratio (300 dpi when printing) */
     __mapImage?: () => string
   }
@@ -41,9 +44,14 @@ export default function MapPrint() {
     if (q.error) window.__printError = String(q.error)
   }, [q.error])
   if (!q.data) return null
-  return params.get('part') === 'inset'
-    ? <Inset product={q.data.product} bounds={(params.get('bounds') || '').split(',').map(Number)} zoom={Number(params.get('zoom') || 16)} />
-    : <MainMap product={q.data.product} site={q.data.site} />
+  const part = params.get('part')
+  const bounds = (params.get('bounds') || '').split(',').map(Number)
+  if (part === 'inset') return <Locator product={q.data.product} bounds={bounds} zoom={Number(params.get('zoom') || 16)} />
+  if (part === 'overview') {
+    const [lon, lat] = (params.get('centre') || '').split(',').map(Number)
+    return <Locator product={q.data.product} bounds={bounds} centre={Number.isFinite(lat) ? [lon, lat] : undefined} overview />
+  }
+  return <MainMap product={q.data.product} site={q.data.site} />
 }
 
 const full: React.CSSProperties = { position: 'fixed', inset: 0 }
@@ -89,8 +97,17 @@ function MainMap({ product, site }: { product: ProductT; site: SiteFull }) {
   )
 }
 
-/** Locator: a light basemap zoomed out, with the main map's extent marked. */
-function Inset({ product, bounds, zoom }: { product: ProductT; bounds: number[]; zoom: number }) {
+const INK = '#1D232B'
+const OVERVIEW_SPAN_M = 1_500_000 // the country overview is about this wide
+const EARTH_M = 40075016.686
+
+/** A locator: a light basemap zoomed out, with `bounds` marked. The area locator is
+ *  centred on the extent, 5 zoom levels out. The overview is about 1,500 km across
+ *  (less if the extent wouldn't fit), and reports where its marker is so the page can
+ *  draw leader lines to it. Ink, not the status colours, which are reserved. */
+function Locator({ product, bounds, zoom = 16, centre, overview = false }: {
+  product: ProductT; bounds: number[]; zoom?: number; centre?: [number, number]; overview?: boolean
+}) {
   const config = useConfigData()
   const el = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -100,25 +117,54 @@ function Inset({ product, bounds, zoom }: { product: ProductT; bounds: number[];
       || config.basemaps.find((b) => b.kind === 'style' || b.kind === 'pmtiles')
       || config.basemaps.find((b) => b.id === id)
     const [w, s, e, n] = bounds
-    const centre: [number, number] = [(w + e) / 2, (s + n) / 2]
+    const mid: [number, number] = centre || [(w + e) / 2, (s + n) / 2]
+    const width = el.current!.clientWidth
+    let z = Math.max(3, Math.min(13, zoom - 5))
+    if (overview) {
+      const fit = Math.log2((width * EARTH_M * Math.cos((mid[1] * Math.PI) / 180)) / (512 * OVERVIEW_SPAN_M))
+      const extentPx0 = (Math.max(e - w, 1e-6) / 360) * 512 // the extent's width at zoom 0
+      z = Math.max(0, Math.min(8, fit, Math.log2((0.35 * width) / extentPx0)))
+    }
     const map = new maplibregl.Map({
       container: el.current!, style: basemapStyle(bm, config.glyphs), interactive: false, attributionControl: false,
-      center: centre, zoom: Math.max(3, Math.min(13, zoom - 5)), pixelRatio: window.devicePixelRatio || 1,
+      center: mid, zoom: z, pixelRatio: window.devicePixelRatio || 1,
       canvasContextAttributes: { preserveDrawingBuffer: true }, fadeDuration: 0,
     })
+    const frame: GeoJSON.Feature = { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] } }
+    const point = (c: [number, number]): GeoJSON.Feature => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: c } })
+    let marker: number[] | null = null
     map.on('load', () => {
-      map.addSource('frame', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] } } })
-      map.addSource('centre', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: centre } } })
-      map.addLayer({ id: 'frame-fill', type: 'fill', source: 'frame', paint: { 'fill-color': '#A8281A', 'fill-opacity': 0.15 } })
-      map.addLayer({ id: 'frame', type: 'line', source: 'frame', paint: { 'line-color': '#A8281A', 'line-width': 2 } })
-      map.addLayer({ id: 'centre', type: 'circle', source: 'centre', paint: { 'circle-radius': 4, 'circle-color': '#A8281A', 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } })
+      // The extent as a box, or as a ring when it would be too small to see
+      const a = map.project([w, n]), b = map.project([e, s])
+      const h = el.current!.clientHeight
+      const small = b.x - a.x < 10 || b.y - a.y < 10
+      if (small) {
+        const c = map.project([(w + e) / 2, (s + n) / 2]), R = 6
+        map.addSource('mark', { type: 'geojson', data: point([(w + e) / 2, (s + n) / 2]) })
+        map.addLayer({ id: 'mark', type: 'circle', source: 'mark', paint: overview
+          ? { 'circle-radius': R, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': INK, 'circle-stroke-width': 2 }
+          : { 'circle-radius': 4, 'circle-color': INK, 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } })
+        marker = [c.x - R, c.y - R, c.x + R, c.y + R]
+      } else {
+        map.addSource('frame', { type: 'geojson', data: frame })
+        map.addLayer({ id: 'frame-fill', type: 'fill', source: 'frame', paint: { 'fill-color': INK, 'fill-opacity': 0.12 } })
+        map.addLayer({ id: 'frame', type: 'line', source: 'frame', paint: { 'line-color': INK, 'line-width': 1.6 } })
+        if (!overview) {
+          map.addSource('centre', { type: 'geojson', data: point(mid) })
+          map.addLayer({ id: 'centre', type: 'circle', source: 'centre', paint: { 'circle-radius': 3.5, 'circle-color': INK, 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 } })
+        }
+        marker = [a.x, a.y, b.x, b.y]
+      }
+      marker = [marker[0] / width, marker[1] / h, marker[2] / width, marker[3] / h].map((x) => Math.round(x * 1e4) / 1e4)
     })
     map.on('idle', () => {
-      if (!map.loaded() || !map.areTilesLoaded()) return
+      if (!map.loaded() || !map.areTilesLoaded() || !marker) return
+      const bb = map.getBounds()
+      window.__mapState = { bounds: [bb.getWest(), bb.getSouth(), bb.getEast(), bb.getNorth()], zoom: map.getZoom(), marker }
       window.__mapImage = exportCanvas(map)
       requestAnimationFrame(() => requestAnimationFrame(() => (window.__printReady = true)))
     })
-    map.on('error', (e) => console.warn('inset', e.error?.message))
+    map.on('error', (e) => console.warn(overview ? 'overview' : 'inset', e.error?.message))
     return () => map.remove()
   }, [])
   return <div ref={el} style={full} />

@@ -17,7 +17,7 @@ from django.utils.text import slugify
 from ninja import NinjaAPI, Schema
 from ninja.errors import HttpError
 
-from . import exports, kobo, storage
+from . import exports, kobo, page1, storage
 from .access import can_edit, require_create, require_edit, require_view
 from .ingest import IngestError, kind_for
 from .models import Feature, KoboSource, Layer, Product, ProductVersion, Response, Site, Upload
@@ -90,7 +90,8 @@ def product_dict(p: Product) -> dict:
         "id": p.id, "site": p.site_id, "kind": p.kind, "title": p.title, "code": p.code,
         "version_label": p.version_label, "page_size": p.page_size, "view": p.view,
         "key_message": p.key_message, "glance": p.glance, "authority": p.authority, "sources": p.sources,
-        "disclaimer": p.disclaimer, "credits": p.credits, "updated_at": p.updated_at,
+        "disclaimer": p.disclaimer, "credits": p.credits, "locators": page1.locators(p.locators),
+        "updated_at": p.updated_at,
         "versions": [version_dict(v) for v in p.versions.all()[:20]],
         "preview": {
             "status": p.preview_status, "error": p.preview_error, "at": p.preview_at,
@@ -849,6 +850,7 @@ class ProductPatch(Schema):
     sources: str | None = None
     disclaimer: str | None = None
     credits: str | None = None
+    locators: dict | None = None
 
 
 def _product(request, pid, edit=True) -> Product:
@@ -881,7 +883,7 @@ def get_product(request, pid: str, v: int | None = None):
 def patch_product(request, pid: str, data: ProductPatch):
     p = _product(request, pid)
     for k, val in data.dict(exclude_unset=True).items():
-        setattr(p, k, val)
+        setattr(p, k, page1.locators(val) if k == "locators" else val)
     p.save()
     return product_dict(p)
 
