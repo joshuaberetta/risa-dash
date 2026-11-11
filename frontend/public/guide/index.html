@@ -336,6 +336,14 @@
 </ul>
 <p>Several kits will be able to work together (planned): a kit at each site, a hub at base that shows the whole response, still offline, and the cloud or a national server only when there's a link and the focal point chooses to send.</p>
 <p>On a thin link, send the small things first: page 1 (about 1.4 MB), then the GeoPackage (usually 5–50 MB). Full imagery travels by USB drive or courier, or waits for a good connection.</p>
+<h3>Moving a response between instances</h3>
+<p>A <strong>bundle</strong> is a whole response in one file: its sites, layers and features, imagery, review decisions, page 1 versions and their PDFs, and a GeoPackage per site. Use it to load a kit from the cloud before a mission, to bring a kit's work back to the cloud or a national server, or to archive a response.</p>
+<ul>
+  <li>On the response's page, <strong>Bundle</strong> makes one to download. Untick <strong>Include imagery</strong> to send only the work done on it, to an instance that already has the imagery: much smaller over a thin link.</li>
+  <li>On the other instance, <strong>Import bundle</strong> on the home page reads it. If the response is already there, give its edit key: the import then updates it with the bundle's changes. Importing the same bundle twice changes nothing.</li>
+  <li>Each file in a bundle carries a checksum, so a copy that was cut off or damaged is refused rather than half-imported. Copy it again.</li>
+  <li>Kobo tokens never go in a bundle. A Kobo layer arrives with its data, and needs connecting again to keep syncing.</li>
+</ul>
 <div class="warning"><p>One gap today: the labels on the map's basemap (place and street names) still need an internet connection. The imagery, your data and the printed page don't.</p></div>
 </section>
 
@@ -414,7 +422,7 @@
   <li>Check photos for faces, documents and number plates before you share the site's link widely.</li>
   <li>Keep the key message and labels to facts about places and services, never about individuals.</li>
   <li>Delete layers you no longer need. Deleting a layer removes its files too; a whole response is removed by the instance's administrator.</li>
-  <li>Moving data on a USB drive? Treat the drive as sensitive. Encrypted transfer files are planned, so a lost drive exposes nothing.</li>
+  <li>Moving data on a USB drive? Treat the drive as sensitive: a bundle holds everything about the response, imagery included. Encrypted bundles are planned, so a lost drive exposes nothing.</li>
 </ul>
 <p>These practices follow the IASC Operational Guidance on Data Responsibility in Humanitarian Action: collect only what's needed, keep control with the responsible organisation, and share deliberately.</p>
 </section>

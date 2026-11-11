@@ -1,10 +1,11 @@
 import { Anchor, AppShell, Badge, Button, Card, Container, Group, Modal, PasswordInput, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
 import { DateInput } from '../components/DateInput'
-import { IconPlus } from '@tabler/icons-react'
+import { IconPackageImport, IconPlus } from '@tabler/icons-react'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { api, saveEditKey, type ResponseT } from '../api'
+import { ImportBundleModal } from '../components/Bundles'
 import { ShowKey } from '../components/EditKey'
 import Header from '../components/Header'
 import { FEEDBACK_HELP } from './ResponsePage'
@@ -18,6 +19,7 @@ export default function Home() {
   const config = useConfigData()
   const responses = useQuery({ queryKey: ['responses'], queryFn: () => api<(ResponseT & { sites: number })[]>('/responses') })
   const [open, setOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   usePageTour('home', homeTour, !!responses.data)
   return (
     <AppShell header={{ height: 52 }}>
@@ -29,7 +31,10 @@ export default function Home() {
               <Title order={2}>Responses</Title>
               <Text c="dimmed" size="sm">Drone and satellite imagery, KoboCollect observations and analysis layers, printed as RISA page 1.</Text>
             </div>
-            <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-response">New response</Button>
+            <Group>
+              <Button variant="default" leftSection={<IconPackageImport size={16} />} onClick={() => setImportOpen(true)}>Import bundle</Button>
+              <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-response">New response</Button>
+            </Group>
           </Group>
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} data-tour="responses">
             {responses.data?.map((r) => (
@@ -52,6 +57,7 @@ export default function Home() {
           </Text>
         </Container>
         <NewResponse opened={open} onClose={() => setOpen(false)} />
+        {importOpen && <ImportBundleModal onClose={() => setImportOpen(false)} />}
       </AppShell.Main>
     </AppShell>
   )

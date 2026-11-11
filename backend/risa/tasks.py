@@ -1,14 +1,16 @@
 """Background jobs, on a Postgres-backed queue (Procrastinate): no Redis to run."""
 
 import logging
+import os
+import tempfile
 from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
 from procrastinate.contrib.django import app
 
-from . import analysis, ingest, kobo, learning, printing
-from .models import Detector, KoboSource, Layer, Product, ProductVersion, Upload
+from . import analysis, bundles, ingest, kobo, learning, printing, storage
+from .models import Detector, KoboSource, Layer, Product, ProductVersion, Response, Transfer, Upload
 
 log = logging.getLogger(__name__)
 
@@ -94,3 +96,54 @@ def train_detector(detector_id: int):
         log.exception("Training %s failed", detector_id)
         d.status, d.error = "failed", str(e)[:2000]
         d.save(update_fields=["status", "error"])
+
+
+@app.task(queue="ingest")
+def export_bundle(transfer_id: str):
+    t = Transfer.objects.select_related("response").get(id=transfer_id)
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, f"{t.response.slug}.risa.zip")
+            bundles.export_bundle(t.response, path, imagery=t.options.get("imagery", True),
+                                  originals=t.options.get("originals", False))
+            t.size = os.path.getsize(path)
+            t.file_key = storage.save(f"bundles/{t.id}/{os.path.basename(path)}", path, content_type="application/zip")
+        t.status = "ready"
+    except Exception as e:
+        log.exception("Bundle export %s failed", transfer_id)
+        t.status, t.error = "failed", str(e)[:4000]
+    t.save()
+
+
+@app.task(queue="ingest")
+def import_bundle(transfer_id: str, upload_id: str):
+    t = Transfer.objects.get(id=transfer_id)
+    upload = Upload.objects.get(id=upload_id)
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "bundle.zip")
+            storage.concat_parts([upload.part_key(n) for n in range(upload.part_count)], path)
+            t.result = bundles.import_bundle(path, edit_key_hash=upload.layer_options.get("edit_key_hash"))
+        t.response_id = Response.objects.get(slug=t.result["response"]).id
+        t.status = "ready"
+    except bundles.BundleError as e:
+        t.status, t.error = "failed", str(e)
+    except Exception as e:
+        log.exception("Bundle import %s failed", transfer_id)
+        t.status, t.error = "failed", str(e)[:4000]
+    t.save()
+    storage.delete_prefix(f"uploads/{upload.id}")
+    upload.delete()
+
+
+@app.periodic(cron="17 3 * * *")
+@app.task(queue="ingest", queueing_lock="clean_bundles")
+def clean_bundles(timestamp: int):
+    """Exported bundles can be gigabytes: keep them a week, then make them again if needed."""
+    old = timezone.now() - timedelta(days=settings.BUNDLE_KEEP_DAYS)
+    for t in Transfer.objects.filter(created_at__lt=old):
+        storage.delete_prefix(f"bundles/{t.id}")
+        t.delete()
+    for u in Upload.objects.filter(kind="bundle", created_at__lt=old):
+        storage.delete_prefix(f"uploads/{u.id}")
+        u.delete()

@@ -20,7 +20,19 @@ from ninja.errors import HttpError
 from . import exports, kobo, page1, storage
 from .access import can_edit, require_create, require_edit, require_view
 from .ingest import IngestError, kind_for
-from .models import Feature, KoboSource, Layer, Product, ProductVersion, Response, Site, Upload, feedback_link
+from .models import (
+    Feature,
+    KoboSource,
+    Layer,
+    Product,
+    ProductVersion,
+    Response,
+    Site,
+    Transfer,
+    Upload,
+    feedback_link,
+    hash_key,
+)
 from .summary import site_summary
 from .symbology import symbology
 
@@ -319,6 +331,78 @@ def export_gpkg(request, site_id: str):
         raise HttpError(404, "This site has no vector data to export yet")
     return FileResponse(open(path, "rb"), as_attachment=True, filename=os.path.basename(path),
                         content_type="application/geopackage+sqlite3")
+
+
+# ---- response bundles ----------------------------------------------------------------
+# A transfer's ID is only given to whoever started it (with the edit key, or the create
+# key for an import), so its status and download are reached by the ID alone: a browser
+# download can't send the X-Edit-Key header.
+
+
+def transfer_dict(t: Transfer) -> dict:
+    return {
+        "id": t.id, "kind": t.kind, "status": t.status, "error": t.error, "size": t.size,
+        "options": t.options, "result": t.result, "created_at": t.created_at,
+        "response": t.response.slug if t.response else None,
+        "download": f"/api/transfers/{t.id}/download" if t.kind == "export" and t.file_key else None,
+    }
+
+
+class BundleIn(Schema):
+    imagery: bool = True
+    originals: bool = False
+
+
+@api.post("/responses/{slug}/bundles")
+def create_bundle(request, slug: str, data: BundleIn):
+    from .tasks import export_bundle
+
+    r = get_object_or_404(Response, slug=slug)
+    require_edit(request, r)
+    t = Transfer.objects.create(kind="export", response=r, options=data.dict())
+    export_bundle.defer(transfer_id=str(t.id))
+    return transfer_dict(t)
+
+
+@api.get("/responses/{slug}/bundles")
+def list_bundles(request, slug: str):
+    r = get_object_or_404(Response, slug=slug)
+    require_edit(request, r)
+    return [transfer_dict(t) for t in r.transfers.filter(kind="export").select_related("response")[:10]]
+
+
+@api.get("/transfers/{tid}")
+def get_transfer(request, tid: str):
+    return transfer_dict(get_object_or_404(Transfer.objects.select_related("response"), id=tid))
+
+
+@api.get("/transfers/{tid}/download")
+def download_bundle(request, tid: str):
+    t = get_object_or_404(Transfer, id=tid, kind="export", status="ready")
+    if storage.is_s3():
+        return HttpResponseRedirect(storage.url(t.file_key))
+    return FileResponse(default_storage.open(t.file_key, "rb"), as_attachment=True,
+                        filename=os.path.basename(t.file_key), content_type="application/zip")
+
+
+class BundleUploadIn(Schema):
+    filename: str
+    size: int
+    # To import into a response that is already here
+    edit_key: str = ""
+
+
+@api.post("/bundles/uploads")
+def start_bundle_upload(request, data: BundleUploadIn):
+    require_create(request)
+    if data.size <= 0 or data.size > settings.MAX_BUNDLE_SIZE:
+        raise HttpError(400, f"Bundles up to {settings.MAX_BUNDLE_SIZE // 1024**3} GB")
+    u = Upload.objects.create(
+        filename=os.path.basename(data.filename)[:300], size=data.size, kind="bundle",
+        chunk_size=settings.UPLOAD_CHUNK_SIZE, layer_name="",
+        layer_options={"edit_key_hash": hash_key(data.edit_key) if data.edit_key else None},
+    )
+    return {"id": u.id, "chunk_size": u.chunk_size, "parts": u.part_count, "kind": "bundle"}
 
 
 # ---- layers ------------------------------------------------------------------------
@@ -692,7 +776,10 @@ def start_upload(request, site_id: str, data: UploadIn):
 
 def _upload(request, upload_id) -> Upload:
     u = get_object_or_404(Upload.objects.select_related("site__response"), id=upload_id)
-    require_edit(request, u.site.response)
+    if u.site is None:
+        require_create(request)
+    else:
+        require_edit(request, u.site.response)
     return u
 
 
@@ -731,6 +818,16 @@ def complete_upload(request, upload_id: str):
     missing = [n for n in range(u.part_count) if not default_storage.exists(u.part_key(n))]
     if missing:
         raise HttpError(400, f"Missing parts: {missing[:10]}")
+    if u.kind == "bundle":
+        from .tasks import import_bundle
+
+        if u.completed:
+            raise HttpError(400, "This bundle is already being imported")
+        u.completed = True
+        u.save(update_fields=["completed"])
+        t = Transfer.objects.create(kind="import")
+        import_bundle.defer(transfer_id=str(t.id), upload_id=str(u.id))
+        return transfer_dict(t)
     opts = u.layer_options or {}
     s = u.site
     lyr = Layer.objects.create(

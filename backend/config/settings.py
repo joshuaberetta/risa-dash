@@ -133,6 +133,10 @@ else:
 UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024
 DATA_UPLOAD_MAX_MEMORY_SIZE = UPLOAD_CHUNK_SIZE + 1024 * 1024
 MAX_UPLOAD_SIZE = int(env("MAX_UPLOAD_SIZE", str(8 * 1024**3)))
+# A response bundle holds every orthomosaic of the response
+MAX_BUNDLE_SIZE = int(env("MAX_BUNDLE_SIZE", str(64 * 1024**3)))
+# Exported bundles and unfinished bundle uploads are deleted after this many days
+BUNDLE_KEEP_DAYS = int(env("BUNDLE_KEEP_DAYS", "7"))
 
 # ---- access ---------------------------------------------------------------------
 # Creating a response needs this key when set (the hosted instance sets it).

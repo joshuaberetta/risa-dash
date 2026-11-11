@@ -16,6 +16,12 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Ruff
         run: uvx ruff check backend
+      # apt in the image build can't resolve archive.ubuntu.com through the runner's resolver
+      - name: Docker DNS
+        run: |
+          f=/etc/docker/daemon.json; [ -f $f ] || echo '{}' | sudo tee $f
+          sudo jq '. + {dns: ["1.1.1.1", "8.8.8.8"]}' $f | sudo tee $f.new && sudo mv $f.new $f
+          sudo systemctl restart docker
       - name: Tests (PostGIS, GDAL and Typst in the dev image)
         run: |
           docker compose up -d --wait db
@@ -41,5 +47,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Upload, process, print page 1 and export with no network
+      # apt in the image build can't resolve archive.ubuntu.com through the runner's resolver
+      - name: Docker DNS
+        run: |
+          f=/etc/docker/daemon.json; [ -f $f ] || echo '{}' | sudo tee $f
+          sudo jq '. + {dns: ["1.1.1.1", "8.8.8.8"]}' $f | sudo tee $f.new && sudo mv $f.new $f
+          sudo systemctl restart docker
+      - name: Upload, process, print page 1, export and bundle with no network
         run: scripts/e2e.sh

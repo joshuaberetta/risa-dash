@@ -22,8 +22,9 @@ Stack: Django 5.2 + GeoDjango + PostGIS, Django Ninja, Procrastinate (Postgres j
 - **User guide** at `/guide/`, linked as **Guide** in the app bar: setup, imagery, Kobo, the map, page 1, offline and low bandwidth, a response checklist and questions, with screenshots. A static page ([`frontend/public/guide/`](frontend/public/guide/index.html)) in the kobotoolbox.org style shared with kobo-dash, kobo-field-forms and kobo-in-a-box (`home.css`, fonts bundled), so it works offline.
 - **Walkthrough**: each page (home, response, site) has a short tour that highlights its parts in turn. It starts by itself the first time someone opens that kind of page, and again from **Tour** in the header, or with `?tour` on any link for demos. The wording is in [`frontend/src/tours.ts`](frontend/src/tours.ts).
 - **Export**: a GeoPackage of every vector layer (opens in QGIS and ArcGIS Pro), the COG and the original upload per layer.
+- **Response bundles**: a whole response in one zip, to move it between instances (cloud → box → cloud, by USB drive when there's no link) and to archive it: sites, layers, features (review decisions included), COGs, Kobo field maps (not tokens), products, page 1 versions and their PDFs, detector versions, and a GeoPackage per site. **Bundle** on a response's page, **Import bundle** on the home page, or `manage.py bundle export <response> <file>` and `manage.py bundle import <file>`. Imagery can be left out to send only the work done on it. A manifest written last lists every file with its SHA-256, so a cut-off or damaged copy is refused. Import merges by UUID: the bundle's rows are created or updated, others are kept, each vector layer's features are replaced by the bundle's, and importing again changes nothing. Importing into a response that's already there needs its edit key; a new one keeps the edit key it had. [`risa/bundles.py`](backend/risa/bundles.py). Not yet encrypted or incremental (planned for federation).
 
-Not yet: pages 2 and 3, QML styles inside the GeoPackage, response bundles, offline content packs (`pack build/load`), swipe between imagery dates, generated OpenAPI client. See the plan.
+Not yet: pages 2 and 3, QML styles inside the GeoPackage, offline content packs (`pack build/load`), swipe between imagery dates, generated OpenAPI client. See the plan.
 
 ## Run it locally
 
@@ -55,7 +56,7 @@ cd frontend && npx tsc -b
 scripts/e2e.sh                       # the production image with the internet cut off
 ```
 
-`scripts/e2e.sh` builds the production image and runs it on a Docker network with no way out, as on an offline kobo-in-a-box. [`scripts/e2e.py`](scripts/e2e.py) then checks that no online basemaps are offered, the frontend and guide are served, imagery becomes a COG and vector is processed, page 1 renders to PDF, and the site exports as a GeoPackage. CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs it on every push, with ruff, the backend tests and the frontend build.
+`scripts/e2e.sh` builds the production image and runs it on a Docker network with no way out, as on an offline kobo-in-a-box. [`scripts/e2e.py`](scripts/e2e.py) then checks that no online basemaps are offered, the frontend and guide are served, imagery becomes a COG and vector is processed, page 1 renders to PDF, the site exports as a GeoPackage, and the response goes out as a bundle and back in. CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs it on every push, with ruff, the backend tests and the frontend build.
 
 `scripts/shot.py` screenshots a page in the worker's headless Chromium (no GPU, like printing).
 
@@ -85,4 +86,6 @@ All environment variables; see [`backend/config/settings.py`](backend/config/set
 | `STORAGE` | `filesystem` | or `s3` with `S3_*`, `MEDIA_PUBLIC_URL` |
 | `ONLINE_BASEMAPS` | `true` | `false` on an offline box |
 | `PRINT_BASE_URL` | `PUBLIC_URL` | Where the worker's Chromium opens the print route |
+| `MAX_BUNDLE_SIZE` | 64 GB | Largest bundle an import accepts |
+| `BUNDLE_KEEP_DAYS` | 7 | Exported bundles are deleted after this, as are unfinished bundle uploads |
 | `FEEDBACK_URL` | empty | Feedback form (e.g. a Kobo form's web link): a QR code on printed maps and a Feedback link online. Responses can set their own. `{response}`, `{site}`, `{product}`, `{version}` and `{source}` are filled in. The printed QR code points to the short `/f/<product>/<version>`, which redirects to the form, so it stays scannable at its printed size |

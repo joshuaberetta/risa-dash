@@ -264,7 +264,18 @@ export async function uploadFile(
   const start = await api<{ id: string; chunk_size: number; parts: number }>(`/sites/${siteId}/uploads`, {
     body: { filename: file.name, size: file.size, name: meta.name, captured_at: meta.captured_at || null, attribution: meta.attribution || '' },
   })
-  const { id, chunk_size, parts } = start
+  await sendParts(start, file, onProgress, signal)
+  return api<LayerT>(`/uploads/${start.id}/complete`, { method: 'POST' })
+}
+
+/** Send a file's parts, three at a time, retrying each on flaky links. */
+async function sendParts(
+  { id, chunk_size, parts }: { id: string; chunk_size: number; parts: number },
+  file: File,
+  onProgress: (fraction: number) => void,
+  signal?: AbortSignal,
+  headers: Record<string, string> = {},
+) {
   let done = 0
   const queue = Array.from({ length: parts }, (_, i) => i)
   const sendPart = async (n: number) => {
@@ -272,7 +283,7 @@ export async function uploadFile(
     for (let attempt = 0; ; attempt++) {
       if (signal?.aborted) throw new Error('Upload cancelled')
       try {
-        await api(`/uploads/${id}/parts/${n}`, { method: 'PUT', raw: blob, headers: { 'Content-Type': 'application/octet-stream' } })
+        await api(`/uploads/${id}/parts/${n}`, { method: 'PUT', raw: blob, headers: { 'Content-Type': 'application/octet-stream', ...headers } })
         break
       } catch (e) {
         // Flaky Wi-Fi: back off and retry the same part
@@ -287,5 +298,35 @@ export async function uploadFile(
     while (queue.length) await sendPart(queue.shift()!)
   })
   await Promise.all(workers)
-  return api<LayerT>(`/uploads/${id}/complete`, { method: 'POST' })
+}
+
+// ---- response bundles -------------------------------------------------------------------
+
+export interface TransferT {
+  id: string
+  kind: 'export' | 'import'
+  status: 'processing' | 'ready' | 'failed'
+  error: string
+  size: number
+  options: { imagery?: boolean; originals?: boolean }
+  result: { response?: string; name?: string; created?: boolean; sites?: number; layers?: number; features?: number; versions?: number }
+  created_at: string
+  response: string | null
+  download: string | null
+}
+
+/** Upload a bundle and start importing it. The create key is needed when the instance has one;
+ * the edit key when the response is already here. */
+export async function importBundle(
+  file: File,
+  keys: { createKey?: string; editKey?: string },
+  onProgress: (fraction: number) => void,
+  signal?: AbortSignal,
+): Promise<TransferT> {
+  const headers: Record<string, string> = keys.createKey ? { 'X-Create-Key': keys.createKey } : {}
+  const start = await api<{ id: string; chunk_size: number; parts: number }>('/bundles/uploads', {
+    body: { filename: file.name, size: file.size, edit_key: keys.editKey || '' }, headers,
+  })
+  await sendParts(start, file, onProgress, signal, headers)
+  return api<TransferT>(`/uploads/${start.id}/complete`, { method: 'POST', headers })
 }

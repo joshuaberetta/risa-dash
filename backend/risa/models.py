@@ -169,11 +169,12 @@ class Upload(models.Model):
     """A chunked, resumable upload. Parts live in storage under uploads/<id>/."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="uploads")
+    # Blank for a response bundle being imported
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="uploads", null=True, blank=True)
     filename = models.CharField(max_length=300)
     size = models.BigIntegerField()
     chunk_size = models.IntegerField()
-    kind = models.CharField(max_length=20)  # raster | vector
+    kind = models.CharField(max_length=20)  # raster | vector | bundle
     layer_name = models.CharField(max_length=200)
     layer_options = models.JSONField(default=dict, blank=True)
     completed = models.BooleanField(default=False)
@@ -235,6 +236,28 @@ class ProductVersion(models.Model):
     class Meta:
         ordering = ["-n"]
         constraints = [models.UniqueConstraint(fields=["product", "n"], name="version_per_product")]
+
+
+class Transfer(models.Model):
+    """A response bundle: made for download (export) or read from an upload (import)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    kind = models.CharField(max_length=10)  # export | import
+    # The response exported, or imported into (set when the import is done)
+    response = models.ForeignKey(Response, on_delete=models.CASCADE, related_name="transfers", null=True, blank=True)
+    status = models.CharField(max_length=20, default="processing")
+    error = models.TextField(blank=True)
+    # {imagery, originals} for an export
+    options = models.JSONField(default=dict, blank=True)
+    # The bundle, under bundles/<id>/ (never served as media)
+    file_key = models.CharField(max_length=500, blank=True)
+    size = models.BigIntegerField(default=0)
+    # What an import did: {response, name, created, sites, layers, features, ...}
+    result = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 class Logo(models.Model):

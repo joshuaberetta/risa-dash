@@ -1,9 +1,10 @@
 import { AppShell, Badge, Button, Card, Container, Group, Modal, Select, SimpleGrid, Stack, Text, TextInput, Title } from '@mantine/core'
-import { IconMapPin, IconMessageCircle, IconPlus } from '@tabler/icons-react'
+import { IconMapPin, IconMessageCircle, IconPackageExport, IconPlus } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { api, setCurrentResponse, type ResponseT, type SiteT } from '../api'
+import { BundleModal } from '../components/Bundles'
 import { EditKeyButton } from '../components/EditKey'
 import { useConfigData } from '../hooks'
 import Header from '../components/Header'
@@ -24,6 +25,7 @@ export default function ResponsePage() {
   const q = useQuery({ queryKey: ['response', slug], queryFn: () => api<ResponseT & { sites: SiteT[] }>(`/responses/${slug}`) })
   const [open, setOpen] = useState(false)
   const [fbOpen, setFbOpen] = useState(false)
+  const [bundleOpen, setBundleOpen] = useState(false)
   const r = q.data
   usePageTour('response', responseTour, !!r)
   return (
@@ -47,6 +49,7 @@ export default function ResponsePage() {
                 </div>
                 <Group>
                   <span data-tour="edit-key"><EditKeyButton slug={r.slug} canEdit={r.can_edit} /></span>
+                  {r.can_edit && <Button variant="default" leftSection={<IconPackageExport size={16} />} onClick={() => setBundleOpen(true)}>Bundle</Button>}
                   {r.can_edit && <Button variant="default" leftSection={<IconMessageCircle size={16} />} onClick={() => setFbOpen(true)}>Feedback form</Button>}
                   {r.can_edit && <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-site">New site</Button>}
                 </Group>
@@ -62,6 +65,7 @@ export default function ResponsePage() {
               {r.sites.length === 0 && <Text c="dimmed">No sites yet. {r.can_edit ? 'Add the first site you assessed.' : 'Unlock editing to add one.'}</Text>}
               <NewSite slug={r.slug} opened={open} onClose={() => setOpen(false)} />
               {fbOpen && <FeedbackForm response={r} onClose={() => setFbOpen(false)} />}
+              {bundleOpen && <BundleModal slug={r.slug} onClose={() => setBundleOpen(false)} />}
             </>
           )}
         </Container>

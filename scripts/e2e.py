@@ -134,6 +134,28 @@ def main():
     if not gpkg.startswith(b"SQLite format 3"):
         sys.exit("FAIL: export.gpkg is not a GeoPackage")
     ok("GeoPackage export")
+
+    t = api.call("POST", f"/responses/{r['response']['slug']}/bundles", {"imagery": True})
+    t = wait("the bundle", lambda: (x := api.call("GET", f"/transfers/{t['id']}"))["status"] != "processing" and x, 300)
+    if t["status"] != "ready":
+        sys.exit(f"FAIL: bundle export: {t['error'][:2000]}")
+    bundle = get(base + t["download"], timeout=120)
+    if not bundle.startswith(b"PK"):
+        sys.exit("FAIL: the bundle is not a zip")
+    ok(f"bundle export, {len(bundle) // 1024} KB")
+
+    # Back in, as the same response: an update that changes nothing
+    u = api.call("POST", "/bundles/uploads", {"filename": "e2e.risa.zip", "size": len(bundle), "edit_key": api.key})
+    for n in range(u["parts"]):
+        api.call("PUT", f"/uploads/{u['id']}/parts/{n}", raw=bundle[n * u["chunk_size"]:(n + 1) * u["chunk_size"]])
+    t = api.call("POST", f"/uploads/{u['id']}/complete")
+    t = wait("the bundle import", lambda: (x := api.call("GET", f"/transfers/{t['id']}"))["status"] != "processing" and x, 300)
+    if t["status"] != "ready" or t["result"]["created"] or t["result"]["layers"] != 2:
+        sys.exit(f"FAIL: bundle import: {t['error'][:2000] or t['result']}")
+    after = api.call("GET", f"/sites/{sid}")["layers"]
+    if sorted(lyr["id"] for lyr in after) != sorted(lyr["id"] for lyr in layers):
+        sys.exit("FAIL: the import changed the site's layers")
+    ok("bundle import")
     print("PASS")
 
 
