@@ -36,6 +36,7 @@ class Candidate:
 class Detector:
     id = ""
     label = ""
+    short = ""  # for tables and layer names
     simulated = False
     gsd = 0.25
     # Bigger areas are read coarser than gsd, to stay within memory
@@ -75,5 +76,5 @@ def get(detector_id: str | None) -> Detector:
 
 
 def describe() -> list[dict]:
-    return [{"id": d.id, "label": d.label, "simulated": d.simulated, "description": d.description,
+    return [{"id": d.id, "label": d.label, "short": d.short or d.label, "simulated": d.simulated, "description": d.description,
              "unavailable": d.available()} for d in all_detectors()]

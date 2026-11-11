@@ -687,7 +687,7 @@ def analyse_layer(request, layer_id: str, data: AnalyseIn):
         raise HttpError(400, "The area to analyse doesn't overlap the image")
     site = src.site
     lyr = Layer.objects.create(
-        site=site, name=f"Detected shelters{' (simulated)' if det.simulated else ''} · {src.name}"[:200],
+        site=site, name=f"Detected shelters ({det.short or det.label}) · {src.name}"[:200],
         kind="analysis", status="processing",
         z_order=_next_z(site), style={"preset": "analysis"},
         attribution=f"Shelters and buildings detected on {src.name} by {det.label}"

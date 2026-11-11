@@ -1,9 +1,10 @@
 """How good is a detector? Its results on an analysis layer against a reference: shelters
 a person marked (points, one click per shelter) or outlined (polygons), in another layer.
 
-Only the area the reference covers is scored (its outline grown by a few metres, or a
-given box), so a reference that covers part of the image doesn't count the rest as
-misses. Matching is one to one, most confident detection first:
+Only the area the reference covers is scored, so a reference that covers part of the
+image doesn't count the rest as misses: a given box; else the reference layer's own
+areas (polygons with properties.role = "area": where the person looked, which may hold
+no shelters at all); else its features' outline grown by 5 m. Matching is one to one, most confident detection first:
 
     reference point    matched by the detection that contains it
     reference outline  matched by the detection overlapping it most, if IoU >= 0.3
@@ -32,6 +33,11 @@ def _area(reference: Layer, bbox: list[float] | None) -> GEOSGeometry:
         area.srid = 4326
         return area
     with connection.cursor() as cur:
+        cur.execute("""SELECT ST_AsEWKT(ST_Multi(ST_Union(geom))) FROM risa_feature
+                       WHERE layer_id = %s AND properties->>'role' = 'area'""", [str(reference.id)])
+        ewkt = cur.fetchone()[0]
+        if ewkt:
+            return GEOSGeometry(ewkt)
         # The reference's outline, grown 5 m: where the person looked
         cur.execute("""
             SELECT ST_AsEWKT(ST_Transform(ST_Buffer(ST_ConvexHull(ST_Collect(ST_Transform(geom, 3857))), 5), 4326))
@@ -54,6 +60,7 @@ def evaluate(layer: Layer, reference: Layer, cls: str = "shelter", bbox: list[fl
         cur.execute("""
             SELECT id::text, GeometryType(geom) LIKE '%%POINT' FROM risa_feature
             WHERE layer_id = %s AND (risa_type IN (%s, '') OR risa_type IS NULL)
+              AND coalesce(properties->>'role', '') <> 'area'
               AND ST_Intersects(geom, ST_GeomFromEWKT(%s))""", [str(reference.id), cls, area.ewkt])
         refs = dict(cur.fetchall())
         # Candidate pairs and their overlap: 1 for a point inside, IoU for an outline

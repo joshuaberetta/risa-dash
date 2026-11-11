@@ -28,6 +28,7 @@ export interface Fonts {
 export interface DetectorT {
   id: string
   label: string
+  short: string
   simulated: boolean
   description: string
   /** Why it can't run on this instance; empty when it can */

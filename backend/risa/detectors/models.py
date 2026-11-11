@@ -48,6 +48,7 @@ def nms(boxes: np.ndarray, scores: np.ndarray, iou: float, contain: float = 0.6)
 class ShelterYolo(Detector):
     id = "yolo-shelters"
     label = "Shelter detector (YOLOv8n, camps in DRC, Chad, Mozambique)"
+    short = "YOLOv8n shelters"
     simulated = False
     # 9 cm and a low floor did best on the Haiti reference chips (of 5, 7, 9 cm; 0.05, 0.15):
     # the confidence is kept on each shelter, and the review and evaluation choose the cut

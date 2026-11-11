@@ -167,7 +167,60 @@ Imagery: {attribution}.
 
 This is the input HOT's fAIr / RAMP training takes (imagery plus footprint labels).
 Detections came from {model}{simulated}.
+
+## yolo/: ready to train a detector (Ultralytics YOLO format)
+
+- images/*.jpg: 1024 x 1024 tiles at {gsd} m/px, labels/*.txt: one line per object,
+  `class cx cy w h` (0-1 of the tile). Classes in data.yaml: 0 shelter, 1 building.
+- Only fully reviewed tiles: every suggestion in them was accepted, corrected or
+  rejected, so an unlabelled roof in a tile is background, not a missed label.
+  {tiles} tiles, {boxes} boxes; tiles with suggestions still to review are left out.
+- Boxes are the features' extents, axis-aligned; polygons are in labels.geojson.
+- Reviews done in bulk by confidence ("accept at 75 % or more") are the model's own
+  calls confirmed wholesale, not a person's one by one; `review_mode` isn't recorded yet.
+
+    yolo detect train data=yolo/data.yaml model=yolov8n.pt imgsz=1024
 """
+
+
+def yolo_tiles(layer: Layer, cog: str, tmp: str, z: zipfile.ZipFile, gsd: float, tile: int = 1024) -> tuple[int, int]:
+    """Tiles of the area with boxes for the reviewed shelters and buildings, YOLO format.
+    Returns (tiles, boxes) written."""
+    _, _, georef = analysis.read_aoi(cog, layer.meta["aoi"], tmp, gsd=gsd, max_pixels=150_000_000)
+    gt, W, H = georef["gt"], georef["W"], georef["H"]
+    rows = []
+    for f in layer.features.filter(risa_type__in=["shelter", "building"]).exclude(properties__review="rejected"):
+        x0, y0, x1, y1 = f.geom.transform(3857, clone=True).extent
+        c0, c1 = (x0 - gt[0]) / gt[1], (x1 - gt[0]) / gt[1]
+        r0, r1 = (y1 - gt[3]) / gt[5], (y0 - gt[3]) / gt[5]
+        rows.append((c0, r0, c1, r1, 0 if f.risa_type == "shelter" else 1, f.properties.get("review") == "suggested"))
+    boxes = np.array([r[:4] for r in rows]) if rows else np.zeros((0, 4))
+    meta = np.array([(r[4], r[5]) for r in rows], dtype=int) if rows else np.zeros((0, 2), int)
+    n_tiles = n_boxes = 0
+    # Tiles from the top left; the last row and column may run past the image (padded black)
+    for r in range(0, max(H - tile // 4, 1), tile):
+        for c in range(0, max(W - tile // 4, 1), tile):
+            cx, cy = (boxes[:, 0] + boxes[:, 2]) / 2, (boxes[:, 1] + boxes[:, 3]) / 2
+            inside = (cx >= c) & (cx < c + tile) & (cy >= r) & (cy < r + tile)
+            if not inside.any() or meta[inside, 1].any():
+                continue  # nothing reviewed here, or still suggestions to review
+            name = f"{layer.id.hex[:8]}_{r // tile:03d}_{c // tile:03d}"
+            jpg = os.path.join(tmp, f"{name}.jpg")
+            run(["gdal_translate", "-q", "-of", "JPEG", "-co", "QUALITY=92", "-b", "1", "-b", "2", "-b", "3",
+                 "-srcwin", str(c), str(r), str(tile), str(tile), georef["path"], jpg])
+            z.write(jpg, f"yolo/images/{name}.jpg")
+            lines = []
+            for (b0, b1, b2, b3), (k, _) in zip(boxes[inside], meta[inside], strict=True):
+                x0, y0 = max(b0, c) - c, max(b1, r) - r
+                x1, y1 = min(b2, c + tile) - c, min(b3, r + tile) - r
+                if x1 - x0 > 1 and y1 - y0 > 1:
+                    lines.append(f"{k} {(x0 + x1) / 2 / tile:.6f} {(y0 + y1) / 2 / tile:.6f} "
+                                 f"{(x1 - x0) / tile:.6f} {(y1 - y0) / tile:.6f}")
+            z.writestr(f"yolo/labels/{name}.txt", "\n".join(lines) + "\n")
+            n_tiles, n_boxes = n_tiles + 1, n_boxes + len(lines)
+            os.unlink(jpg)
+    z.writestr("yolo/data.yaml", "path: .\ntrain: images\nval: images\nnames:\n  0: shelter\n  1: building\n")
+    return n_tiles, n_boxes
 
 
 def training_data(layer: Layer, out_path: str) -> str:
@@ -184,21 +237,28 @@ def training_data(layer: Layer, out_path: str) -> str:
                                          "model": p.get("model"), **(p.get("stats") or {})}})
         return {"type": "FeatureCollection", "features": feats}
 
+    from . import detectors
+
     base = layer.features.filter(risa_type__in=["shelter", "building"])
-    with tempfile.TemporaryDirectory() as tmp:
+    gsd = detectors.get(layer.meta.get("detector")).gsd
+    with tempfile.TemporaryDirectory() as tmp, zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
         img = os.path.join(tmp, "image.tif")
         with storage.local_copy(src.source, suffix=".tif") as cog:
             run(["gdal_translate", "-q", "-of", "COG", "-co", "COMPRESS=JPEG", "-projwin_srs", "EPSG:4326",
                  "-projwin", str(w), str(n), str(e), str(s), cog, img])
-        with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
-            z.write(img, "image.tif")
-            z.writestr("labels.geojson", json.dumps(fc(base.filter(properties__review="accepted"), "accepted")))
-            z.writestr("negatives.geojson", json.dumps(fc(base.filter(properties__review="rejected"), "rejected")))
-            z.writestr("aoi.geojson", json.dumps({"type": "Feature", "properties": {}, "geometry": {
-                "type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}}))
-            z.writestr("README.md", README.format(
-                site=layer.site.name, layer=src.name, attribution=src.attribution or "see the dashboard",
-                model=layer.meta.get("model", analysis.MODEL),
-                simulated=" (simulated: a stand-in for a model)" if layer.meta.get("simulated") else ""))
+            tiles, boxes = yolo_tiles(layer, cog, tmp, z, gsd)
+        z.write(img, "image.tif")
+        z.writestr("labels.geojson", json.dumps(fc(base.filter(properties__review="accepted"), "accepted")))
+        z.writestr("negatives.geojson", json.dumps(fc(base.filter(properties__review="rejected"), "rejected")))
+        z.writestr("aoi.geojson", json.dumps({"type": "Feature", "properties": {}, "geometry": {
+            "type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}}))
+        z.writestr("README.md", README.format(
+            site=layer.site.name, layer=src.name, attribution=src.attribution or "see the dashboard",
+            model=layer.meta.get("model", analysis.MODEL),
+            simulated=" (simulated: a stand-in for a model)" if layer.meta.get("simulated") else "",
+            gsd=gsd, tiles=tiles, boxes=boxes))
+        z.writestr("meta.json", json.dumps({"model": layer.meta.get("model"), "simulated": layer.meta.get("simulated"),
+                                            "gsd_m": gsd, "aoi": layer.meta.get("aoi"), "counts": layer.meta.get("counts"),
+                                            "evaluation": layer.meta.get("evaluation")}, indent=1, default=str))
     return out_path
 

@@ -10,6 +10,7 @@ from . import Candidate, Detector, register
 class Simulated(Detector):
     id = "simulated"
     label = "Simulated (colour rules)"
+    short = "Simulated"
     simulated = True
     gsd = analysis.GSD
     description = ("A stand-in, not a model: bright grey roofs and blue tarps are shelter candidates. Its outlines "

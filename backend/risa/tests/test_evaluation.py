@@ -56,3 +56,23 @@ def test_outlines_match_by_overlap():
     Feature.objects.create(layer=ref, geom=sq(0.0001 + 0.00003, 0), risa_type="shelter")     # IoU ~0.14
     e = evaluation.evaluate(ai, ref)
     assert e["matched"] == 1 and e["reference_kind"] == "outlines"
+
+
+@pytest.mark.django_db
+def test_a_reference_with_its_own_areas():
+    r = Response(name="T", slug="t")
+    r.set_edit_key()
+    r.save()
+    site = Site.objects.create(response=r, name="S", slug="s")
+    ai = Layer.objects.create(site=site, name="Detected", kind="analysis")
+    ref = Layer.objects.create(site=site, name="Reference", kind="vector")
+    # Two labelled areas far apart: one with a shelter, one of empty ground
+    Feature.objects.create(layer=ref, geom=sq(0, 0, 0.0002), properties={"role": "area"})
+    Feature.objects.create(layer=ref, geom=sq(0.01, 0, 0.0002), properties={"role": "area"})
+    Feature.objects.create(layer=ref, geom=Point(0.00005, 0.00005, srid=4326), risa_type="shelter")
+    Feature.objects.create(layer=ai, geom=sq(0.00003, 0.00003), risa_type="shelter", properties={"ai_class": "shelter", "confidence": 0.9})
+    Feature.objects.create(layer=ai, geom=sq(0.01005, 0.00005), risa_type="shelter", properties={"ai_class": "shelter", "confidence": 0.3})
+    # Between the areas: not looked at, not scored
+    Feature.objects.create(layer=ai, geom=sq(0.005, 0), risa_type="shelter", properties={"ai_class": "shelter", "confidence": 0.9})
+    e = evaluation.evaluate(ai, ref)
+    assert (e["reference_count"], e["detected"], e["matched"]) == (1, 2, 1)

@@ -206,18 +206,43 @@ def wait(api, what, check, tries=200):
     sys.exit(f"\n{what}: timed out")
 
 
-def demo(api, sid, pid, ortho):
-    """Shelters detected and the confident ones accepted, as a reviewer would; page 1 printed."""
-    lyr = api.call("POST", f"/layers/{ortho['id']}/analyse", {})
-    lyr = wait(api, "Detecting shelters", lambda: next(
+REFERENCE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sample", "haiti-reference-shelters.geojson")
+
+
+def detect(api, sid, ortho, detector):
+    lyr = api.call("POST", f"/layers/{ortho['id']}/analyse", {"detector": detector})
+    lyr = wait(api, f"Detecting shelters ({detector})", lambda: next(
         (x for x in api.call("GET", f"/sites/{sid}")["layers"] if x["id"] == lyr["id"] and x["status"] != "processing"), None))
     if lyr["status"] != "ready":
         sys.exit(f"Detection failed: {lyr.get('error', '')[:300]}")
-    n = api.call("POST", f"/layers/{lyr['id']}/review", {"action": "accept", "min_confidence": 0.75})["changed"]
-    print(f"  accepted {n} suggestions at 75 % or more")
+    return lyr
+
+
+def demo(api, sid, pid, ortho):
+    """The stand-in and, where the instance has it, the real model, both scored against
+    the reference shelters; the model's confident shelters accepted, as a reviewer would;
+    page 1 printed from them."""
+    ref = api.upload(sid, REFERENCE, "Reference shelters (marked by eye; to check)", None,
+                     "Marked by eye on 40 m chips at 4 cm/px (Claude); not yet checked by a person")
+    wait(api, "Loading the reference", lambda: next(
+        (x for x in api.call("GET", f"/sites/{sid}")["layers"] if x["id"] == ref["id"] and x["status"] != "processing"), None))
+    api.call("PATCH", f"/layers/{ref['id']}", {"visible_default": False})
+    models = [d["id"] for d in api.call("GET", "/config")["detectors"] if not d["unavailable"]]
+    runs = [detect(api, sid, ortho, d) for d in (["simulated"] + [m for m in models if m != "simulated"])]
+    for lyr in runs:
+        e = api.call("POST", f"/layers/{lyr['id']}/evaluate", {"reference": ref["id"]})
+        print(f"  {lyr['analysis']['model']}: {lyr['analysis']['counts']['shelter']} shelters in "
+              f"{lyr['analysis']['seconds']} s; on {e['reference_count']} reference shelters: precision "
+              f"{e['precision']}, recall {e['recall']}, F1 {e['f1']}")
+    best = runs[-1]
+    if len(runs) > 1:
+        # The stand-in stays for comparison, off the map
+        api.call("PATCH", f"/layers/{runs[0]['id']}", {"visible_default": False})
+    n = api.call("POST", f"/layers/{best['id']}/review", {"action": "accept", "min_confidence": 0.5})["changed"]
+    print(f"  accepted {n} suggestions at 50 % or more")
     # On page 1 too, so its figures count the accepted shelters
     view = api.call("GET", f"/products/{pid}")["product"]["view"]
-    view["layers"].append({"id": lyr["id"], "visible": True, "opacity": 1})
+    view["layers"].append({"id": best["id"], "visible": True, "opacity": 1})
     api.call("PATCH", f"/products/{pid}", {"view": view})
     ver = api.call("POST", f"/products/{pid}/render")
     v = wait(api, "Printing page 1", lambda: next(

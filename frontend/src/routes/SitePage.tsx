@@ -16,7 +16,7 @@ import FeaturePanel, { FeatureForm, type FeatureFields } from '../components/Fea
 import Header from '../components/Header'
 import LayerPanel from '../components/LayerPanel'
 import Legend from '../components/Legend'
-import { AnalyseButton, AnalysisProgress, LearnPanel } from '../components/Analysis'
+import { AnalyseButton, AnalysisProgress, LearnPanel, ModelsPanel } from '../components/Analysis'
 import { siteTour } from '../tours'
 import { usePageTour } from '../tour'
 import { ProductsPanel } from '../components/Products'
@@ -375,8 +375,10 @@ export default function SitePage() {
               </Tabs.Panel>
               <Tabs.Panel value="ai" data-tour="ai">
                 {canEdit && <div style={{ padding: '12px 12px 0' }}><AnalyseButton site={site} getViewBounds={viewBounds} onStarted={() => setTab('ai')} /></div>}
+                <ModelsPanel site={site} canEdit={canEdit} />
                 {layers.some((l) => l.kind === 'analysis' && l.status === 'ready') && (
                   <LearnPanel slug={site.response.slug} canEdit={canEdit} drawing={!!addTo}
+                    model={layers.some((l) => l.kind === 'analysis' && l.status === 'ready' && l.analysis?.simulated === false)}
                     onDrawMissed={() => {
                       const target = layers.filter((l) => l.kind === 'analysis' && l.status === 'ready').sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]
                       if (addTo) { setDrawMode('static'); return }

@@ -91,3 +91,48 @@ def test_learning_from_reviews_beats_the_rules():
     square = {**thin, "aspect": 0.95}
     from risa import analysis
     assert analysis.learned_confidence(thin, d.params) < 0.3 < 0.7 < analysis.learned_confidence(square, d.params)
+
+
+@pytest.mark.django_db
+def test_training_export_has_yolo_tiles_only_where_fully_reviewed(tmp_path, monkeypatch):
+    import subprocess
+    import zipfile
+
+    from risa import learning, storage
+
+    # A 200 m x 100 m image at the equator, 0.5 m/px
+    tif = tmp_path / "img.tif"
+    subprocess.run(["gdal_create", "-of", "GTiff", "-outsize", "400", "200", "-bands", "3", "-ot", "Byte", "-burn", "120",
+                    "-a_srs", "EPSG:3857", "-a_ullr", "0", "100", "200", "0", str(tif)], check=True, capture_output=True)
+    monkeypatch.setattr(storage, "local_copy", lambda key, suffix="": __import__("contextlib").nullcontext(str(tif)))
+    r = Response(name="T", slug="t")
+    r.set_edit_key()
+    r.save()
+    site = Site.objects.create(response=r, name="S", slug="s")
+    src = Layer.objects.create(site=site, name="Ortho", kind="raster", source="x.tif")
+    lyr = Layer.objects.create(site=site, name="A", kind="analysis",
+                               meta={"source_layer": str(src.id), "aoi": [0, 0, 0.0017966, 0.0008983], "detector": "simulated"})
+    m = 1 / 111319.49  # degrees per metre at the equator
+
+    def box(x, y, review):
+        Feature.objects.create(layer=lyr, risa_type="shelter", properties={"review": review, "confidence": 0.8},
+                               geom=Polygon(((x * m, y * m), ((x + 4) * m, y * m), ((x + 4) * m, (y + 4) * m), (x * m, (y + 4) * m),
+                                             (x * m, y * m)), srid=4326))
+    # One tile covers it all at 0.5 m/px: every suggestion in it reviewed
+    box(10, 60, "accepted")
+    box(30, 60, "rejected")
+    box(50, 60, "accepted")
+    monkeypatch.setattr("risa.detectors.simulated.Simulated.gsd", 0.5)
+    out = tmp_path / "t.zip"
+    learning.training_data(lyr, str(out))
+    with zipfile.ZipFile(out) as z:
+        tiles = [n for n in z.namelist() if n.startswith("yolo/images/")]
+        labels = [z.read(n).decode().split() for n in z.namelist() if n.startswith("yolo/labels/")]
+        assert len(tiles) == 1 and len(labels[0]) == 10  # two accepted boxes, five numbers each; the rejected one is background
+        assert labels[0][0] == "0" and 0 < float(labels[0][3]) < 0.05
+        assert "names:" in z.read("yolo/data.yaml").decode()
+    # One suggestion left in the tile: it's no longer fully reviewed
+    box(70, 60, "suggested")
+    learning.training_data(lyr, str(out))
+    with zipfile.ZipFile(out) as z:
+        assert not [n for n in z.namelist() if n.startswith("yolo/images/")]

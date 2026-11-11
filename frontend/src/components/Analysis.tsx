@@ -1,9 +1,9 @@
 // Imagery analysis: detect shelters, buildings, blocks and the site boundary on an
 // orthomosaic with a chosen detector (simulated or a model), then review the suggestions.
 
-import { Alert, Badge, Button, Group, Loader, Modal, NumberInput, Paper, Progress, Radio, Select, Stack, Text } from '@mantine/core'
+import { Alert, Badge, Button, Group, Loader, Modal, NumberInput, Paper, Progress, Radio, Select, Stack, Table, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconPolygon, IconSchool, IconSparkles } from '@tabler/icons-react'
+import { IconChartBar, IconPolygon, IconSchool, IconSparkles } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api, type LayerT, type SiteFull } from '../api'
@@ -93,7 +93,7 @@ export function AnalysisProgress({ layers }: { layers: LayerT[] }) {
           <Text size="sm" fw={600}>Analysing imagery</Text>
           <Text size="xs" c="dimmed">{p.step}…</Text>
         </div>
-        <Badge color="violet" variant="light">Simulated</Badge>
+        <Badge color="violet" variant="light">{running[0].analysis?.simulated === false ? 'Model' : 'Simulated'}</Badge>
       </Group>
       <Progress value={p.pct} color="violet" mt="sm" size="sm" animated />
     </Paper>
@@ -149,7 +149,7 @@ interface DetectorInfo {
 const pc = (x?: number | null) => (x == null ? '–' : `${Math.round(x * 100)}%`)
 
 /** Learn from corrections: every accept, reject, edit and drawn shelter is a label. */
-export function LearnPanel({ slug, canEdit, onDrawMissed, drawing }: { slug: string; canEdit: boolean; onDrawMissed?: () => void; drawing: boolean }) {
+export function LearnPanel({ slug, canEdit, onDrawMissed, drawing, model }: { slug: string; canEdit: boolean; onDrawMissed?: () => void; drawing: boolean; model?: boolean }) {
   const qc = useQueryClient()
   const q = useQuery({
     queryKey: ['detector', slug],
@@ -197,7 +197,81 @@ export function LearnPanel({ slug, canEdit, onDrawMissed, drawing }: { slug: str
           {onDrawMissed && <Button size="compact-xs" variant={drawing ? 'filled' : 'light'} color="violet" leftSection={<IconPolygon size={13} />} onClick={onDrawMissed}>{drawing ? 'Drawing missed shelters (Esc to stop)' : 'Draw missed shelters'}</Button>}
         </Group>
       )}
-      <Text size="xs" c="dimmed" mt={6}>Simulated: this tunes the stand-in detector. A real model is fine-tuned on the same labels; download them from the analysis layer’s menu.</Text>
+      {model
+        ? <Text size="xs" c="dimmed" mt={6}>Learning here tunes the stand-in. For the model, your reviews are its training data: <b>Download training data</b> in the analysis layer’s menu gives image tiles and labels ready for YOLO fine-tuning (only areas where every suggestion was reviewed).</Text>
+        : <Text size="xs" c="dimmed" mt={6}>Simulated: this tunes the stand-in detector. A real model is fine-tuned on the same labels; download them from the analysis layer’s menu.</Text>}
+    </Paper>
+  )
+}
+
+/** The detection runs on this site, each with its model and, once evaluated, how it
+ * scores against a reference layer of shelters marked or outlined by a person. */
+export function ModelsPanel({ site, canEdit }: { site: SiteFull; canEdit: boolean }) {
+  const qc = useQueryClient()
+  const config = useConfigData()
+  const runs = site.layers.filter((l) => l.kind === 'analysis' && l.status === 'ready')
+  const refs = site.layers.filter((l) => ['vector', 'annotations', 'kobo'].includes(l.kind) && l.status === 'ready')
+  const guess = refs.find((l) => /reference/i.test(l.name))
+  const [ref, setRef] = useState<string | null>(guess?.id || null)
+  const [busy, setBusy] = useState('')
+  if (!runs.length) return null
+  const label = (l: LayerT) => config.detectors.find((d) => d.id === l.analysis?.detector)?.short || l.analysis?.model || 'Simulated'
+  const evaluate = async (l: LayerT) => {
+    if (!ref) return
+    setBusy(l.id)
+    try {
+      await api(`/layers/${l.id}/evaluate`, { body: { reference: ref } })
+      qc.invalidateQueries({ queryKey: ['site'] })
+    } catch (e) {
+      notifications.show({ color: 'red', message: String((e as Error).message) })
+    } finally {
+      setBusy('')
+    }
+  }
+  return (
+    <Paper withBorder p="sm" mx="sm" mt="sm">
+      <Group gap={6} mb={4}><IconChartBar size={16} color="var(--mantine-color-violet-7)" /><Text fw={600} size="sm">Models</Text></Group>
+      <Text size="xs" c="dimmed">
+        Each detection, and how it scores against shelters a person marked: <b>precision</b> (of what it found, how much is a shelter), <b>recall</b> (of the shelters, how many it found).
+      </Text>
+      {canEdit && refs.length > 0 && (
+        <Select size="xs" mt="xs" label="Reference shelters" placeholder="A layer of shelters marked by a person" value={ref} onChange={setRef}
+          data={refs.map((l) => ({ value: l.id, label: l.name }))} />
+      )}
+      <Table mt="xs" fz="xs" verticalSpacing={4} horizontalSpacing={6}>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Model</Table.Th>
+            <Table.Th ta="right"><Tooltip label="Shelters it found on the whole area"><span>Found</span></Tooltip></Table.Th>
+            <Table.Th ta="right"><Tooltip label="Precision: of what it found, the share that are shelters"><span>Prec.</span></Tooltip></Table.Th>
+            <Table.Th ta="right"><Tooltip label="Recall: of the reference shelters, the share it found"><span>Recall</span></Tooltip></Table.Th>
+            <Table.Th ta="right"><Tooltip label="F1: precision and recall together"><span>F1</span></Tooltip></Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {runs.map((l) => {
+            const e = l.analysis?.evaluation
+            return (
+              <Table.Tr key={l.id}>
+                <Table.Td>
+                  <Text size="xs" fw={600}>{label(l)}</Text>
+                  <Text size="xs" c="dimmed">
+                    {l.analysis?.seconds != null ? `${l.analysis.seconds} s` : ''}
+                    {canEdit && ref && <> · <Text span size="xs" c="violet" style={{ cursor: 'pointer' }} onClick={() => evaluate(l)}>{busy === l.id ? 'scoring…' : 'score'}</Text></>}
+                  </Text>
+                </Table.Td>
+                <Table.Td ta="right">{l.analysis?.counts?.shelter ?? '–'}</Table.Td>
+                <Table.Td ta="right">{pc(e?.precision)}</Table.Td>
+                <Table.Td ta="right">{pc(e?.recall)}</Table.Td>
+                <Table.Td ta="right">
+                  {e ? <Tooltip label={`Against ${e.reference_count} reference shelters (${e.reference_name}), in ${Math.round(e.area_m2)} m²`}><b>{pc(e.f1)}</b></Tooltip> : '–'}
+                </Table.Td>
+              </Table.Tr>
+            )
+          })}
+        </Table.Tbody>
+      </Table>
+      {!refs.length && canEdit && <Text size="xs" mt={6}>To score a model, add a layer of reference shelters: draw them as points (type Shelter), or upload a file of them.</Text>}
     </Paper>
   )
 }
