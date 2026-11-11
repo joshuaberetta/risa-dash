@@ -1,18 +1,24 @@
-"""GIS exports: a GeoPackage with one table per vector layer, each with its QGIS style,
-and GeoJSON."""
+"""GIS exports: a GeoPackage with one table per vector layer, each with its QGIS style;
+GeoJSON and CSV per layer, or every layer of a site in a zip."""
 
+import csv
+import io
 import json
 import os
 import re
 import sqlite3
 import subprocess
 import tempfile
+import zipfile
 
-from django.contrib.gis.db.models.functions import AsGeoJSON
+from django.contrib.gis.db.models.functions import AsGeoJSON, AsWKT, Centroid
 
 from . import qml
 from .geofuncs import GeometryType
 from .models import Layer, Site
+from .symbology import symbology
+
+VECTOR_KINDS = ["vector", "kobo", "annotations", "analysis"]
 
 
 def layer_geojson(layer: Layer, flat: bool = False) -> dict:
@@ -30,6 +36,55 @@ def layer_geojson(layer: Layer, flat: bool = False) -> dict:
         })
         feats.append({"type": "Feature", "id": str(f["id"]), "geometry": json.loads(f["gj"]), "properties": props})
     return {"type": "FeatureCollection", "features": feats}
+
+
+def layer_csv(layer: Layer) -> str:
+    """One row per feature, for a spreadsheet: type and status as codes and in words,
+    longitude and latitude (the centre of a line or area), the geometry as WKT, then the
+    feature's own fields. With a byte-order mark, so Excel reads it as UTF-8."""
+    sym = symbology()
+    rows, fields = [], {}
+    qs = layer.features.annotate(c=Centroid("geom"), wkt=AsWKT("geom")).order_by("label", "id")
+    for f in qs.iterator(chunk_size=2000):
+        props = {k: (json.dumps(v, ensure_ascii=False) if isinstance(v, dict | list) else v)
+                 for k, v in (f.properties or {}).items()}
+        fields.update(dict.fromkeys(props))
+        rows.append(({
+            "risa_id": str(f.id), "label": f.label, "type": f.risa_type,
+            "type_label": (sym["types"].get(f.risa_type) or sym["hazards"].get(f.risa_type) or {}).get("label", ""),
+            "status": f.risa_status, "status_label": (sym["status"].get(f.risa_status) or {}).get("label", ""),
+            "observed_at": f.observed_at.isoformat() if f.observed_at else "",
+            "longitude": round(f.c.x, 7), "latitude": round(f.c.y, 7), "geometry_wkt": f.wkt,
+        }, props))
+    head = ["risa_id", "label", "type", "type_label", "status", "status_label", "observed_at", "longitude",
+            "latitude", "geometry_wkt"]
+    extra = [k for k in fields if k not in head]
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(head + extra)
+    for base, props in rows:
+        w.writerow([base[k] for k in head] + [props.get(k, "") for k in extra])
+    return "\ufeff" + out.getvalue()
+
+
+def file_name(name: str) -> str:
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("_")[:80] or "layer"
+
+
+def site_zip(site: Site, fmt: str, out_path: str) -> str | None:
+    """Every vector layer of the site as GeoJSON or CSV, one file each, in a zip."""
+    layers = [lyr for lyr in site.layers.filter(kind__in=VECTOR_KINDS, status="ready") if lyr.features.exists()]
+    if not layers:
+        return None
+    used: set[str] = set()
+    with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
+        for lyr in layers:
+            name = _table_name(file_name(lyr.name).lower(), used)
+            if fmt == "geojson":
+                z.writestr(f"{name}.geojson", json.dumps(layer_geojson(lyr), ensure_ascii=False, default=str))
+            else:
+                z.writestr(f"{name}.csv", layer_csv(lyr))
+    return out_path
 
 
 GEOM_GROUPS = [
@@ -54,7 +109,7 @@ def site_geopackage(site: Site, out_path: str) -> str:
     used: set[str] = set()
     styles: list[tuple[str, str, str]] = []  # (table, layer name, QML)
     with tempfile.TemporaryDirectory() as tmp:
-        for layer in site.layers.filter(kind__in=["vector", "kobo", "annotations", "analysis"], status="ready"):
+        for layer in site.layers.filter(kind__in=VECTOR_KINDS, status="ready"):
             if not layer.features.exists():
                 continue
             src = os.path.join(tmp, f"{layer.id}.geojson")

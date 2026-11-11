@@ -116,6 +116,10 @@ export default function LayerPanel({ site, state, setState, onZoom, canEdit }: P
                     {canEdit && l.kind === 'analysis' && l.status === 'ready' && <Menu.Item leftSection={<IconSparkles size={14} />} onClick={() => setReviewing(l)}>Review by confidence…</Menu.Item>}
                     {canEdit && l.kind === 'analysis' && l.status === 'ready' && <Menu.Item leftSection={<IconTrash size={14} />} onClick={() => bulkReview(l, 'delete_rejected')}>Remove rejected</Menu.Item>}
                     {l.kind === 'analysis' && l.analysis?.training_data && <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={l.analysis.training_data}>Download training data (imagery + labels)</Menu.Item>}
+                    {['vector', 'kobo', 'annotations', 'analysis'].includes(l.kind) && l.status === 'ready' && <>
+                      <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={`/api/layers/${l.id}/export.geojson`}>Download GeoJSON</Menu.Item>
+                      <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={`/api/layers/${l.id}/export.csv`}>Download CSV (spreadsheet)</Menu.Item>
+                    </>}
                     {l.download && <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={l.download}>Download original</Menu.Item>}
                     {l.kind === 'raster' && l.url && <Menu.Item leftSection={<IconDownload size={14} />} component="a" href={l.url} download>Download COG (QGIS/ArcGIS)</Menu.Item>}
                     {canEdit && <Menu.Divider />}

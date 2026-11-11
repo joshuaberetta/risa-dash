@@ -322,15 +322,31 @@ def get_summary(request, site_id: str, layers: str = ""):
     return site_summary(s, ids)
 
 
+@api.get("/sites/{site_id}/export-{fmt}.zip")
+def export_zip(request, site_id: str, fmt: str):
+    """Every vector layer of the site as GeoJSON or CSV files, in a zip."""
+    s = _site(request, site_id, edit=False)
+    if fmt not in ("geojson", "csv"):
+        raise HttpError(404, "GeoJSON or CSV")
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, f"{s.response.slug}_{s.slug}_{fmt}.zip")
+        if not exports.site_zip(s, fmt, path):
+            raise HttpError(404, "This site has no vector data to export yet")
+        # Open, then the folder goes: the file is streamed from the open handle
+        f = open(path, "rb")
+    return FileResponse(f, as_attachment=True, filename=os.path.basename(path), content_type="application/zip")
+
+
 @api.get("/sites/{site_id}/export.gpkg")
 def export_gpkg(request, site_id: str):
     s = _site(request, site_id, edit=False)
-    tmp = tempfile.mkdtemp()
-    path = os.path.join(tmp, f"{s.response.slug}_{s.slug}.gpkg")
-    exports.site_geopackage(s, path)
-    if not os.path.exists(path):
-        raise HttpError(404, "This site has no vector data to export yet")
-    return FileResponse(open(path, "rb"), as_attachment=True, filename=os.path.basename(path),
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, f"{s.response.slug}_{s.slug}.gpkg")
+        exports.site_geopackage(s, path)
+        if not os.path.exists(path):
+            raise HttpError(404, "This site has no vector data to export yet")
+        f = open(path, "rb")
+    return FileResponse(f, as_attachment=True, filename=os.path.basename(path),
                         content_type="application/geopackage+sqlite3")
 
 
@@ -474,6 +490,22 @@ def layer_features(request, layer_id: str, t: str = ""):
     r = HttpResponse(content_type="application/geo+json")
     r.write(json.dumps(exports.layer_geojson(lyr), default=str, ensure_ascii=False))
     r["Cache-Control"] = "public, max-age=31536000" if t else "no-cache"
+    return r
+
+
+@api.get("/layers/{layer_id}/export.{fmt}")
+def layer_export(request, layer_id: str, fmt: str):
+    """The layer as a file to download: GeoJSON (with every field) or CSV (for a spreadsheet)."""
+    lyr = _layer(request, layer_id, edit=False)
+    if not lyr.is_vector or fmt not in ("geojson", "csv"):
+        raise HttpError(404, "GeoJSON and CSV are for vector layers")
+    name = f"{lyr.site.response.slug}_{lyr.site.slug}_{exports.file_name(lyr.name)}.{fmt}"
+    if fmt == "csv":
+        r = HttpResponse(exports.layer_csv(lyr), content_type="text/csv; charset=utf-8")
+    else:
+        r = HttpResponse(json.dumps(exports.layer_geojson(lyr), default=str, ensure_ascii=False),
+                         content_type="application/geo+json")
+    r["Content-Disposition"] = f'attachment; filename="{name}"'
     return r
 
 

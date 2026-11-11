@@ -262,6 +262,8 @@ export default function SitePage() {
               <Menu.Target><Button size="xs" variant="default" leftSection={<IconDownload size={14} />} data-tour="export">Export</Button></Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item component="a" href={`/api/sites/${site.id}/export.gpkg`}>GeoPackage (QGIS, ArcGIS Pro)</Menu.Item>
+                <Menu.Item component="a" href={`/api/sites/${site.id}/export-geojson.zip`}>GeoJSON, a file per layer (zip)</Menu.Item>
+                <Menu.Item component="a" href={`/api/sites/${site.id}/export-csv.zip`}>CSV for spreadsheets, a file per layer (zip)</Menu.Item>
                 <Menu.Label>Imagery: use “Download COG” on each layer</Menu.Label>
               </Menu.Dropdown>
             </Menu>

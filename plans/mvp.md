@@ -482,7 +482,7 @@ About 7–8 weeks for one developer. Each phase ends deployed to risa-dash.kobol
 - Rebuild the Venezuela site and compare it with MA023 alongside MapAction.
 
 **Phase 5 · Export, bundles, self-hosting (weeks 7–8)**
-- GeoPackage with QML styles, GeoJSON, CSV, COG download. Test in QGIS 3.40 LTR and ArcGIS Pro. (11/11/2026: QML styles done and checked in QGIS 3.42; GeoPackage written as 1.2 for older readers. Still to do: GeoJSON and CSV downloads, a test in ArcGIS Pro and QGIS 3.40 LTR.)
+- GeoPackage with QML styles, GeoJSON, CSV, COG download. Test in QGIS 3.40 LTR and ArcGIS Pro. (11/11/2026: QML styles done and checked in QGIS 3.42; GeoPackage written as 1.2 for older readers. GeoJSON and CSV downloads done the same day, per layer and per site. Still to do: a test in ArcGIS Pro and QGIS 3.40 LTR.)
 - Response bundle export and import; a cloud → box → cloud round trip.
 - `docs/self-hosting.md` (done 11/11/2026). The box's compose file, edge route and `risa.sh` live in kobo-in-a-box (`remote/risa/`) rather than here as `compose.box.yaml`; it was installed on the GPU rig with `offline.sh on` on 11/11/2026. Label fonts are a setting (`MAP_FONT`, `MAP_FONT_BOLD`), and since 11/11/2026 they are in the image (`scripts/fetch-fonts.sh`, served at `/fonts/`), so the box can drop its `RISA_GLYPHS_URL` and the edge's font route.
 - A demo response from the fictional sample site on the RISA site, for showing the tool without real data.

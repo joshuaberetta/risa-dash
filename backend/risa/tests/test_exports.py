@@ -48,3 +48,43 @@ def test_geopackage_carries_qgis_styles(tmp_path):
     # Partly: dashed
     line = ET.fromstring(styles["site_layout_lines"][1])
     assert any(o.get("name") == "use_custom_dash" and o.get("value") == "1" for o in line.iter("Option"))
+
+
+@pytest.mark.django_db
+def test_geojson_and_csv_downloads(client):
+    import csv
+    import io
+    import json
+    import zipfile
+
+    r = Response(name="T", slug="t")
+    r.set_edit_key()
+    r.save()
+    site = Site.objects.create(response=r, name="Camp A", slug="camp-a")
+    lyr = Layer.objects.create(site=site, name="Water points", kind="kobo")
+    Feature.objects.create(layer=lyr, geom=Point(35.25, -19.5, srid=4326), risa_type="water", risa_status="no",
+                           label="WP-01", properties={"note": "dry, «since Monday»", "tags": ["a"]})
+    Feature.objects.create(layer=lyr, geom=Polygon(((0, 0), (2, 0), (2, 2), (0, 0)), srid=4326), risa_type="flood")
+    Layer.objects.create(site=site, name="Empty", kind="vector")
+
+    res = client.get(f"/api/layers/{lyr.id}/export.csv")
+    assert res["Content-Disposition"] == 'attachment; filename="t_camp-a_Water_points.csv"'
+    text = res.content.decode("utf-8")
+    assert text.startswith("﻿")
+    rows = list(csv.DictReader(io.StringIO(text.lstrip("﻿"))))
+    wp = next(x for x in rows if x["label"] == "WP-01")
+    assert (wp["type_label"], wp["status"], wp["status_label"]) == ("Water point", "no", "Closed / not working")
+    assert (wp["longitude"], wp["latitude"], wp["note"], wp["tags"]) == ("35.25", "-19.5", "dry, «since Monday»", '["a"]')
+    flood = next(x for x in rows if x["type"] == "flood")
+    assert flood["geometry_wkt"].startswith("POLYGON") and float(flood["longitude"]) > 1
+
+    gj = json.loads(client.get(f"/api/layers/{lyr.id}/export.geojson").content)
+    assert len(gj["features"]) == 2 and gj["features"][0]["properties"]["risa_id"]
+    assert client.get(f"/api/layers/{lyr.id}/export.shp").status_code == 404
+
+    res = client.get(f"/api/sites/{site.id}/export-csv.zip")
+    with zipfile.ZipFile(io.BytesIO(b"".join(res.streaming_content))) as z:
+        assert z.namelist() == ["water_points.csv"]
+    res = client.get(f"/api/sites/{site.id}/export-geojson.zip")
+    with zipfile.ZipFile(io.BytesIO(b"".join(res.streaming_content))) as z:
+        assert z.namelist() == ["water_points.geojson"]
