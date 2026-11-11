@@ -13,6 +13,11 @@ features visible in the image for testing only. It does not describe the camp.
       https://oin-hotosm-temp.s3.us-east-1.amazonaws.com/69bbae0f57bbd74f1e80e3ad/0/69bbae0f57bbd74f1e80e3ae.tif
     python3 -I scripts/seed_sample.py --api http://localhost:8070 --imagery haiti-aviation-camp-1.tif
 
+--demo makes the hosted instance's demo response (/r/demo): it also detects shelters,
+accepts the confident ones as a reviewer would, and renders page 1.
+
+    python3 -I scripts/seed_sample.py --demo --api https://risa-dash.kobolabs.dev --imagery … --create-key …
+
 Only the standard library. Prints the site URL and the edit key.
 """
 
@@ -126,15 +131,21 @@ def main():
     ap.add_argument("--api", default="http://localhost:8070")
     ap.add_argument("--imagery", required=True, help="haiti-aviation-camp-1.tif")
     ap.add_argument("--create-key", default=os.environ.get("CREATE_KEY", ""))
+    ap.add_argument("--demo", action="store_true", help="the demo response: /r/demo, detection reviewed, page 1 printed")
     args = ap.parse_args()
 
     api = Api(args.api)
+    name, code, version = "Sample: Port-au-Prince displacement site (test data)", "TEST01", "Initial assessment · Day 2 · v1.0"
+    if args.demo:
+        name, code, version = "Demo: Aviation Camp, Port-au-Prince (fictional data)", "DEMO01", "Demo · Day 2 · v1.0"
     r = api.call("POST", "/responses", {
-        "name": "Sample: Port-au-Prince displacement site (test data)", "hazard": "Earthquake", "country": "HTI",
+        "name": name, "slug": "demo" if args.demo else "", "hazard": "Earthquake", "country": "HTI",
         "glide": "TEST-0000-HTI", "language": "en",
     }, headers={"X-Create-Key": args.create_key} if args.create_key else None)
     api.key = r["edit_key"]
     slug = r["response"]["slug"]
+    # Now, so a run that stops halfway doesn't lose it
+    print(f"Edit key for {slug} (saved nowhere else): {api.key}")
     site = api.call("POST", f"/responses/{slug}/sites", {
         "name": "Aviation Camp", "place": "Delmas, Port-au-Prince, Haiti · imagery IOM 2012, other data fictional",
         "kind": "camp", "center": [(W + E) / 2, (N + S) / 2], "zoom": 17.4,
@@ -170,15 +181,51 @@ def main():
 
     # A page 1 framed on the camp
     pad = 0.0004
-    api.call("POST", f"/sites/{sid}/products", {
-        "title": "Common Operational Picture", "code": "TEST01", "version_label": "Initial assessment · Day 2 · v1.0",
+    product = api.call("POST", f"/sites/{sid}/products", {
+        "title": "Common Operational Picture", "code": code, "version_label": version,
         "page_size": "A3", "authority": "Direction de la Protection Civile (example)",
         "key_message": "Test data. Blocks C and D border the flooded canal. Use R1 from the west or east; R3 is closed.",
         "view": {"bounds": [W + pad * 2, S - pad * 0.2, E - pad * 6, N + pad * 0.2], "bearing": 0,
                  "basemap": "positron", "layers": [{"id": lyr["id"], "visible": True, "opacity": 1} for lyr in full["layers"]]},
     })
+    if args.demo:
+        demo(api, sid, product["id"], next(lyr for lyr in full["layers"] if lyr["kind"] == "raster"))
     print(f"\nOpen  {args.api.replace(':8070', ':5173')}/r/{slug}/{site['slug']}")
     print(f"Edit key (saved nowhere else): {api.key}")
+
+
+def wait(api, what, check, tries=200):
+    print(f"{what}…", end="", flush=True)
+    for _ in range(tries):
+        out = check()
+        if out:
+            print()
+            return out
+        print(".", end="", flush=True)
+        time.sleep(3)
+    sys.exit(f"\n{what}: timed out")
+
+
+def demo(api, sid, pid, ortho):
+    """Shelters detected and the confident ones accepted, as a reviewer would; page 1 printed."""
+    lyr = api.call("POST", f"/layers/{ortho['id']}/analyse", {})
+    lyr = wait(api, "Detecting shelters", lambda: next(
+        (x for x in api.call("GET", f"/sites/{sid}")["layers"] if x["id"] == lyr["id"] and x["status"] != "processing"), None))
+    if lyr["status"] != "ready":
+        sys.exit(f"Detection failed: {lyr.get('error', '')[:300]}")
+    n = api.call("POST", f"/layers/{lyr['id']}/review", {"action": "accept", "min_confidence": 0.75})["changed"]
+    print(f"  accepted {n} suggestions at 75 % or more")
+    # On page 1 too, so its figures count the accepted shelters
+    view = api.call("GET", f"/products/{pid}")["product"]["view"]
+    view["layers"].append({"id": lyr["id"], "visible": True, "opacity": 1})
+    api.call("PATCH", f"/products/{pid}", {"view": view})
+    ver = api.call("POST", f"/products/{pid}/render")
+    v = wait(api, "Printing page 1", lambda: next(
+        (x for x in api.call("GET", f"/products/{pid}")["product"]["versions"]
+         if x["n"] == ver["n"] and x["status"] != "processing"), None))
+    if v["status"] != "ready":
+        sys.exit(f"Page 1 failed: {v.get('error', '')[:300]}")
+    print(f"  page 1: {api.base}{v['pdf']}")
 
 
 if __name__ == "__main__":

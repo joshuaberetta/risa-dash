@@ -47,7 +47,7 @@ curl -L -o .sample-data/oam/haiti-aviation-camp-1.tif \
 python3 -I scripts/seed_sample.py --api http://localhost:8070 --imagery .sample-data/oam/haiti-aviation-camp-1.tif
 ```
 
-It prints the site URL and the edit key (use **Unlock editing**). Against the hosted instance, pass `--api https://risa-dash.kobolabs.dev --create-key …`.
+It prints the site URL and the edit key (use **Unlock editing**). Against the hosted instance, pass `--api https://risa-dash.kobolabs.dev --create-key …`. `--demo` makes the demo response instead (`/r/demo`): shelters detected and the confident ones accepted, and page 1 printed. The hosted demo is at https://risa-dash.kobolabs.dev/r/demo.
 
 ### Tests
 
