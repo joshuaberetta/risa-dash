@@ -35,7 +35,7 @@ The same software runs in four ways, chosen per response by whoever is responsib
 |---|---|---|---|
 | **The consortium's instance** (risa-dash.kobolabs.dev) | A cloud provider's data centre in Frankfurt, in the EU | Yes | Running |
 | **Self-hosted** by a national authority or an organisation | Its own server or cloud account, in the country if required | Only for its users to reach it | Built: one Docker set-up for every target |
-| **Offline on a field kit** (Kobo in a box) | The kit, in the team's hands | None | Built, not yet tried on a kit; offline map labels still to bundle |
+| **Offline on a field kit** (Kobo in a box) | The kit, in the team's hands | None | Built, not yet tried on a kit |
 | **Federated**: several kits, a hub at base, and optionally the cloud | Each kit; then the hub; then the cloud, only what the focal point chooses | None between kits; a link only to reach the cloud | Planned |
 
 What makes this possible:
@@ -154,7 +154,7 @@ RISA records infrastructure and services, not people. But imagery of a displacem
 - No personal accounts, and no tracking or analytics. Editing a response needs a shared edit key, stored only as a hash.
 - Questions marked sensitive when a Kobo project is connected (names, phone numbers, anything about a person) are never copied to the dashboard.
 - Kobo access tokens are stored encrypted and sent only to their own Kobo server. Photos are fetched through the dashboard when someone opens them, not stored in it.
-- No imagery, observation or photo is sent to an outside AI company. Today's analysis is simulated; the planned models run on the kit, the hub or, for the hosted instance, a server rented from the same provider in the same region.
+- No imagery, observation or photo is sent to an outside AI company. The shelter model runs on the dashboard's own server, the kit or the hub; larger models will run there too or, for the hosted instance, on a server rented from the same provider in the same region.
 
 **Who can see it.** Viewing a site is open to anyone with its link, so the map can be shared with partners in the first hours; links aren't listed by search engines. An instance can require the edit key for viewing too. Imagery and printed pages are served at long, unguessable addresses, so a file whose address has been shared can be opened by anyone who has it; for the most sensitive responses, a national server or a kit keeps even that inside the authority's network.
 
@@ -189,11 +189,11 @@ The MVP is running at **risa-dash.kobolabs.dev** with real drone imagery (IOM's 
 | Locator maps and the feedback QR code and link | Working; the consortium's feedback form is still to be written in Kobo |
 | Sharing a site's live map by link | Working |
 | Embedding in partners' dashboards and websites (e.g. the Virtual OSOCC) | Planned: an embed view, links that keep the view, a per-response switch and a list of allowed sites, and a fixed link to the latest page 1. About 1–2 weeks of development |
-| Self-hosting and the offline box | Built: one Docker set-up for the cloud, a national server and a kit, with offline basemaps and the user guide on the box. Not yet tried on a kit, and the map's label fonts still come from the internet |
+| Self-hosting and the offline box | Built: one Docker set-up for the cloud, a national server and a kit, with offline basemaps and the user guide on the box. Not yet tried on a kit |
 | Encrypted transfer files and an imagery archive | Planned, with several kits and a hub |
-| Imagery analysis and review | Working end to end, with a **simulated** detector (simple colour rules standing in for a model), so the review workflow can be tried now |
-| Learning from corrections | Working end to end on the simulated detector; corrections are kept as training data and can be exported |
-| A real segmentation model, and fine-tuning it on corrections | Planned: choose and test a model on the Venezuela and Mozambique orthomosaics, then a training service on a GPU |
+| Imagery analysis and review | Working end to end with an open shelter model trained on camp imagery (YOLOv8n, on CPU) and a simulated stand-in for comparison; each scored against reference shelters (F1 0.79 and 0.29 on an indicative Haiti sample) |
+| Learning from corrections | Corrections are kept as training data and export ready for fine-tuning (YOLO tiles and labels); the learning loop runs end to end on the simulated detector |
+| Outlines, fine-tuning on corrections, a person-checked benchmark | Planned, ideally with a research partner ([`partner-brief.md`](partner-brief.md)): a segmenter for footprints, a training service on a GPU, test sets from Venezuela, Mozambique and Haiti |
 | AI on the kit's local models (brief, key message, photo checks) | Planned; an example of the AI analysis output is shown in the dashboard today, made from the site's data without a model |
 | Several kits and a hub | Planned; moving a whole response between instances as one file is designed |
 | The assistant and support help | Planned, on the tools and models Kobo-in-a-box has already tested offline |

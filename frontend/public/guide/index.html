@@ -84,7 +84,7 @@
   <li><strong>Runs where your data must stay</strong>On the consortium's instance, self-hosted on your own server, fully offline on a field kit, or (planned) as a network of kits with a hub.</li>
 </ul>
 <p>Everything belongs to a <strong>response</strong> (an emergency, such as "Venezuela: earthquake, June 2026"), and each response has <strong>sites</strong>. A site has its own map, layers, figures and printed products.</p>
-<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis (shelter detection) is <strong>simulated</strong>, a stand-in for a real model, and the analysis tab shows example output. Embedding the map in other websites is planned. Pages 2 and 3 of the RISA product are still to come.</p></div>
+<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis finds shelters with a real, open model trained on camp imagery, as suggestions for a person to review; a simulated stand-in remains for comparison, and the analysis tab's situation brief is example output. Embedding the map in other websites is planned. Pages 2 and 3 of the RISA product are still to come.</p></div>
 </section>
 
 <section id="run">
@@ -263,15 +263,20 @@
 
 <section id="ai">
 <h2>Imagery analysis</h2>
-<div class="note"><p>The detector is <strong>simulated</strong> for now. It uses simple colour rules on the real imagery and stands in for a real model, so the review workflow can be tried and improved. Don't report its counts as findings.</p></div>
-<p>Counting shelters on an orthomosaic by hand takes hours. In the <strong>AI analysis</strong> tab, <strong>Detect shelters on imagery</strong> finds shelters and buildings in the current view or the whole image, groups shelters into blocks and outlines the site.</p>
+<p>Counting shelters on an orthomosaic by hand takes hours. In the <strong>AI analysis</strong> tab, <strong>Detect shelters on imagery</strong> finds shelters and buildings in the current view or the whole image, groups shelters into blocks and outlines the site. Choose the <strong>model</strong>:</p>
+<ul>
+  <li><strong>Shelter detector (YOLOv8n)</strong>, an open model trained on drone imagery of camps in DRC, Chad and Mozambique. It's strongest on plastic-sheeting shelters, and needs imagery at 10 cm per pixel or finer. It finds most shelters that stand apart, and misses more where roofs run together.</li>
+  <li><strong>Simulated</strong>, simple colour rules standing in for a model. It's kept for comparison; don't report its counts as findings.</li>
+</ul>
+<p>Either way, a person checks the results before they count:</p>
 <ul>
   <li><strong>Every result is a suggestion</strong>, drawn dashed until a person accepts it. Accept or reject one at a time, or use <strong>⋯ › Review by confidence…</strong> to accept or reject everything above or below a level.</li>
   <li>Re-tag or reshape a suggestion like a drawn feature, and use <strong>Draw missed shelters</strong> for any it missed.</li>
   <li>Only <strong>accepted</strong> shelters count in the figures and on page 1.</li>
-  <li><strong>Learn from corrections:</strong> each accept, reject, reshape and missed shelter is kept. After 20 reviews each way, it trains a detector version for this response and reports its accuracy on reviews it didn't train on. <strong>Download training data</strong> exports the imagery and labels for training a real model.</li>
+  <li><strong>Learn from corrections:</strong> each accept, reject, reshape and missed shelter is kept. For the simulated detector, after 20 reviews each way, it trains a version for this response. For the model, your reviews are its training data: <strong>⋯ › Download training data</strong> gives the imagery, the labels and image tiles ready for fine-tuning, from the areas where every suggestion was reviewed.</li>
+  <li><strong>Models</strong> shows each detection with its model, and how it scores against <strong>reference shelters</strong>: a layer of shelters a person marked, one point each (draw them, or upload a file). <strong>Precision</strong> is the share of what it found that are shelters; <strong>recall</strong> the share of the shelters it found. Score a model on a few marked blocks before trusting its count on a new site.</li>
 </ul>
-<figure><a href="static/shots/ai.jpg"><img src="static/shots/ai.jpg" width="1440" height="900" alt="The AI analysis tab beside the map: Detect shelters on imagery, Learn from corrections with counts of accepted and rejected suggestions, and the example situation brief. On the map, detected shelters are outlined in violet and grouped into labelled blocks with dashed outlines."></a><figcaption>Detected shelters waiting for review.</figcaption></figure>
+<figure><a href="static/shots/ai.jpg"><img src="static/shots/ai.jpg" width="1440" height="900" alt="The AI analysis tab beside the map: Detect shelters on imagery, the Models card comparing the shelter model (precision 90%, recall 71%) with the simulated stand-in, and Learn from corrections. On the map, shelters the model found are outlined in violet and grouped into labelled blocks."></a><figcaption>Shelters found by the model, waiting for review, and the two models scored against reference shelters.</figcaption></figure>
 </section>
 
 <section id="page1">
@@ -411,7 +416,7 @@
   <li><strong>No personal accounts, no tracking, no analytics.</strong> Your browser keeps only the edit key, your layer and basemap choices for each site, and which tours you've seen. The edit key is stored on the server only as a hash.</li>
   <li><strong>Sensitive questions are left out.</strong> When you connect a Kobo project, list any question about a person (names, phone numbers, ages) under <strong>Left out (sensitive)</strong>. Those answers are never copied to the dashboard.</li>
   <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server; they never reach a browser. <strong>Photos</strong> are fetched from Kobo when someone opens them, not stored in the dashboard.</li>
-  <li><strong>No AI company sees your data.</strong> The imagery analysis is simulated today and sends nothing anywhere. The planned models run on the kit, the hub, or a server rented from the same provider in the same region as the instance.</li>
+  <li><strong>No AI company sees your data.</strong> The shelter model runs on the dashboard's own server, the kit or the hub, and sends nothing anywhere. Larger models, when they come, run there too, or on a server rented from the same provider in the same region as the instance.</li>
   <li><strong>Feedback</strong> goes into a Kobo form that the response's owner chooses, under their control.</li>
 </ul>
 
@@ -478,7 +483,7 @@
 </details>
 <details>
   <summary>Is any of our data sent to an AI company?</summary>
-  <div><p>No. The imagery analysis is simulated today and runs on the dashboard's own server. The planned models are open-weight models on the kit, the hub, or a server from the same provider and region as the instance.</p></div>
+  <div><p>No. The shelter model is an open-weight model that runs on the dashboard's own server, or on the kit or hub offline. Later models will be open-weight too, on the same machines or a server from the same provider and region as the instance.</p></div>
 </details>
 <details>
   <summary>Are we locked in to the consortium's instance?</summary>

@@ -120,6 +120,17 @@ def main():
         sys.exit("FAIL: empty site summary")
     ok("site summary")
 
+    # The shelter model is in the image and runs with no network (here, on a blank image: no shelters)
+    if not any(d["id"] == "yolo-shelters" and not d["unavailable"] for d in api.call("GET", "/config")["detectors"]):
+        sys.exit("FAIL: the shelter model isn't available in the image")
+    ortho = next(lyr for lyr in layers if lyr["kind"] == "raster")
+    run = api.call("POST", f"/layers/{ortho['id']}/analyse", {"detector": "yolo-shelters"})
+    run = wait("the shelter model", lambda: next((x for x in api.call("GET", f"/sites/{sid}")["layers"]
+                                                  if x["id"] == run["id"] and x["status"] != "processing"), None), 300)
+    if run["status"] != "ready":
+        sys.exit(f"FAIL: the shelter model: {run.get('error', '')[:1000]}")
+    ok(f"shelter model ran offline in {run['analysis']['seconds']} s")
+
     p = api.call("POST", f"/sites/{sid}/products", {
         "title": "Common Operational Picture", "code": "E2E01", "page_size": "A3",
         "key_message": "End-to-end test.",
@@ -160,7 +171,8 @@ def main():
         api.call("PUT", f"/uploads/{u['id']}/parts/{n}", raw=bundle[n * u["chunk_size"]:(n + 1) * u["chunk_size"]])
     t = api.call("POST", f"/uploads/{u['id']}/complete")
     t = wait("the bundle import", lambda: (x := api.call("GET", f"/transfers/{t['id']}"))["status"] != "processing" and x, 300)
-    if t["status"] != "ready" or t["result"]["created"] or t["result"]["layers"] != 2:
+    layers = api.call("GET", f"/sites/{sid}")["layers"]
+    if t["status"] != "ready" or t["result"]["created"] or t["result"]["layers"] != len(layers):
         sys.exit(f"FAIL: bundle import: {t['error'][:2000] or t['result']}")
     after = api.call("GET", f"/sites/{sid}")["layers"]
     if sorted(lyr["id"] for lyr in after) != sorted(lyr["id"] for lyr in layers):

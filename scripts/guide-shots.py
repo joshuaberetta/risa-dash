@@ -6,9 +6,10 @@ same response, which changes nothing.
     docker compose exec -T -e SLUG=<response> -e KEY=<edit-key> worker python - < scripts/guide-shots.py
     docker compose cp worker:/tmp/shots/. frontend/public/guide/static/shots/
 
-ONLY=bundle,bundle-import takes some of them. The guide's other shots (the site, a
-feature with its Kobo photo, the Kobo dialog, the summary, the data table, AI analysis
-and the page 1 editor) were taken by hand from the sample with the box's demo Kobo project
+ONLY=bundle,bundle-import takes some of them. "ai" needs the demo response
+(seed_sample.py --demo: SLUG=demo, its key). The guide's other shots (the site, a
+feature with its Kobo photo, the Kobo dialog, the summary, the data table and the page 1
+editor) were taken by hand from the sample with the box's demo Kobo project
 (kobo-in-a-box remote/risa/demo-kobo.py) connected.
 """
 import os
@@ -37,7 +38,7 @@ def want(name):
 def main():
     OUT.mkdir(exist_ok=True)
     with sync_playwright() as p:
-        b = p.chromium.launch(args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--no-sandbox"])
+        b = p.chromium.launch(args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--no-sandbox"])
         page = b.new_page(viewport={"width": 1440, "height": 900})
         page.goto(BASE + "/")
         # Walkthroughs off: they start by themselves on a first visit
@@ -52,6 +53,14 @@ def main():
             page.get_by_label("Country (ISO3)").fill("VEN")
             page.get_by_label("GLIDE number").fill("EQ-2026-000093-VEN")
             shot(page, "new-response")
+
+        if want("ai"):
+            site = urllib.request.urlopen(f"{API}/api/responses/{SLUG}").read()
+            site_slug = __import__("json").loads(site)["sites"][0]["slug"]
+            page.goto(f"{BASE}/r/{SLUG}/{site_slug}", wait_until="networkidle")
+            page.get_by_role("tab", name="AI analysis").click()
+            page.wait_for_timeout(6000)
+            shot(page, "ai")
 
         bundle = "/tmp/sample.risa.zip"
         if want("bundle") or want("bundle-import"):

@@ -321,6 +321,8 @@ Automatic segmentation of the orthomosaic for each camp or area of interest, bui
 
 Run them with ONNX Runtime on the worker (CPU, slow but simple), on a GPU droplet for big sites, or on the box's GPU offline. The interface, data model and review workflow stay the same whichever model wins: the model replaces one function.
 
+**Since 11/11/2026, a real baseline:** detectors are plug-ins (`risa/detectors/`), with an open YOLOv8n shelter model trained on camp drone imagery (DRC, Chad, Mozambique) running on CPU with ONNX Runtime, next to the simulated one; an evaluation against reference shelters (`risa/evaluation.py`, the Models card); and training data exported as YOLO tiles. On 99 shelters marked by eye in the Haiti sample, F1 0.79 against 0.29. The contract and protocol for partners: `docs/models.md`; the brief: `docs/partner-brief.md`.
+
 **MVP: simulated.** `risa/analysis.py` implements the whole pipeline and review workflow with a stand-in detector: colour rules on the real image (bright grey roofs and blue tarps as shelter candidates, large bright roofs as buildings). Its outlines sit on real objects, so reviewing them is realistic, but counts are not reliable. Every feature and the layer say "simulated", and the dialog says so before it runs. On the Haiti sample (0.5 km², 3.3 cm/px) it finds about 2,100 shelter candidates, 22 buildings and 15 blocks in about 10 s locally.
 
 ### Learning from corrections (fine-tuning)
