@@ -52,7 +52,10 @@ It prints the site URL and the edit key (use **Unlock editing**). Against the ho
 ```sh
 docker compose exec web python -m pytest -q risa/tests
 cd frontend && npx tsc -b
+scripts/e2e.sh                       # the production image with the internet cut off
 ```
+
+`scripts/e2e.sh` builds the production image and runs it on a Docker network with no way out, as on an offline kobo-in-a-box. [`scripts/e2e.py`](scripts/e2e.py) then checks that no online basemaps are offered, the frontend and guide are served, imagery becomes a COG and vector is processed, page 1 renders to PDF, and the site exports as a GeoPackage. CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs it on every push, with ruff, the backend tests and the frontend build.
 
 `scripts/shot.py` screenshots a page in the worker's headless Chromium (no GPU, like printing).
 

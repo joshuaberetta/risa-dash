@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""
+End-to-end test against a running instance: the frontend and guide are served, a
+response and site are created, imagery and vector are uploaded and processed, page 1
+is rendered to PDF and the site exports as a GeoPackage.
+
+Run by scripts/e2e.sh inside the production image, on a network with no internet, so
+anything that needs to reach outside fails here first. Only the standard library (and
+gdal_create from the image, for a small test GeoTIFF).
+
+    python3 -I scripts/e2e.py --api http://web:8000
+"""
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from seed_sample import LAYOUT, OBS, Api, E, N, S, W, feat, point  # noqa: E402
+
+
+def get(url: str, timeout=30) -> bytes:
+    with urllib.request.urlopen(url, timeout=timeout) as r:
+        return r.read()
+
+
+def wait(what: str, check, timeout: float):
+    """Poll check() until it returns something truthy, or fail after timeout seconds."""
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        try:
+            out = check()
+        except OSError:
+            out = None
+        if out:
+            return out
+        time.sleep(2)
+    sys.exit(f"FAIL: timed out waiting for {what}")
+
+
+def ok(msg: str):
+    print(f"ok   {msg}", flush=True)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--api", default="http://localhost:8000")
+    ap.add_argument("--online", action="store_true", help="skip the check that the internet is unreachable")
+    args = ap.parse_args()
+    base = args.api.rstrip("/")
+
+    if not args.online:
+        try:
+            get("https://tiles.openfreemap.org/", timeout=5)
+            sys.exit("FAIL: the internet is reachable; run this on a network with no way out (scripts/e2e.sh)")
+        except OSError:
+            ok("no internet")
+
+    wait("the web app", lambda: get(f"{base}/api/config"), 180)
+    config = json.loads(get(f"{base}/api/config"))
+    online = [b["id"] for b in config["basemaps"] if b.get("online")]
+    if online:
+        sys.exit(f"FAIL: online basemaps offered with ONLINE_BASEMAPS=false: {online}")
+    ok("config, no online basemaps")
+
+    if b"<div id=\"root\"" not in get(f"{base}/"):
+        sys.exit("FAIL: / is not the frontend")
+    if b"<html" not in get(f"{base}/guide/"):
+        sys.exit("FAIL: /guide/ is not served")
+    ok("frontend and guide")
+
+    api = Api(base)
+    r = api.call("POST", "/responses", {"name": "E2E test", "hazard": "Flood", "country": "HTI", "language": "en"})
+    api.key = r["edit_key"]
+    site = api.call("POST", f"/responses/{r['response']['slug']}/sites", {
+        "name": "E2E site", "kind": "camp", "center": [(W + E) / 2, (N + S) / 2], "zoom": 17,
+    })
+    sid = site["id"]
+    ok("response and site")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tif = os.path.join(tmp, "ortho.tif")
+        subprocess.run(["gdal_create", "-of", "GTiff", "-outsize", "800", "240", "-bands", "3", "-ot", "Byte",
+                        "-burn", "140", "-burn", "120", "-burn", "90", "-a_srs", "EPSG:4326",
+                        "-a_ullr", str(W), str(N), str(E), str(S), tif], check=True, capture_output=True)
+        lay = os.path.join(tmp, "layout.geojson")
+        with open(lay, "w") as f:
+            json.dump({"type": "FeatureCollection", "features": LAYOUT + [
+                feat(point(x, y), type=t, status=st, label=lab) for t, x, y, st, lab in OBS]}, f)
+        api.upload(sid, tif, "Test orthomosaic", "2026-01-01", "Synthetic")
+        api.upload(sid, lay, "Test layout", "2026-01-01", "Fictional")
+
+    def layers_done():
+        layers = api.call("GET", f"/sites/{sid}")["layers"]
+        return layers if all(lyr["status"] != "processing" for lyr in layers) else None
+
+    layers = wait("imagery and vector processing", layers_done, 300)
+    failed = [f"{lyr['name']}: {lyr.get('error', '')[:300]}" for lyr in layers if lyr["status"] != "ready"]
+    if failed or len(layers) != 2:
+        sys.exit(f"FAIL: layers not ready: {failed or layers}")
+    ok("COG and vector layers ready")
+
+    summary = api.call("GET", f"/sites/{sid}/summary")
+    if not summary:
+        sys.exit("FAIL: empty site summary")
+    ok("site summary")
+
+    p = api.call("POST", f"/sites/{sid}/products", {
+        "title": "Common Operational Picture", "code": "E2E01", "page_size": "A3",
+        "key_message": "End-to-end test.",
+        "view": {"bounds": [W, S, E, N], "bearing": 0, "basemap": "positron",
+                 "layers": [{"id": lyr["id"], "visible": True, "opacity": 1} for lyr in layers]},
+    })
+    ver = api.call("POST", f"/products/{p['id']}/render")
+
+    def rendered():
+        v = next(v for v in api.call("GET", f"/products/{p['id']}")["product"]["versions"] if v["n"] == ver["n"])
+        return v if v["status"] in ("ready", "failed") else None
+
+    v = wait("page 1 render", rendered, 300)
+    if v["status"] != "ready":
+        sys.exit(f"FAIL: page 1 render: {v['error'][:2000]}")
+    pdf = get(base + v["pdf"])
+    if not pdf.startswith(b"%PDF") or len(pdf) < 50_000:
+        sys.exit(f"FAIL: page 1 PDF looks wrong ({len(pdf)} bytes)")
+    ok(f"page 1 PDF, {len(pdf) // 1024} KB")
+
+    gpkg = get(f"{base}/api/sites/{sid}/export.gpkg", timeout=120)
+    if not gpkg.startswith(b"SQLite format 3"):
+        sys.exit("FAIL: export.gpkg is not a GeoPackage")
+    ok("GeoPackage export")
+    print("PASS")
+
+
+if __name__ == "__main__":
+    main()

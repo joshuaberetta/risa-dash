@@ -1,0 +1,32 @@
+# End-to-end test of the production image with no way out to the internet, as on an
+# offline kobo-in-a-box. Every service is on an internal network, and the test runs from
+# a container on it. See scripts/e2e.sh.
+#   scripts/e2e.sh
+services:
+  db:
+    image: imresamu/postgis:16-3.5   # amd64 and arm64
+    networks: [offline]
+
+  web:
+    env_file: !override [e2e.env]
+    ports: !reset []
+    extra_hosts: !reset []
+    networks: [offline]
+
+  worker:
+    env_file: !override [e2e.env]
+    extra_hosts: !reset []
+    networks: [offline]
+
+  e2e:
+    image: ${RISA_IMAGE:-risa-dash:latest}
+    command: ["python3", "-I", "/scripts/e2e.py", "--api", "http://web:8000"]
+    volumes: [../scripts:/scripts:ro]
+    networks: [offline]
+    depends_on:
+      web: { condition: service_started }
+      worker: { condition: service_started }
+
+networks:
+  offline:
+    internal: true
