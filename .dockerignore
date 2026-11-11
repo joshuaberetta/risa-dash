@@ -9,3 +9,4 @@ frontend/dist
 *.gpkg
 *.pdf
 .env
+frontend/public/fonts

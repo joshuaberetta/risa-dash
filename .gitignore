@@ -11,3 +11,4 @@ frontend/dist/
 *.gpkg
 .env.deploy
 *.tsbuildinfo
+frontend/public/fonts/

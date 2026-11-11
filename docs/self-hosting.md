@@ -93,7 +93,7 @@ Nothing calls the internet at runtime except what's set below, so the same insta
   dc cp Mozambique.pmtiles web:/data/media/basemaps/
   ```
 
-- **Label fonts.** Map labels need glyphs from `GLYPHS_URL`, OpenFreeMap by default. Offline, point it at a tile server's fonts on your network (a [TileServer GL](https://github.com/maptiler/tileserver-gl) or [Martin](https://martin.maplibre.org) with fonts), and set `MAP_FONT` and `MAP_FONT_BOLD` to fonts it has. Protomaps' font set has no Bold, so with it use `MAP_FONT_BOLD=Noto Sans Medium`. Without fonts, the map and page 1 still show imagery, symbols and the printed text, but not the labels on the map.
+- **Label fonts** are in the image (Noto Sans Regular, Medium, Italic and Bold, served at `/fonts/`), so labels need nothing more. To use another glyph server's instead, set `GLYPHS_URL`, and `MAP_FONT` and `MAP_FONT_BOLD` to fonts it has (Protomaps' set has no Bold: `MAP_FONT_BOLD=Noto Sans Medium`).
 
 - **Installing with no internet.** Build the image where there is a link, then carry it:
 

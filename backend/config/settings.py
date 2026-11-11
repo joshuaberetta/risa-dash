@@ -156,8 +156,10 @@ KOBO_SYNC_MINUTES = int(env("KOBO_SYNC_MINUTES", "10"))
 # false on an offline box: hides basemaps that need the internet
 ONLINE_BASEMAPS = env_bool("ONLINE_BASEMAPS", True)
 # Offline basemaps are any *.pmtiles under MEDIA_ROOT/basemaps (docs/self-hosting.md)
-GLYPHS_URL = env("GLYPHS_URL", "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf")
-# Map label fonts, as named on GLYPHS_URL; a comma-separated list is a fallback stack.
+# Map label fonts: the instance's own (in the image, scripts/fetch-fonts.sh: Noto Sans
+# Regular, Medium, Italic, Bold), or another glyph server's
+GLYPHS_URL = env("GLYPHS_URL", "/fonts/{fontstack}/{range}.pbf")
+# The label fonts, as named on GLYPHS_URL; a comma-separated list is a fallback stack.
 # Protomaps' fonts (e.g. a kobo-in-a-box tile server) have no Bold: use Noto Sans Medium.
 MAP_FONT = env_list("MAP_FONT", "Noto Sans Regular")
 MAP_FONT_BOLD = env_list("MAP_FONT_BOLD", "Noto Sans Bold")

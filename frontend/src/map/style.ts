@@ -11,7 +11,9 @@ import { absUrl, type Basemap, type Fonts, type LayerT, type Symbology } from '.
 
 export const OVERLAY_PREFIX = 'risa-'
 
-export function basemapStyle(bm: Basemap | undefined, glyphs: string): StyleSpecification | string {
+export function basemapStyle(bm: Basemap | undefined, glyphsUrl: string): StyleSpecification | string {
+  // The instance's own fonts come as a path; MapLibre wants a full URL, braces unescaped
+  const glyphs = glyphsUrl.startsWith('/') ? window.location.origin + glyphsUrl : glyphsUrl
   const bg: LayerSpecification = { id: 'background', type: 'background', paint: { 'background-color': '#eef0f2' } }
   if (!bm || bm.kind === 'none') return { version: 8, glyphs, sources: {}, layers: [bg] }
   if (bm.kind === 'style') return bm.url!

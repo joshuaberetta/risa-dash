@@ -9,6 +9,11 @@ COPY frontend/ ./
 COPY symbology/ /app/symbology/
 RUN npm run build
 
+# Map label fonts, so labels need no internet (scripts/fetch-fonts.sh)
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4 AS fonts
+COPY scripts/fetch-fonts.sh /usr/local/bin/
+RUN fetch-fonts.sh /fonts
+
 FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4 AS base
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /usr/local/bin/uv
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
@@ -37,6 +42,7 @@ FROM base AS app
 COPY symbology/ /app/symbology/
 COPY backend/ ./
 COPY --from=frontend /app/frontend/dist /app/frontend/dist
+COPY --from=fonts /fonts /app/frontend/dist/fonts
 RUN SECRET_KEY=build python manage.py collectstatic --noinput -v0
 EXPOSE 8000
 CMD ["start", "web"]

@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -67,6 +68,15 @@ def main():
     if online:
         sys.exit(f"FAIL: online basemaps offered with ONLINE_BASEMAPS=false: {online}")
     ok("config, no online basemaps")
+
+    glyphs = config["glyphs"]
+    if not glyphs.startswith("/"):
+        sys.exit(f"FAIL: label fonts come from {glyphs}, not this instance")
+    for font in {*config["fonts"]["regular"], *config["fonts"]["bold"], "Noto Sans Medium", "Noto Sans Italic"}:
+        url = base + glyphs.replace("{fontstack}", urllib.parse.quote(font)).replace("{range}", "0-255")
+        if len(get(url)) < 1000:
+            sys.exit(f"FAIL: no label font at {url}")
+    ok("label fonts served by the instance")
 
     if b"<div id=\"root\"" not in get(f"{base}/"):
         sys.exit("FAIL: / is not the frontend")

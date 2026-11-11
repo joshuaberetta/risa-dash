@@ -334,7 +334,7 @@
   <li>Phones and laptops join the kit's Wi-Fi. KoboCollect sends submissions to the kit's Kobo (<code>http://kc.kobo.local</code>), and the dashboard (<code>risa.kobo.local</code>) reads them from there.</li>
   <li>Imagery goes onto the kit by cable or over its Wi-Fi, so gigabytes never cross a satellite link.</li>
   <li>Basemaps are offline extracts of the response area, loaded before the kit leaves.</li>
-  <li>This guide, the fonts and the tours are on the kit too.</li>
+  <li>This guide, the tours and the fonts for the map's labels are part of the dashboard, so they work with no internet too, on a kit or a national server.</li>
 </ul>
 <p>Several kits will be able to work together (planned): a kit at each site, a hub at base that shows the whole response, still offline, and the cloud or a national server only when there's a link and the focal point chooses to send.</p>
 <p>On a thin link, send the small things first: page 1 (about 1.4 MB), then the GeoPackage (usually 5–50 MB). Full imagery travels by USB drive or courier, or waits for a good connection.</p>
@@ -349,7 +349,6 @@
 </ul>
 <figure><a href="static/shots/bundle.jpg"><img src="static/shots/bundle.jpg" width="1440" height="900" alt="The Response bundle dialog on a response's page: what a bundle holds, an Include imagery checkbox, Make bundle, and the bundle made, with a link to download it and its size, 71 MB."></a><figcaption>Making a bundle of a response.</figcaption></figure>
 <figure><a href="static/shots/bundle-import.jpg"><img src="static/shots/bundle-import.jpg" width="1440" height="900" alt="The Import a bundle dialog on the home page: the bundle file chosen, the response's edit key, and the result: Updated, with the number of sites, layers, features and printed versions it brought in, and Open response."></a><figcaption>Importing a bundle. With the edit key, it updates a response that is already here.</figcaption></figure>
-<div class="warning"><p>On a kit, the map's labels come from the kit. A national server with no internet needs its administrator to serve the label fonts on its own network (see the <a href="https://github.com/joshuaberetta/risa-dash/blob/main/docs/self-hosting.md">self-hosting guide</a>). Without them the map shows no labels, though the imagery, your data and the printed page's text are all there.</p></div>
 </section>
 
 <section id="checklist">
@@ -424,7 +423,7 @@
 </ul>
 
 <h4>What reaches other services online</h4>
-<p>The online basemaps (OpenFreeMap, Esri satellite imagery and OpenStreetMap) are loaded by each viewer's browser, so the basemap provider sees the request and the area of the map being viewed. The map's label fonts come from OpenFreeMap too, unless the instance's administrator serves them from its own network. To avoid this, choose an offline basemap or <strong>No basemap</strong>; an administrator can turn the online basemaps off altogether and serve the fonts locally. On a kit, none of this applies.</p>
+<p>The online basemaps (OpenFreeMap, Esri satellite imagery and OpenStreetMap) are loaded by each viewer's browser, so the basemap provider sees the request and the area of the map being viewed. The OpenFreeMap basemaps also load their label fonts from OpenFreeMap; with any other basemap, the labels' fonts come from the dashboard itself. To avoid this, choose an offline basemap or <strong>No basemap</strong>; an instance's administrator can turn the online basemaps off altogether. On a kit, none of this applies.</p>
 
 <h4>Good practice for teams</h4>
 <ul>
