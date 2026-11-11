@@ -49,14 +49,16 @@ class ShelterYolo(Detector):
     id = "yolo-shelters"
     label = "Shelter detector (YOLOv8n, camps in DRC, Chad, Mozambique)"
     simulated = False
-    gsd = 0.07
-    # About 0.5 km² at 7 cm; larger areas are read coarser, and the model degrades past 10 cm
-    max_pixels = 110_000_000
+    # 9 cm and a low floor did best on the Haiti reference chips (of 5, 7, 9 cm; 0.05, 0.15):
+    # the confidence is kept on each shelter, and the review and evaluation choose the cut
+    gsd = 0.09
+    # About 0.5 km² at 9 cm; larger areas are read coarser, and the model degrades past 10 cm
+    max_pixels = 70_000_000
     description = ("A YOLOv8 nano model fine-tuned on drone imagery of camps around Goma, in Chad and in Mozambique "
                    "(github.com/alex6H/RefugeeCampShelterDetection-YOLOv8, MIT). Finds shelters, tents, huts and "
                    "buildings as boxes. Strongest on plastic-sheeting shelters; needs imagery at 10 cm/px or finer.")
     file = "refugee-shelters-yolov8n.onnx"
-    tile, overlap, min_conf, iou = 1024, 192, 0.15, 0.4
+    tile, overlap, min_conf, iou = 1024, 192, 0.05, 0.4
 
     def __init__(self):
         self._session = None
