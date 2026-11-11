@@ -9,8 +9,9 @@ sit on real objects, so the review workflow (suggested -> accepted / rejected /
 edited) can be built and tried before a model is plugged in. Every feature carries
 `simulated: true` and the model name, and nothing counts until a person accepts it.
 
-A real model replaces `detect()`: same input (an RGB array for the area of interest
-plus its geotransform), same output (polygons with a class and a confidence).
+The detector is pluggable (risa/detectors/): this file reads the area, stores what a
+detector finds and derives blocks and the boundary; the colour rules below are the
+simulated detector's (risa/detectors/simulated.py), and learning.py builds on them.
 """
 
 import json
@@ -46,13 +47,13 @@ def progress(layer: Layer, step: str, pct: int) -> None:
 # ---- image -> arrays --------------------------------------------------------------
 
 
-def read_aoi(cog_path: str, bounds: list[float], tmp: str) -> tuple[np.ndarray, np.ndarray, dict]:
-    """RGB and mask for the area of interest, resampled to about GSD m/px.
+def read_aoi(cog_path: str, bounds: list[float], tmp: str, gsd: float = GSD) -> tuple[np.ndarray, np.ndarray, dict]:
+    """RGB and mask for the area of interest, resampled to about gsd m/px.
     Returns (rgb[h, w, 3], valid[h, w], georef) where georef has the ENVI header path."""
     w, s, e, n = bounds
     # Ground metres to Web Mercator units at this latitude
     k = 1 / math.cos(math.radians((s + n) / 2))
-    tr = GSD * k
+    tr = gsd * k
     # Size in Web Mercator units; coarsen big areas to stay within memory
     R = 6378137.0
     mw = math.radians(abs(e - w)) * R
@@ -203,7 +204,7 @@ def classify(feats: list[dict], georef: dict, rgb: np.ndarray, detector=None) ->
     return out
 
 
-def derive_blocks(layer: Layer, lat: float, model: str = MODEL) -> int:
+def derive_blocks(layer: Layer, lat: float, model: str = MODEL, simulated: bool = True) -> int:
     """Group shelters into blocks (DBSCAN on centroids) and outline the site."""
     sql_blocks = """
         WITH s AS (
@@ -229,14 +230,14 @@ def derive_blocks(layer: Layer, lat: float, model: str = MODEL) -> int:
     feats = [
         Feature(layer=layer, geom=GEOSGeometry(gj, srid=4326), risa_type="block", label=f"Block {i + 1} · {n} shelters",
                 properties={"ai_class": "block", "shelters": n, "confidence": 0.6, "review": "suggested",
-                            "model": model, "simulated": True})
+                            "model": model, "simulated": simulated})
         for i, (_, n, gj) in enumerate(rows)
     ]
     if boundary and boundary[0] and boundary[1] >= 12:
         feats.append(Feature(layer=layer, geom=GEOSGeometry(boundary[0], srid=4326), risa_type="boundary",
                              label="Site boundary (detected)",
                              properties={"ai_class": "boundary", "shelters": boundary[1], "confidence": 0.55,
-                                         "review": "suggested", "model": model, "simulated": True}))
+                                         "review": "suggested", "model": model, "simulated": simulated}))
     Feature.objects.bulk_create(feats)
     return len(rows)
 
@@ -248,39 +249,44 @@ def latest_detector(response):
 
 
 def analyse(layer: Layer) -> None:
+    from . import detectors
+
     src = Layer.objects.get(id=layer.meta["source_layer"])
     bounds = layer.meta["aoi"]
-    detector = latest_detector(layer.site.response)
-    model = detector.name if detector else MODEL
-    layer.meta = {**layer.meta, "model": model, "detector_version": detector.version if detector else 0}
+    det = detectors.get(layer.meta.get("detector"))
+    if hasattr(det, "for_response"):
+        det = det.for_response(layer.site.response)
+    why = det.available()
+    if why:
+        raise IngestError(f"{det.label} can't run here: {why}")
+    model = getattr(det, "model_name", det.id)
+    learned = getattr(det, "learned", None)
+    layer.meta = {**layer.meta, "model": model, "detector": det.id, "simulated": det.simulated,
+                  "detector_version": learned.version if learned else 0}
     with tempfile.TemporaryDirectory() as tmp:
         progress(layer, "Reading the imagery", 10)
         with storage.local_copy(src.source, suffix=".tif") as cog:
-            rgb, valid, georef = read_aoi(cog, bounds, tmp)
-        progress(layer, "Finding shelters and roofs", 35)
-        mask = detect(rgb, valid, detector.params.get("rules") if detector else None)
-        # A model takes longer; keep the simulation honest about the wait, roughly
-        time.sleep(1.5)
-        progress(layer, "Tracing outlines", 60)
-        polys = polygonise(mask, georef, tmp)
-        found = classify(polys, georef, rgb, detector)
+            rgb, valid, georef = read_aoi(cog, bounds, tmp, gsd=det.gsd)
+        t0 = time.monotonic()
+        found = det.detect(rgb, valid, georef, tmp, lambda step, pct: progress(layer, step, pct))
+        seconds = round(time.monotonic() - t0, 1)
     progress(layer, "Grouping into blocks", 80)
     with transaction.atomic():
         layer.features.all().delete()
         Feature.objects.bulk_create([
-            Feature(layer=layer, geom=g, risa_type=cls, label="",
-                    properties={"ai_class": cls, "area_m2": a, "confidence": conf, "review": "suggested",
-                                "model": model, "simulated": True, "stats": st})
-            for g, cls, a, conf, st in found
+            Feature(layer=layer, geom=c.geom, risa_type=c.cls, label="",
+                    properties={"ai_class": c.cls, "area_m2": c.area_m2, "confidence": c.confidence,
+                                "review": "suggested", "model": model, "simulated": det.simulated, "stats": c.stats})
+            for c in found
         ])
-        blocks = derive_blocks(layer, (bounds[1] + bounds[3]) / 2, model)
-    counts = {"shelter": sum(1 for x in found if x[1] == "shelter"),
-              "building": sum(1 for x in found if x[1] == "building"), "block": blocks}
+        blocks = derive_blocks(layer, (bounds[1] + bounds[3]) / 2, model, det.simulated)
+    counts = {"shelter": sum(1 for c in found if c.cls == "shelter"),
+              "building": sum(1 for c in found if c.cls == "building"), "block": blocks}
     from django.contrib.gis.db.models import Extent
 
     ext = layer.features.aggregate(e=Extent("geom"))["e"]
     layer.bbox = list(ext) if ext else bounds
-    layer.meta = {**layer.meta, "counts": counts, "progress": {"step": "Done", "pct": 100}}
+    layer.meta = {**layer.meta, "counts": counts, "seconds": seconds, "progress": {"step": "Done", "pct": 100}}
     layer.status = "ready"
     layer.error = ""
     layer.save()

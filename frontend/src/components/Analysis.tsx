@@ -1,5 +1,5 @@
-// Imagery analysis (simulated): detect shelters, buildings, blocks and the site
-// boundary on an orthomosaic, then review the suggestions.
+// Imagery analysis: detect shelters, buildings, blocks and the site boundary on an
+// orthomosaic with a chosen detector (simulated or a model), then review the suggestions.
 
 import { Alert, Badge, Button, Group, Loader, Modal, NumberInput, Paper, Progress, Radio, Select, Stack, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
@@ -7,6 +7,7 @@ import { IconPolygon, IconSchool, IconSparkles } from '@tabler/icons-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api, type LayerT, type SiteFull } from '../api'
+import { useConfigData } from '../hooks'
 
 export const SIMULATED_NOTE =
   'Simulated: colour rules on the real image stand in for a segmentation model. Outlines sit on real roofs and tarps, but counts are not reliable. Review every suggestion.'
@@ -31,13 +32,18 @@ function AnalyseModal({ site, rasters, getViewBounds, onClose, onStarted }: {
   site: SiteFull; rasters: LayerT[]; getViewBounds: () => [number, number, number, number] | null; onClose: () => void; onStarted?: () => void
 }) {
   const qc = useQueryClient()
+  const config = useConfigData()
+  const usable = config.detectors.filter((d) => !d.unavailable)
+  const [detector, setDetector] = useState(
+    (usable.find((d) => d.id === config.default_detector) || usable.find((d) => !d.simulated) || usable[0])?.id || 'simulated')
+  const chosen = config.detectors.find((d) => d.id === detector)
   const [layer, setLayer] = useState(rasters[0].id)
   const [area, setArea] = useState<'image' | 'view'>('view')
   const [err, setErr] = useState('')
   const run = async () => {
     try {
       const bounds = area === 'view' ? getViewBounds() : null
-      await api(`/layers/${layer}/analyse`, { body: { bounds } })
+      await api(`/layers/${layer}/analyse`, { body: { bounds, detector } })
       qc.invalidateQueries({ queryKey: ['site'] })
       onStarted?.()
       onClose()
@@ -52,7 +58,13 @@ function AnalyseModal({ site, rasters, getViewBounds, onClose, onStarted }: {
           Finds shelters and buildings on the orthomosaic, groups shelters into blocks and outlines the site. Everything comes back as
           a <b>suggestion</b> to check: accept, reject, re-tag or reshape it. Only accepted shelters count towards the figures on page 1.
         </Text>
-        <Alert color="violet" variant="light" title="Simulated analysis">{SIMULATED_NOTE}</Alert>
+        {config.detectors.length > 1 && (
+          <Select label="Model" value={detector} onChange={(v) => v && setDetector(v)} allowDeselect={false}
+            data={config.detectors.map((d) => ({ value: d.id, label: d.label + (d.unavailable ? ' (not installed here)' : ''), disabled: !!d.unavailable }))} />
+        )}
+        {chosen?.simulated
+          ? <Alert color="violet" variant="light" title="Simulated analysis">{SIMULATED_NOTE}</Alert>
+          : chosen && <Alert color="violet" variant="light" title={chosen.label}>{chosen.description}</Alert>}
         {rasters.length > 1 && <Select label="Imagery" data={rasters.map((r) => ({ value: r.id, label: r.name }))} value={layer} onChange={(v) => v && setLayer(v)} allowDeselect={false} />}
         <Radio.Group label="Area of interest" value={area} onChange={(v) => setArea(v as 'image' | 'view')}>
           <Stack gap={6} mt={6}>

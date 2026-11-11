@@ -164,6 +164,12 @@ GLYPHS_URL = env("GLYPHS_URL", "/fonts/{fontstack}/{range}.pbf")
 MAP_FONT = env_list("MAP_FONT", "Noto Sans Regular")
 MAP_FONT_BOLD = env_list("MAP_FONT_BOLD", "Noto Sans Bold")
 
+# ---- imagery analysis ---------------------------------------------------------------
+# The detector the dashboard offers first (risa/detectors/): simulated, or a real model
+DEFAULT_DETECTOR = env("DEFAULT_DETECTOR", "simulated")
+# Model weights, downloaded at image build or copied in offline
+MODELS_DIR = Path(env("MODELS_DIR", "/opt/models"))
+
 # ---- print ------------------------------------------------------------------------
 # The worker opens the print route here. Inside compose: http://web:8000
 PRINT_BASE_URL = env("PRINT_BASE_URL", PUBLIC_URL).rstrip("/")

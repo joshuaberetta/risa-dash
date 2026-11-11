@@ -17,7 +17,7 @@ from django.utils.text import slugify
 from ninja import NinjaAPI, Schema
 from ninja.errors import HttpError
 
-from . import exports, kobo, page1, storage
+from . import detectors, exports, kobo, page1, storage
 from .access import can_edit, require_create, require_edit, require_view
 from .ingest import IngestError, kind_for
 from .models import (
@@ -89,7 +89,8 @@ def layer_dict(lyr: Layer) -> dict:
                      "last_synced_at": k.last_synced_at, "last_error": k.last_error,
                      "submissions": k.submission_count, "auto_sync": k.auto_sync}
     if lyr.kind == "analysis":
-        d["analysis"] = {k: lyr.meta.get(k) for k in ("source_layer", "model", "simulated", "progress", "counts", "aoi",
+        d["analysis"] = {k: lyr.meta.get(k) for k in ("source_layer", "model", "detector", "simulated", "progress", "counts", "aoi",
+                                                      "seconds", "evaluation",
                                                       "detector_version")}
         if lyr.status == "ready":
             d["analysis"]["training_data"] = f"/api/layers/{lyr.id}/training-data.zip"
@@ -165,6 +166,8 @@ def config(request):
         "source_url": settings.SOURCE_URL,
         "licence": "AGPL-3.0",
         "feedback_url": feedback_link(source="web"),
+        "detectors": detectors.describe(),
+        "default_detector": settings.DEFAULT_DETECTOR,
     }
 
 
@@ -659,13 +662,20 @@ REVIEW_STATES = ("suggested", "accepted", "rejected")
 
 class AnalyseIn(Schema):
     bounds: list[float] | None = None  # [w, s, e, n]; default: the whole image
+    detector: str = ""  # risa/detectors/; default: DEFAULT_DETECTOR
 
 
 @api.post("/layers/{layer_id}/analyse")
 def analyse_layer(request, layer_id: str, data: AnalyseIn):
-    """Detect shelters, buildings, blocks and the site boundary on an orthomosaic.
-    Simulated for now (see risa/analysis.py): the results are suggestions to review."""
+    """Detect shelters, buildings, blocks and the site boundary on an orthomosaic, with
+    the chosen detector (risa/detectors/). The results are suggestions to review."""
     from .tasks import analyse_imagery
+
+    det = detectors.get(data.detector)
+    if data.detector and det.id != data.detector:
+        raise HttpError(400, f"No detector {data.detector!r} here")
+    if det.available():
+        raise HttpError(400, f"{det.label} can't run here: {det.available()}")
 
     src = _layer(request, layer_id)
     if src.kind != "raster" or src.status != "ready" or not src.bbox:
@@ -677,14 +687,36 @@ def analyse_layer(request, layer_id: str, data: AnalyseIn):
         raise HttpError(400, "The area to analyse doesn't overlap the image")
     site = src.site
     lyr = Layer.objects.create(
-        site=site, name=f"Detected shelters (simulated) · {src.name}"[:200], kind="analysis", status="processing",
+        site=site, name=f"Detected shelters{' (simulated)' if det.simulated else ''} · {src.name}"[:200],
+        kind="analysis", status="processing",
         z_order=_next_z(site), style={"preset": "analysis"},
-        attribution=f"Shelters and buildings detected on {src.name} (simulated analysis, reviewed by a person)",
-        meta={"source_layer": str(src.id), "model": "simulated-colour-rules-v0", "simulated": True, "aoi": aoi,
+        attribution=f"Shelters and buildings detected on {src.name} by {det.label}"
+                    f"{' (simulated analysis' if det.simulated else ' (model output'}, reviewed by a person)",
+        meta={"source_layer": str(src.id), "detector": det.id, "model": det.id, "simulated": det.simulated, "aoi": aoi,
               "progress": {"step": "Queued", "pct": 2}},
     )
     analyse_imagery.defer(layer_id=str(lyr.id))
     return layer_dict(lyr)
+
+
+class EvaluateIn(Schema):
+    reference: str  # a layer of reference shelters: points (a click each) or outlines
+    bbox: list[float] | None = None  # [w, s, e, n]; default: where the reference is
+
+
+@api.post("/layers/{layer_id}/evaluate")
+def evaluate_layer(request, layer_id: str, data: EvaluateIn):
+    """Score an analysis layer's detections against reference shelters (risa/evaluation.py)."""
+    from . import evaluation
+
+    lyr = _layer(request, layer_id)
+    ref = _layer(request, data.reference, edit=False)
+    if lyr.kind != "analysis" or ref.site_id != lyr.site_id or not ref.is_vector or ref.kind == "analysis":
+        raise HttpError(400, "Evaluate an analysis layer against a vector layer of reference shelters on the same site")
+    try:
+        return evaluation.evaluate(lyr, ref, bbox=data.bbox)
+    except ValueError as e:
+        raise HttpError(400, str(e)) from None
 
 
 class ReviewIn(Schema):

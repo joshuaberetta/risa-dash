@@ -25,7 +25,33 @@ export interface Fonts {
   bold: string[]
 }
 
+export interface DetectorT {
+  id: string
+  label: string
+  simulated: boolean
+  description: string
+  /** Why it can't run on this instance; empty when it can */
+  unavailable: string
+}
+
+export interface Evaluation {
+  reference: string
+  reference_name: string
+  area_m2: number
+  matched: number
+  detected: number
+  reference_count: number
+  precision: number
+  recall: number
+  f1: number
+  count_error: number
+  min_confidence: number
+  at: string
+}
+
 export interface Config {
+  detectors: DetectorT[]
+  default_detector: string
   symbology: Symbology
   basemaps: Basemap[]
   glyphs: string
@@ -81,7 +107,10 @@ export interface LayerT {
   analysis?: {
     source_layer: string
     model: string
+    detector?: string
     simulated: boolean
+    seconds?: number
+    evaluation?: Evaluation
     progress?: { step: string; pct: number }
     counts?: { shelter: number; building: number; block: number }
     aoi: [number, number, number, number]
