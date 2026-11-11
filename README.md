@@ -58,7 +58,7 @@ scripts/e2e.sh                       # the production image with the internet cu
 
 `scripts/e2e.sh` builds the production image and runs it on a Docker network with no way out, as on an offline kobo-in-a-box. [`scripts/e2e.py`](scripts/e2e.py) then checks that no online basemaps are offered, the frontend and guide are served, imagery becomes a COG and vector is processed, page 1 renders to PDF, the site exports as a GeoPackage, and the response goes out as a bundle and back in. CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs it on every push, with ruff, the backend tests and the frontend build.
 
-`scripts/shot.py` screenshots a page in the worker's headless Chromium (no GPU, like printing).
+`scripts/shot.py` screenshots a page in the worker's headless Chromium (no GPU, like printing). [`scripts/guide-shots.py`](scripts/guide-shots.py) retakes the user guide's screenshots of the home page and the bundle dialogs from the sample response; the others were taken by hand with the box's demo Kobo project connected.
 
 ## Self-hosting and offline
 

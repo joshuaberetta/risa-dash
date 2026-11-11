@@ -116,7 +116,7 @@
   <li><strong>Improvements are shared.</strong> Anyone who offers a changed version as a service must publish the changes, so what one team adds comes back to everyone.</li>
   <li><strong>It can be checked.</strong> The <a href="https://github.com/joshuaberetta/risa-dash">source code is public</a>, so anyone can see exactly what the software does with data.</li>
 </ul>
-<p>To run your own, the <a href="https://github.com/joshuaberetta/risa-dash">README on GitHub</a> covers self-hosting with Docker and the settings for an offline kit.</p>
+<p>To run your own, the <a href="https://github.com/joshuaberetta/risa-dash/blob/main/docs/self-hosting.md">self-hosting guide on GitHub</a> covers an install on your own server with Docker, with or without the internet, and backups. A field kit has its own setup in Kobo in a box.</p>
 </section>
 
 <section id="start">
@@ -313,6 +313,7 @@
   <li><strong>The PDF</strong> is the product to circulate. Open the latest version from the PDF icon next to the product.</li>
   <li><strong>Export › GeoPackage</strong> has every vector layer of the site in one file that opens in QGIS and ArcGIS Pro, for deeper analysis or a partner's own maps.</li>
   <li>Each imagery layer's <strong>⋯ › Download COG</strong> gives the converted imagery, which QGIS and ArcGIS read directly; <strong>Download original</strong> gives the file as uploaded.</li>
+  <li><strong>Bundle</strong> on the response's page puts the whole response in one file, for another instance of the dashboard or an archive (see <a href="#offline">Moving a response between instances</a>). It's for people running the dashboard, not for circulating: it holds everything, and needs the edit key to make.</li>
 </ul>
 <h3>On partners' dashboards and websites (planned)</h3>
 <p>The map is meant to appear where coordinators already work: the Virtual OSOCC, the national authority's operations dashboard, cluster pages and partners' own dashboards, always showing the latest data. This isn't possible yet: for now the dashboard can't be shown inside another website. To come:</p>
@@ -344,7 +345,9 @@
   <li>Each file in a bundle carries a checksum, so a copy that was cut off or damaged is refused rather than half-imported. Copy it again.</li>
   <li>Kobo tokens never go in a bundle. A Kobo layer arrives with its data, and needs connecting again to keep syncing.</li>
 </ul>
-<div class="warning"><p>One gap today: the labels on the map's basemap (place and street names) still need an internet connection. The imagery, your data and the printed page don't.</p></div>
+<figure><a href="static/shots/bundle.jpg"><img src="static/shots/bundle.jpg" width="1440" height="900" alt="The Response bundle dialog on a response's page: what a bundle holds, an Include imagery checkbox, Make bundle, and the bundle made, with a link to download it and its size, 71 MB."></a><figcaption>Making a bundle of a response.</figcaption></figure>
+<figure><a href="static/shots/bundle-import.jpg"><img src="static/shots/bundle-import.jpg" width="1440" height="900" alt="The Import a bundle dialog on the home page: the bundle file chosen, the response's edit key, and the result: Updated, with the number of sites, layers, features and printed versions it brought in, and Open response."></a><figcaption>Importing a bundle. With the edit key, it updates a response that is already here.</figcaption></figure>
+<div class="warning"><p>On a kit, the map's labels come from the kit. A national server with no internet needs its administrator to serve the label fonts on its own network (see the <a href="https://github.com/joshuaberetta/risa-dash/blob/main/docs/self-hosting.md">self-hosting guide</a>). Without them the map shows no labels, though the imagery, your data and the printed page's text are all there.</p></div>
 </section>
 
 <section id="checklist">
@@ -355,7 +358,7 @@
 <ol class="checklist">
   <li>Agree with the data owner where the data may live and who may see the map. That decides the instance: the consortium's, a national authority's own, or a field kit (see <a href="#run">Where it runs</a>). Get its create key if it needs one.</li>
   <li>Deploy the RISA form in KoboToolbox, and make an API token for an account that can see its data.</li>
-  <li>For a kit: load the offline basemap of the area and any pre-event imagery before it leaves, and check that it opens with the internet off.</li>
+  <li>For a kit: load the offline basemap of the area and any pre-event imagery before it leaves, and check that it opens with the internet off. If the response already exists on the cloud or a national server, import its bundle onto the kit too.</li>
   <li>Decide on the feedback form and test its link.</li>
   <li>Run through the sample response once, so the first real page 1 isn't the first page 1.</li>
 </ol>
@@ -378,6 +381,12 @@
   <li>Update route and service statuses, and the key message.</li>
   <li>Change the version label (<em>Day 5 · v1.1</em>) and render a new version. The QR code always opens the latest.</li>
   <li>Read the feedback that came in and fix what's wrong on the map.</li>
+  <li>Working on a kit? When there's a link or a drive going back, send a bundle to the cloud or the national server, without imagery if that's already there.</li>
+</ol>
+
+<h4>At the end</h4>
+<ol class="checklist">
+  <li>Make a bundle with imagery and keep it where the data owner agreed: it is the response's archive.</li>
 </ol>
 </section>
 
@@ -413,7 +422,7 @@
 </ul>
 
 <h4>What reaches other services online</h4>
-<p>The online basemaps (OpenFreeMap, Esri satellite imagery and OpenStreetMap) are loaded by each viewer's browser, so the basemap provider sees the request and the area of the map being viewed. The map's label fonts also come from OpenFreeMap today. To avoid this, choose an offline basemap or <strong>No basemap</strong>; an instance's administrator can turn the online basemaps off altogether. On a kit, none of this applies.</p>
+<p>The online basemaps (OpenFreeMap, Esri satellite imagery and OpenStreetMap) are loaded by each viewer's browser, so the basemap provider sees the request and the area of the map being viewed. The map's label fonts come from OpenFreeMap too, unless the instance's administrator serves them from its own network. To avoid this, choose an offline basemap or <strong>No basemap</strong>; an administrator can turn the online basemaps off altogether and serve the fonts locally. On a kit, none of this applies.</p>
 
 <h4>Good practice for teams</h4>
 <ul>
@@ -459,7 +468,7 @@
 </details>
 <details>
   <summary>Can we run our own copy?</summary>
-  <div><p>Yes, with no licence fee and no permission needed. It's free and open-source software (AGPL-3.0, like KoboToolbox), built only on open-source components. It runs on a national authority's own server, in any cloud account, or fully offline on a field kit. The <a href="https://github.com/joshuaberetta/risa-dash">source code and self-hosting guide are on GitHub</a>.</p></div>
+  <div><p>Yes, with no licence fee and no permission needed. It's free and open-source software (AGPL-3.0, like KoboToolbox), built only on open-source components. It runs on a national authority's own server, in any cloud account, or fully offline on a field kit. The <a href="https://github.com/joshuaberetta/risa-dash">source code</a> and the <a href="https://github.com/joshuaberetta/risa-dash/blob/main/docs/self-hosting.md">self-hosting guide</a> are on GitHub.</p></div>
 </details>
 <details>
   <summary>Does our data leave the country?</summary>

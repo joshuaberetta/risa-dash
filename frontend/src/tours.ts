@@ -21,6 +21,12 @@ export const homeTour = (): TourStep[] => [
     side: 'left',
   },
   {
+    target: 'import-bundle',
+    title: 'Bring a response in',
+    body: 'A response made on another instance, such as a field kit or the cloud, arrives as a bundle file. Import it here; importing a newer bundle later updates it.',
+    side: 'bottom',
+  },
+  {
     target: 'about',
     title: 'Free and open source',
     body: 'Anyone can run it: on this hosted instance, on a national authority’s own server, or fully offline next to a local Kobo server.',
@@ -58,6 +64,12 @@ export const responseTour = (): TourStep[] => [
     title: 'Add a site',
     body: 'Give it a name and, if you have it, a location. The map zooms to the first imagery or data you add.',
     side: 'left',
+  },
+  {
+    target: 'bundle',
+    title: 'Take it elsewhere',
+    body: 'Bundle puts the whole response in one file: its sites, data, imagery and printed pages. Use it to move the response to a field kit or back to the cloud, by USB drive when there is no link, or to archive it.',
+    side: 'bottom',
   },
 ]
 

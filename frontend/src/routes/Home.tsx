@@ -32,7 +32,7 @@ export default function Home() {
               <Text c="dimmed" size="sm">Drone and satellite imagery, KoboCollect observations and analysis layers, printed as RISA page 1.</Text>
             </div>
             <Group>
-              <Button variant="default" leftSection={<IconPackageImport size={16} />} onClick={() => setImportOpen(true)}>Import bundle</Button>
+              <Button variant="default" leftSection={<IconPackageImport size={16} />} onClick={() => setImportOpen(true)} data-tour="import-bundle">Import bundle</Button>
               <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-response">New response</Button>
             </Group>
           </Group>

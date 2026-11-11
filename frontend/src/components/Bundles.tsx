@@ -7,7 +7,11 @@ import { useNavigate } from 'react-router'
 import { api, importBundle, saveEditKey, type TransferT } from '../api'
 import { useConfigData } from '../hooks'
 
-export const BUNDLE_HELP = 'A bundle is the whole response in one file: sites, layers and their features, imagery, page 1 versions and their PDFs, and a GeoPackage per site. Use it to move a response between instances (the cloud and a kobo-in-a-box, by USB drive when there is no link) or to archive it. Kobo tokens are not included.'
+export const BUNDLE_HELP = 'A bundle is the whole response in one file: sites, layers and their features, imagery, page 1 versions and their PDFs, and a GeoPackage per site. Use it to move a response between instances (the cloud and a Kobo in a box field kit, by USB drive when there is no link) or to archive it. Kobo tokens are not included.'
+
+function count(n: number | undefined, thing: string) {
+  return `${n || 'no'} ${thing}${n === 1 ? '' : 's'}`
+}
 
 function size(bytes: number) {
   return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(1)} GB` : `${(bytes / 1024 ** 2).toFixed(1)} MB`
@@ -119,7 +123,8 @@ export function ImportBundleModal({ onClose }: { onClose: () => void }) {
         {t?.status === 'failed' && <Alert color="red" title="Import failed">{t.error}</Alert>}
         {t?.status === 'ready' && (
           <Alert color="green" title={t.result.created ? 'Imported' : 'Updated'}>
-            {t.result.name}: {t.result.sites} site(s), {t.result.layers} layer(s), {t.result.features} feature(s), {t.result.versions} page 1 version(s).
+            {t.result.name}: {[count(t.result.sites, 'site'), count(t.result.layers, 'layer'), count(t.result.features, 'feature'),
+              count(t.result.versions, 'printed version')].join(', ')}.
           </Alert>
         )}
         {err && <Text c="red" size="sm">{err}</Text>}

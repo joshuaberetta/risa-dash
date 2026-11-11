@@ -49,7 +49,7 @@ export default function ResponsePage() {
                 </div>
                 <Group>
                   <span data-tour="edit-key"><EditKeyButton slug={r.slug} canEdit={r.can_edit} /></span>
-                  {r.can_edit && <Button variant="default" leftSection={<IconPackageExport size={16} />} onClick={() => setBundleOpen(true)}>Bundle</Button>}
+                  {r.can_edit && <Button variant="default" leftSection={<IconPackageExport size={16} />} onClick={() => setBundleOpen(true)} data-tour="bundle">Bundle</Button>}
                   {r.can_edit && <Button variant="default" leftSection={<IconMessageCircle size={16} />} onClick={() => setFbOpen(true)}>Feedback form</Button>}
                   {r.can_edit && <Button leftSection={<IconPlus size={16} />} onClick={() => setOpen(true)} data-tour="new-site">New site</Button>}
                 </Group>
