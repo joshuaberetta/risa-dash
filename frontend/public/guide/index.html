@@ -344,6 +344,7 @@
   <li>On the response's page, <strong>Bundle</strong> makes one to download. Untick <strong>Include imagery</strong> to send only the work done on it, to an instance that already has the imagery: much smaller over a thin link.</li>
   <li>On the other instance, <strong>Import bundle</strong> on the home page reads it. If the response is already there, give its edit key: the import then updates it with the bundle's changes. Importing the same bundle twice changes nothing.</li>
   <li>Each file in a bundle carries a checksum, so a copy that was cut off or damaged is refused rather than half-imported. Copy it again.</li>
+  <li>A bundle older than what's here is stopped: one made before changes to the response on this instance, or before a bundle already imported. Importing it would undo those changes, so the import asks first. Make a new bundle where it came from, or choose <strong>Import anyway</strong>.</li>
   <li>Kobo tokens never go in a bundle. A Kobo layer arrives with its data, and needs connecting again to keep syncing.</li>
 </ul>
 <figure><a href="static/shots/bundle.jpg"><img src="static/shots/bundle.jpg" width="1440" height="900" alt="The Response bundle dialog on a response's page: what a bundle holds, an Include imagery checkbox, Make bundle, and the bundle made, with a link to download it and its size, 71 MB."></a><figcaption>Making a bundle of a response.</figcaption></figure>

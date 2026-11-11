@@ -98,6 +98,15 @@ export function ImportBundleModal({ onClose }: { onClose: () => void }) {
       setProgress(null)
     }
   }
+  const anyway = async () => {
+    setErr('')
+    try {
+      await api(`/transfers/${transfer!.id}/import-anyway`, { method: 'POST', headers: createKey ? { 'X-Create-Key': createKey } : {} })
+      await status.refetch()
+    } catch (e) {
+      setErr(String((e as Error).message))
+    }
+  }
   const open = () => {
     if (!t?.response) return
     if (editKey) saveEditKey(t.response, editKey)
@@ -120,7 +129,15 @@ export function ImportBundleModal({ onClose }: { onClose: () => void }) {
         )}
         {progress !== null && !transfer && <Progress value={progress * 100} animated />}
         {transfer && (!t || t.status === 'processing') && <Group gap="xs"><Loader size="xs" /><Text size="sm">Checking and importing…</Text></Group>}
-        {t?.status === 'failed' && <Alert color="red" title="Import failed">{t.error}</Alert>}
+        {t?.status === 'failed' && !t.result.older && <Alert color="red" title="Import failed">{t.error}</Alert>}
+        {t?.status === 'failed' && t.result.older && (
+          <Alert color="yellow" title="This bundle is older than what's here">
+            <Stack gap="xs" align="flex-start">
+              <Text size="sm">{t.error}</Text>
+              <Button size="xs" color="yellow" variant="light" onClick={anyway}>Import anyway</Button>
+            </Stack>
+          </Alert>
+        )}
         {t?.status === 'ready' && (
           <Alert color="green" title={t.result.created ? 'Imported' : 'Updated'}>
             {t.result.name}: {[count(t.result.sites, 'site'), count(t.result.layers, 'layer'), count(t.result.features, 'feature'),

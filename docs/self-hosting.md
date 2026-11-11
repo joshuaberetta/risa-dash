@@ -126,7 +126,7 @@ dc cp /media/usb/response.risa.zip web:/tmp/
 dc exec web python manage.py bundle import /tmp/response.risa.zip
 ```
 
-`bundle export --no-imagery` leaves the orthomosaics out, to send only the work done on them to an instance that has the imagery already. Bundles aren't encrypted yet: treat a drive with one on it as sensitive.
+`bundle import --allow-older` imports a bundle older than changes made here, undoing them; without it, such an import stops. `bundle export --no-imagery` leaves the orthomosaics out, to send only the work done on them to an instance that has the imagery already. Bundles aren't encrypted yet: treat a drive with one on it as sensitive.
 
 ## Backups
 

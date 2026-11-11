@@ -377,6 +377,22 @@ def get_transfer(request, tid: str):
     return transfer_dict(get_object_or_404(Transfer.objects.select_related("response"), id=tid))
 
 
+@api.post("/transfers/{tid}/import-anyway")
+def import_anyway(request, tid: str):
+    """Import a bundle that was stopped for being older than changes made here."""
+    from .tasks import import_bundle
+
+    require_create(request)
+    t = get_object_or_404(Transfer, id=tid, kind="import", status="failed")
+    upload = Upload.objects.filter(id=t.options.get("upload"), kind="bundle").first()
+    if not t.result.get("older") or not upload:
+        raise HttpError(400, "This import can't be repeated; upload the bundle again")
+    t.status, t.error, t.result = "processing", "", {}
+    t.save()
+    import_bundle.defer(transfer_id=str(t.id), upload_id=str(upload.id), allow_older=True)
+    return transfer_dict(t)
+
+
 @api.get("/transfers/{tid}/download")
 def download_bundle(request, tid: str):
     t = get_object_or_404(Transfer, id=tid, kind="export", status="ready")

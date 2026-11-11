@@ -316,7 +316,8 @@ export interface TransferT {
   error: string
   size: number
   options: { imagery?: boolean; originals?: boolean }
-  result: { response?: string; name?: string; created?: boolean; sites?: number; layers?: number; features?: number; versions?: number }
+  /** older: stopped because the bundle predates changes here; it can be imported anyway */
+  result: { response?: string; name?: string; created?: boolean; sites?: number; layers?: number; features?: number; versions?: number; older?: boolean }
   created_at: string
   response: string | null
   download: string | null

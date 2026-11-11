@@ -26,6 +26,8 @@ class Command(BaseCommand):
         ex.add_argument("--originals", action="store_true", help="also the original imagery uploads")
         im = sub.add_parser("import")
         im.add_argument("path")
+        im.add_argument("--allow-older", action="store_true",
+                        help="import even if the bundle is older than changes made here (they are undone)")
 
     def handle(self, *args, **opts):
         if opts["action"] == "export":
@@ -37,7 +39,7 @@ class Command(BaseCommand):
             self.stdout.write(f"{opts['path']}: {len(m['files'])} files, {size / 1024**2:.1f} MB")
         else:
             try:
-                result = bundles.import_bundle(opts["path"], force=True)
+                result = bundles.import_bundle(opts["path"], force=True, allow_older=opts["allow_older"])
             except bundles.BundleError as e:
                 raise CommandError(str(e)) from None
             self.stdout.write(json.dumps(result, indent=1))

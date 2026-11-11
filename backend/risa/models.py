@@ -41,6 +41,11 @@ class Response(models.Model):
     private = models.BooleanField(default=False, help_text="Hidden from the index page")
     feedback_url = models.CharField(max_length=500, blank=True, help_text="Feedback form; blank = the instance's FEEDBACK_URL")
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    # The newest bundle imported into it (when that bundle was made), and when it was
+    # imported: an older bundle would undo changes made since (risa/bundles.py)
+    bundle_at = models.DateTimeField(null=True, blank=True)
+    bundle_imported_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -75,6 +80,7 @@ class Site(models.Model):
     default_view = models.JSONField(default=dict, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["name"]

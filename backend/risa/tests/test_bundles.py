@@ -92,10 +92,10 @@ def test_import_into_an_existing_response_needs_its_key(media):
         bundles.import_bundle(path)
     with pytest.raises(bundles.BundleError, match="edit key"):
         bundles.import_bundle(path, edit_key_hash=hash_key("wrong"))
-    # Local changes since the export are replaced by the bundle's, local extras kept
+    # Confirmed: local changes since the export are replaced by the bundle's, local extras kept
     Feature.objects.filter(label="WP-01").update(risa_status="ok")
     extra = Site.objects.create(response=r, name="Camp B", slug="camp-b")
-    bundles.import_bundle(path, edit_key_hash=hash_key(key))
+    bundles.import_bundle(path, edit_key_hash=hash_key(key), allow_older=True)
     assert Feature.objects.get(label="WP-01").risa_status == "no"
     assert Site.objects.filter(id=extra.id).exists()
 
@@ -195,3 +195,56 @@ def test_old_bundles_are_cleaned_up(media):
     Transfer.objects.filter(id=t.id).update(created_at=timezone.now() - timedelta(days=8))
     tasks.clean_bundles(0)
     assert list(Transfer.objects.all()) == [keep]
+
+
+@pytest.mark.django_db
+def test_an_older_bundle_is_stopped_until_confirmed(media):
+    r, key = make_response()
+    old, new = str(media / "old.zip"), str(media / "new.zip")
+    bundles.export_bundle(r, old)
+    # Unchanged since: fine
+    bundles.import_bundle(old, edit_key_hash=hash_key(key))
+    # A change here after the import, then the same bundle again
+    f = Feature.objects.get(label="WP-01")
+    f.risa_status = "ok"
+    f.save()
+    with pytest.raises(bundles.OlderBundle, match="undo"):
+        bundles.import_bundle(old, edit_key_hash=hash_key(key))
+    # A newer bundle carries the change and goes in; the older one stays out
+    bundles.export_bundle(r, new)
+    bundles.import_bundle(new, edit_key_hash=hash_key(key))
+    with pytest.raises(bundles.OlderBundle):
+        bundles.import_bundle(old, edit_key_hash=hash_key(key))
+    bundles.import_bundle(old, edit_key_hash=hash_key(key), allow_older=True)
+    assert Feature.objects.get(label="WP-01").risa_status == "no"
+    # A response new here has nothing to undo
+    r.delete()
+    assert bundles.import_bundle(old)["created"]
+
+
+@pytest.mark.django_db
+def test_import_anyway_from_the_api(media, monkeypatch):
+    monkeypatch.setattr(tasks.import_bundle, "defer", lambda **kw: tasks.import_bundle(**kw))
+    r, key = make_response()
+    path = str(media / "b.zip")
+    bundles.export_bundle(r, path)
+    f = Feature.objects.get(label="WP-01")
+    f.label = "WP-01 (moved)"
+    f.save()
+    body = open(path, "rb").read()
+    c = Client()
+    u = c.post("/api/bundles/uploads", {"filename": "b.zip", "size": len(body), "edit_key": key},
+               content_type="application/json").json()
+    for n in range(u["parts"]):
+        c.put(f"/api/uploads/{u['id']}/parts/{n}", body[n * u["chunk_size"]:(n + 1) * u["chunk_size"]],
+              content_type="application/octet-stream")
+    t = c.post(f"/api/uploads/{u['id']}/complete").json()
+    t = c.get(f"/api/transfers/{t['id']}").json()
+    assert t["status"] == "failed" and t["result"] == {"older": True}
+    assert Feature.objects.filter(label="WP-01 (moved)").exists()
+    t = c.post(f"/api/transfers/{t['id']}/import-anyway").json()
+    t = c.get(f"/api/transfers/{t['id']}").json()
+    assert t["status"] == "ready", t["error"]
+    assert Feature.objects.filter(label="WP-01").exists()
+    # The upload is gone once used
+    assert c.post(f"/api/transfers/{t['id']}/import-anyway").status_code == 404

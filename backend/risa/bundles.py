@@ -31,6 +31,7 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.files.storage import default_storage
 from django.db import transaction
+from django.db.models import Max
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -45,6 +46,11 @@ KEY_RE = re.compile(r"^(layers|products|logos)/[0-9a-f-]{36}/(?!\.)[^/\\]+$")
 
 class BundleError(Exception):
     pass
+
+
+class OlderBundle(BundleError):
+    """The bundle predates changes made here since the last import, or a bundle already
+    imported: importing it would undo them. Allowed when the person confirms."""
 
 
 # ---- rows ---------------------------------------------------------------------------
@@ -119,7 +125,8 @@ def export_bundle(response: Response, out_path: str, imagery: bool = True, origi
     keys += [v.pdf_key for v in versions if v.pdf_key] + [lg.key for lg in logos if lg.key]
 
     data = {
-        "response": _row(response),
+        # When it last took a bundle is this instance's business, not the next one's
+        "response": _row(response, exclude=("bundle_at", "bundle_imported_at")),
         "sites": [_row(s) for s in response.sites.all()],
         "layers": [_row(lyr, exclude=("error",)) for lyr in layers],
         "kobo": [_row(k, exclude=("id", "token_encrypted", "last_submission_id", "last_error"))
@@ -214,9 +221,30 @@ def _owned(key: str, prefix: str, row_id: str) -> bool:
     return bool(key) and bool(KEY_RE.match(key)) and key.startswith(f"{prefix}/{row_id}/")
 
 
-def import_bundle(path: str, edit_key_hash: str | None = None, force: bool = False) -> dict:
+def local_changed_at(response: Response):
+    """When anything of the response last changed here other than by a bundle import."""
+    since = response.bundle_imported_at
+    after = {"updated_at__gt": since} if since else {}
+    stamps = [
+        Response.objects.filter(id=response.id, **after).aggregate(m=Max("updated_at"))["m"],
+        Site.objects.filter(response=response, **after).aggregate(m=Max("updated_at"))["m"],
+        Layer.objects.filter(site__response=response, **after).aggregate(m=Max("updated_at"))["m"],
+        Feature.objects.filter(layer__site__response=response, **after).aggregate(m=Max("updated_at"))["m"],
+        Product.objects.filter(site__response=response, **after).aggregate(m=Max("updated_at"))["m"],
+        ProductVersion.objects.filter(product__site__response=response,
+                                      **({"rendered_at__gt": since} if since else {})).aggregate(m=Max("rendered_at"))["m"],
+    ]
+    return max((t for t in stamps if t), default=None)
+
+
+def _when(t: datetime.datetime) -> str:
+    return timezone.localtime(t).strftime("%d/%m/%Y %H:%M:%S")
+
+
+def import_bundle(path: str, edit_key_hash: str | None = None, force: bool = False, allow_older: bool = False) -> dict:
     """Import a bundle file. Into a response that exists here, only with its edit key
-    (edit_key_hash), unless force (the command line). Returns what was done."""
+    (edit_key_hash), unless force (the command line); and only if the bundle is newer than
+    what's here, unless allow_older. Returns what was done."""
     with zipfile.ZipFile(path) as z:
         manifest = read_manifest(z)
         verify(z, manifest)
@@ -225,6 +253,14 @@ def import_bundle(path: str, edit_key_hash: str | None = None, force: bool = Fal
         existing = Response.objects.filter(id=r_row["id"]).first()
         if existing and not force and edit_key_hash != existing.edit_key_hash:
             raise BundleError(f'"{existing.name}" is already on this instance; importing into it needs its edit key')
+        made = datetime.datetime.fromisoformat(manifest["created_at"])
+        if existing and not allow_older:
+            newer = [t for t in (existing.bundle_at, local_changed_at(existing)) if t and t > made]
+            if newer:
+                raise OlderBundle(
+                    f"This bundle was made on {_when(made)}, before changes to \"{existing.name}\" here "
+                    f"(the latest on {_when(max(newer))}). Importing it would undo them. Make a new bundle where it "
+                    "came from, or import this one anyway.")
 
         # Files first, outside the transaction: a failed import leaves only unused files
         files = {n[len("files/"):] for n in manifest["files"] if n.startswith("files/")}
@@ -321,6 +357,11 @@ def import_bundle(path: str, edit_key_hash: str | None = None, force: bool = Fal
 
             for row in data.get("detectors", []):
                 _upsert(Detector, _clean(Detector, {**row, "response_id": str(response.id)}), key=("response_id", "version"))
+
+            # Last, so everything this import wrote is older than bundle_imported_at
+            Response.objects.filter(id=response.id).update(
+                bundle_at=max(t for t in (existing and existing.bundle_at, made) if t),
+                bundle_imported_at=timezone.now())
 
     return {"response": response.slug, "name": response.name, "created": created, "files": len(files), **counts}
 

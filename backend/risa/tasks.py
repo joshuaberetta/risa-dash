@@ -116,24 +116,31 @@ def export_bundle(transfer_id: str):
 
 
 @app.task(queue="ingest")
-def import_bundle(transfer_id: str, upload_id: str):
+def import_bundle(transfer_id: str, upload_id: str, allow_older: bool = False):
     t = Transfer.objects.get(id=transfer_id)
     upload = Upload.objects.get(id=upload_id)
+    keep = False
     try:
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "bundle.zip")
             storage.concat_parts([upload.part_key(n) for n in range(upload.part_count)], path)
-            t.result = bundles.import_bundle(path, edit_key_hash=upload.layer_options.get("edit_key_hash"))
+            t.result = bundles.import_bundle(path, edit_key_hash=upload.layer_options.get("edit_key_hash"),
+                                             allow_older=allow_older)
         t.response_id = Response.objects.get(slug=t.result["response"]).id
-        t.status = "ready"
+        t.status, t.error = "ready", ""
+    except bundles.OlderBundle as e:
+        # Kept, so "Import anyway" needs no second upload
+        t.status, t.error, t.result, keep = "failed", str(e), {"older": True}, True
+        t.options = {**t.options, "upload": str(upload.id)}
     except bundles.BundleError as e:
         t.status, t.error = "failed", str(e)
     except Exception as e:
         log.exception("Bundle import %s failed", transfer_id)
         t.status, t.error = "failed", str(e)[:4000]
     t.save()
-    storage.delete_prefix(f"uploads/{upload.id}")
-    upload.delete()
+    if not keep:
+        storage.delete_prefix(f"uploads/{upload.id}")
+        upload.delete()
 
 
 @app.periodic(cron="17 3 * * *")
