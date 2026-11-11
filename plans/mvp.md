@@ -74,6 +74,8 @@ A management command, run online before deployment, fills a folder that the box 
 ./manage.py pack load /data/pack
 ```
 
+**Done 11/11/2026, basemaps only:** `pack build <name> --country ISO3 | --bbox=w,s,e,n [--maxzoom 15] [--out DIR]` and `pack load DIR` (`risa/packs.py`), with `pack.json` (SHA-256 per file), the pmtiles CLI in the image, and fonts in the frontend build (`scripts/fetch-fonts.sh`). Boundaries and imagery aren't in packs yet: nothing in the dashboard uses boundaries yet, and imagery moves in bundles.
+
 The boundaries folder uses the same layout as kobo-dash's `scripts/fetch_boundaries.py`, so a box needs only one copy. The locator maps use the pack's basemap, so it needs low zooms (about 0–8) for the country overview, not only the response area; Natural Earth (bundled, small) plus these boundaries would let the overview fit the whole country instead of centring on the site. Fonts (glyphs), sprites and OCHA icons are part of the frontend build.
 
 ### Fit with kobo-in-a-box

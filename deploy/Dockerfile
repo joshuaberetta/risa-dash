@@ -32,6 +32,13 @@ RUN arch=$([ "$TARGETARCH" = "arm64" ] && echo aarch64 || echo x86_64) \
  && curl -fsSL "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-${arch}-unknown-linux-musl.tar.xz" \
     | tar -xJ -C /usr/local/bin --strip-components=1 "typst-${arch}-unknown-linux-musl/typst" \
  && typst --version
+# pmtiles cuts offline basemaps out of Protomaps' build (manage.py pack build)
+ARG PMTILES_VERSION=1.31.2
+RUN if [ "$TARGETARCH" = "arm64" ]; then arch=arm64 sha=f8bd47e7ea866863489cad588fbaf2f31f42e5821f7a03f009b3769f05801cb1; \
+    else arch=x86_64 sha=3ed7dbf4ec2e6dfe5e25b6f70d1ffc932729f93c86db353bf514dd71010a312f; fi \
+ && curl -fsSL -o /tmp/pmtiles.tgz "https://github.com/protomaps/go-pmtiles/releases/download/v${PMTILES_VERSION}/go-pmtiles_${PMTILES_VERSION}_Linux_${arch}.tar.gz" \
+ && echo "$sha  /tmp/pmtiles.tgz" | sha256sum -c --quiet \
+ && tar -xzf /tmp/pmtiles.tgz -C /usr/local/bin pmtiles && rm /tmp/pmtiles.tgz && pmtiles version
 COPY deploy/start.sh /usr/local/bin/start
 
 # Development: code is mounted

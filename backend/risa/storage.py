@@ -51,11 +51,6 @@ def url(key: str, public: bool = False) -> str:
     return f"{settings.MEDIA_URL}{key}"
 
 
-def absolute_url(key: str, public: bool = False) -> str:
-    u = url(key, public)
-    return u if u.startswith("http") else f"{settings.PUBLIC_URL}{u}"
-
-
 @contextmanager
 def local_copy(key: str, suffix: str = ""):
     """Yields a local path for a stored file (downloads it on S3)."""

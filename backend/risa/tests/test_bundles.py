@@ -21,13 +21,6 @@ from risa.models import (
 )
 
 
-@pytest.fixture
-def media(settings, tmp_path):
-    settings.MEDIA_ROOT = str(tmp_path / "media")
-    settings.STORAGE = "filesystem"
-    return tmp_path
-
-
 def make_response():
     r = Response(name="Floods", slug="floods", country="MOZ")
     key = r.set_edit_key()

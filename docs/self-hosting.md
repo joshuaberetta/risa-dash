@@ -86,12 +86,21 @@ By default (`STORAGE=filesystem`) imagery, PDFs and bundles are on the `media` v
 
 Nothing calls the internet at runtime except what's set below, so the same install works on a network with no way out. The CI runs it that way on every change (`scripts/e2e.sh`).
 
-- **Basemaps.** `ONLINE_BASEMAPS=false` hides OpenFreeMap, Esri and OpenStreetMap. Offline basemaps are [PMTiles](https://docs.protomaps.com/pmtiles/) extracts of the area (made with `pmtiles extract` from a Protomaps build, while online). Any `*.pmtiles` file under `basemaps/` in the media volume is listed as a basemap, named after the file:
+- **Basemaps.** `ONLINE_BASEMAPS=false` hides OpenFreeMap, Esri and OpenStreetMap. Offline basemaps are [PMTiles](https://docs.protomaps.com/pmtiles/) extracts of OpenStreetMap, cut out of [Protomaps](https://protomaps.com)' daily build while there's a link. `pack build` does it, downloading only the area:
 
   ```sh
-    dc exec web mkdir -p /data/media/basemaps
-  dc cp Mozambique.pmtiles web:/data/media/basemaps/
+  # on the server, while it's online: straight in
+  dc exec web python manage.py pack build Mozambique --country MOZ
+  # or anywhere with the image, into a pack folder to carry over
+  dc exec web python manage.py pack build Beira --bbox=34.75,-19.95,35.0,-19.7 --out /tmp/pack
+  dc cp web:/tmp/pack ./pack
+  # then on the server with no internet
+  dc cp ./pack web:/tmp/pack
+  dc exec web python manage.py pack load /tmp/pack
+  dc exec web python manage.py pack list
   ```
+
+  It's listed as the basemap **Offline: <name>**, for the map, page 1 and its locator maps. Countries are cut along geoBoundaries' outlines; `--bbox` is west,south,east,north, written with `=` (a west longitude starts with `-`). `--maxzoom` (default 15: streets and buildings) trades detail for size: a city is a few MB, a country tens to hundreds. `pack load` checks each file against the pack's SHA-256 list. Any other `*.pmtiles` copied under `basemaps/` in the media volume is listed too.
 
 - **Label fonts** are in the image (Noto Sans Regular, Medium, Italic and Bold, served at `/fonts/`), so labels need nothing more. To use another glyph server's instead, set `GLYPHS_URL`, and `MAP_FONT` and `MAP_FONT_BOLD` to fonts it has (Protomaps' set has no Bold: `MAP_FONT_BOLD=Noto Sans Medium`).
 

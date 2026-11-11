@@ -130,7 +130,7 @@ def basemaps() -> list[dict]:
     for f in sorted(files):
         if f.endswith(".pmtiles"):
             out.append({"id": f"pmtiles:{f}", "name": f"Offline: {f[:-8]}", "kind": "pmtiles",
-                        "url": storage.absolute_url(f"basemaps/{f}", public=True), "online": False,
+                        "url": storage.url(f"basemaps/{f}", public=True), "online": False,
                         "attribution": "© OpenStreetMap contributors, Protomaps"})
     if settings.ONLINE_BASEMAPS:
         out += [

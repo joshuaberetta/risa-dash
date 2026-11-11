@@ -359,7 +359,7 @@
 <ol class="checklist">
   <li>Agree with the data owner where the data may live and who may see the map. That decides the instance: the consortium's, a national authority's own, or a field kit (see <a href="#run">Where it runs</a>). Get its create key if it needs one.</li>
   <li>Deploy the RISA form in KoboToolbox, and make an API token for an account that can see its data.</li>
-  <li>For a kit: load the offline basemap of the area and any pre-event imagery before it leaves, and check that it opens with the internet off. If the response already exists on the cloud or a national server, import its bundle onto the kit too.</li>
+  <li>For a kit, or a national server with no internet: load the offline basemap of the area (on a server, the administrator's <code>pack build</code>; see the <a href="https://github.com/joshuaberetta/risa-dash/blob/main/docs/self-hosting.md">self-hosting guide</a>) and any pre-event imagery before it leaves, and check that it opens with the internet off. If the response already exists on the cloud or a national server, import its bundle onto the kit too.</li>
   <li>Decide on the feedback form and test its link.</li>
   <li>Run through the sample response once, so the first real page 1 isn't the first page 1.</li>
 </ol>
