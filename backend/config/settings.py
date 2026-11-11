@@ -169,6 +169,8 @@ MAP_FONT_BOLD = env_list("MAP_FONT_BOLD", "Noto Sans Bold")
 DEFAULT_DETECTOR = env("DEFAULT_DETECTOR", "simulated")
 # Model weights, downloaded at image build or copied in offline
 MODELS_DIR = Path(env("MODELS_DIR", "/opt/models"))
+# CPU threads for a model; 0 is all of them (lower it on a box that also runs Kobo and AI)
+MODEL_THREADS = int(env("MODEL_THREADS", "0"))
 
 # ---- print ------------------------------------------------------------------------
 # The worker opens the print route here. Inside compose: http://web:8000

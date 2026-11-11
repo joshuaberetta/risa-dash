@@ -37,6 +37,9 @@ def test_precision_recall_against_marked_shelters():
     assert e["best_threshold"] == 0.6
     ai.refresh_from_db()
     assert ai.meta["evaluation"]["f1"] == e["f1"]
+    # Scored only inside a given box: the first shelter alone
+    e = evaluation.evaluate(ai, ref, bbox=[-0.000001, -0.000001, 0.00005, 0.00005], save=False)
+    assert (e["reference_count"], e["matched"]) == (1, 1)
 
 
 @pytest.mark.django_db

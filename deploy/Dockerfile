@@ -14,6 +14,11 @@ FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4 AS fonts
 COPY scripts/fetch-fonts.sh /usr/local/bin/
 RUN fetch-fonts.sh /fonts
 
+# Model weights for imagery analysis (scripts/fetch-models.sh)
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4 AS models
+COPY scripts/fetch-models.sh /usr/local/bin/
+RUN fetch-models.sh /opt/models
+
 FROM ghcr.io/osgeo/gdal:ubuntu-small-3.11.4 AS base
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /usr/local/bin/uv
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
@@ -40,6 +45,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then arch=arm64 sha=f8bd47e7ea866863489cad58
  && echo "$sha  /tmp/pmtiles.tgz" | sha256sum -c --quiet \
  && tar -xzf /tmp/pmtiles.tgz -C /usr/local/bin pmtiles && rm /tmp/pmtiles.tgz && pmtiles version
 COPY deploy/start.sh /usr/local/bin/start
+COPY --from=models /opt/models /opt/models
 
 # Development: code is mounted
 FROM base AS dev

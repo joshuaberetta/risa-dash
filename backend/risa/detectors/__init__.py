@@ -38,6 +38,8 @@ class Detector:
     label = ""
     simulated = False
     gsd = 0.25
+    # Bigger areas are read coarser than gsd, to stay within memory
+    max_pixels = 30_000_000
     description = ""
 
     def available(self) -> str:

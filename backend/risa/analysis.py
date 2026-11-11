@@ -47,7 +47,8 @@ def progress(layer: Layer, step: str, pct: int) -> None:
 # ---- image -> arrays --------------------------------------------------------------
 
 
-def read_aoi(cog_path: str, bounds: list[float], tmp: str, gsd: float = GSD) -> tuple[np.ndarray, np.ndarray, dict]:
+def read_aoi(cog_path: str, bounds: list[float], tmp: str, gsd: float = GSD,
+             max_pixels: int = MAX_PIXELS) -> tuple[np.ndarray, np.ndarray, dict]:
     """RGB and mask for the area of interest, resampled to about gsd m/px.
     Returns (rgb[h, w, 3], valid[h, w], georef) where georef has the ENVI header path."""
     w, s, e, n = bounds
@@ -59,8 +60,8 @@ def read_aoi(cog_path: str, bounds: list[float], tmp: str, gsd: float = GSD) -> 
     mw = math.radians(abs(e - w)) * R
     mh = abs(math.log(math.tan(math.pi / 4 + math.radians(n) / 2)) - math.log(math.tan(math.pi / 4 + math.radians(s) / 2))) * R
     px = (mw / tr) * (mh / tr)
-    if px > MAX_PIXELS:
-        tr *= math.sqrt(px / MAX_PIXELS)
+    if px > max_pixels:
+        tr *= math.sqrt(px / max_pixels)
     out = os.path.join(tmp, "aoi.img")
     # BSQ explicitly: ENVI otherwise keeps the source's pixel interleaving
     run(["gdal_translate", "-q", "-of", "ENVI", "-co", "INTERLEAVE=BSQ", "-projwin_srs", "EPSG:4326", "-projwin", str(w), str(n), str(e), str(s),
@@ -266,7 +267,7 @@ def analyse(layer: Layer) -> None:
     with tempfile.TemporaryDirectory() as tmp:
         progress(layer, "Reading the imagery", 10)
         with storage.local_copy(src.source, suffix=".tif") as cog:
-            rgb, valid, georef = read_aoi(cog, bounds, tmp, gsd=det.gsd)
+            rgb, valid, georef = read_aoi(cog, bounds, tmp, gsd=det.gsd, max_pixels=det.max_pixels)
         t0 = time.monotonic()
         found = det.detect(rgb, valid, georef, tmp, lambda step, pct: progress(layer, step, pct))
         seconds = round(time.monotonic() - t0, 1)

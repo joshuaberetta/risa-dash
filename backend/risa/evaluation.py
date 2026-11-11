@@ -28,7 +28,9 @@ THRESHOLDS = [0.0, 0.3, 0.4, 0.5, 0.6, 0.7, 0.75, 0.8, 0.9]
 
 def _area(reference: Layer, bbox: list[float] | None) -> GEOSGeometry:
     if bbox:
-        return Polygon.from_bbox(bbox)
+        area = Polygon.from_bbox(bbox)
+        area.srid = 4326
+        return area
     with connection.cursor() as cur:
         # The reference's outline, grown 5 m: where the person looked
         cur.execute("""
