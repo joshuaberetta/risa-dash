@@ -57,6 +57,8 @@ export default function MapView(props: Props) {
   const propsRef = useRef(props)
   propsRef.current = props
   const basemapRef = useRef<string>('')
+  // The style itself is loaded (overlays can be added), whether or not its tiles are
+  const styleReady = useRef(false)
 
   // Create the map once
   useEffect(() => {
@@ -85,7 +87,10 @@ export default function MapView(props: Props) {
       map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right')
       map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left')
     }
-    map.on('style.load', () => sync(map))
+    map.on('style.load', () => {
+      styleReady.current = true
+      sync(map)
+    })
     map.on('idle', () => propsRef.current.onIdle?.(map))
     map.on('click', (e) => {
       const ids = interactiveLayerIds(map)
@@ -121,6 +126,7 @@ export default function MapView(props: Props) {
     if (!map || props.basemap === basemapRef.current) return
     basemapRef.current = props.basemap
     const bm = props.config.basemaps.find((b) => b.id === props.basemap)
+    styleReady.current = false  // until style.load, which syncs
     map.setStyle(basemapStyle(bm, props.config.glyphs), {
       diff: false,
       transformStyle: (prev, next) => {
@@ -135,7 +141,9 @@ export default function MapView(props: Props) {
   // Overlays
   useEffect(() => {
     const map = mapRef.current
-    if (map && map.isStyleLoaded()) sync(map)
+    // Not isStyleLoaded(): that is also false while any source (the COG, the basemap) is
+    // still loading tiles, and data arriving then would never reach the map
+    if (map && styleReady.current) sync(map)
   }, [props.layers, props.state, props.data, props.highlight])
 
   function sync(map: MLMap) {
