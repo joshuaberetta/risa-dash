@@ -155,8 +155,12 @@ KOBO_SYNC_MINUTES = int(env("KOBO_SYNC_MINUTES", "10"))
 # ---- maps -------------------------------------------------------------------------
 # false on an offline box: hides basemaps that need the internet
 ONLINE_BASEMAPS = env_bool("ONLINE_BASEMAPS", True)
-# Local PMTiles basemaps loaded with `manage.py pack load`, under MEDIA_ROOT/basemaps
+# Offline basemaps are any *.pmtiles under MEDIA_ROOT/basemaps (docs/self-hosting.md)
 GLYPHS_URL = env("GLYPHS_URL", "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf")
+# Map label fonts, as named on GLYPHS_URL; a comma-separated list is a fallback stack.
+# Protomaps' fonts (e.g. a kobo-in-a-box tile server) have no Bold: use Noto Sans Medium.
+MAP_FONT = env_list("MAP_FONT", "Noto Sans Regular")
+MAP_FONT_BOLD = env_list("MAP_FONT_BOLD", "Noto Sans Bold")
 
 # ---- print ------------------------------------------------------------------------
 # The worker opens the print route here. Inside compose: http://web:8000

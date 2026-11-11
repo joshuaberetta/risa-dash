@@ -157,6 +157,7 @@ def config(request):
         "symbology": symbology(),
         "basemaps": basemaps(),
         "glyphs": settings.GLYPHS_URL,
+        "fonts": {"regular": settings.MAP_FONT, "bold": settings.MAP_FONT_BOLD},
         "allowed_servers": settings.ALLOWED_SERVERS,
         "create_key_required": bool(settings.CREATE_KEY),
         "read_only_public": settings.READ_ONLY_PUBLIC,

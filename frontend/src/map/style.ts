@@ -7,11 +7,9 @@ import type {
   SourceSpecification,
   StyleSpecification,
 } from 'maplibre-gl'
-import { absUrl, type Basemap, type LayerT, type Symbology } from '../api'
+import { absUrl, type Basemap, type Fonts, type LayerT, type Symbology } from '../api'
 
 export const OVERLAY_PREFIX = 'risa-'
-export const FONT = ['Noto Sans Regular']
-export const FONT_BOLD = ['Noto Sans Bold']
 
 export function basemapStyle(bm: Basemap | undefined, glyphs: string): StyleSpecification | string {
   const bg: LayerSpecification = { id: 'background', type: 'background', paint: { 'background-color': '#eef0f2' } }
@@ -65,7 +63,7 @@ const rtype: ExpressionSpecification = ['coalesce', ['get', 'risa_type'], '']
 
 /** Imagery analysis: colour by class; dashed while suggested, solid once accepted;
  * rejected hidden. Kept clear of the status colours. */
-function analysisLayers(l: LayerT, sym: Symbology, op: number): LayerSpecification[] {
+function analysisLayers(l: LayerT, sym: Symbology, fonts: Fonts, op: number): LayerSpecification[] {
   const src = sourceId(l)
   const A = sym.analysis || {}
   const cls: ExpressionSpecification = ['coalesce', ['get', 'ai_class'], ['get', 'risa_type'], '']
@@ -85,16 +83,17 @@ function analysisLayers(l: LayerT, sym: Symbology, op: number): LayerSpecificati
       paint: { 'line-color': color, 'line-width': ['case', area, 3, 1.6], 'line-opacity': op } },
     // Blocks are labelled with their count; the boundary is explained by the legend
     { id: lid(l, 'labels-poly'), type: 'symbol', source: src, filter: ['all', notRejected, ['==', cls, 'block']],
-      layout: { 'text-field': ['coalesce', ['get', 'risa_label'], ''], 'text-font': FONT_BOLD, 'text-size': 12, 'text-max-width': 10 },
+      layout: { 'text-field': ['coalesce', ['get', 'risa_label'], ''], 'text-font': fonts.bold, 'text-size': 12, 'text-max-width': 10 },
       paint: { 'text-color': sym.ink, 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1.6, 'text-opacity': op } },
   ]
 }
 
-/** The layers drawn for one site layer, bottom to top. */
-export function overlayLayers(l: LayerT, sym: Symbology): LayerSpecification[] {
+/** The layers drawn for one site layer, bottom to top. Labels use the instance's fonts (they
+ * must be on its GLYPHS_URL). */
+export function overlayLayers(l: LayerT, sym: Symbology, fonts: Fonts): LayerSpecification[] {
   const src = sourceId(l)
   const op = l.style.opacity ?? 1
-  if (l.kind === 'analysis') return analysisLayers(l, sym, op)
+  if (l.kind === 'analysis') return analysisLayers(l, sym, fonts, op)
   if (!['vector', 'kobo', 'annotations'].includes(l.kind)) {
     return [{ id: lid(l, 'raster'), type: 'raster', source: src, paint: { 'raster-opacity': op, 'raster-fade-duration': 0 } }]
   }
@@ -161,19 +160,19 @@ export function overlayLayers(l: LayerT, sym: Symbology): LayerSpecification[] {
       id: lid(l, 'labels-poly'), type: 'symbol', source: src, filter: isPoly,
       // Shifts off the centre rather than sitting under a service symbol
       layout: {
-        'text-field': labelField, 'text-font': FONT_BOLD, 'text-size': 13, 'text-max-width': 8, 'text-padding': 1,
+        'text-field': labelField, 'text-font': fonts.bold, 'text-size': 13, 'text-max-width': 8, 'text-padding': 1,
         'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'], 'text-radial-offset': 0.9,
       },
       paint: { 'text-color': sym.ink, 'text-halo-color': 'rgba(255,255,255,0.9)', 'text-halo-width': 1.6, 'text-opacity': op },
     },
     {
       id: lid(l, 'labels-line'), type: 'symbol', source: src, filter: isLine,
-      layout: { 'text-field': labelField, 'text-font': FONT_BOLD, 'text-size': 12, 'symbol-placement': 'line', 'text-letter-spacing': 0.05 },
+      layout: { 'text-field': labelField, 'text-font': fonts.bold, 'text-size': 12, 'symbol-placement': 'line', 'text-letter-spacing': 0.05 },
       paint: { 'text-color': sym.ink, 'text-halo-color': '#fff', 'text-halo-width': 1.6, 'text-opacity': op },
     },
     {
       id: lid(l, 'labels-point'), type: 'symbol', source: src, filter: isPoint, minzoom: 15,
-      layout: { 'text-field': labelField, 'text-font': FONT, 'text-size': 11, 'text-offset': [0, 1.5], 'text-anchor': 'top', 'text-optional': true },
+      layout: { 'text-field': labelField, 'text-font': fonts.regular, 'text-size': 11, 'text-offset': [0, 1.5], 'text-anchor': 'top', 'text-optional': true },
       paint: { 'text-color': sym.ink, 'text-halo-color': '#fff', 'text-halo-width': 1.4, 'text-opacity': op },
     },
   ]

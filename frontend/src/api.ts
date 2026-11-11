@@ -20,10 +20,17 @@ export interface Symbology {
   analysis?: Record<string, { color: string }>
 }
 
+export interface Fonts {
+  regular: string[]
+  bold: string[]
+}
+
 export interface Config {
   symbology: Symbology
   basemaps: Basemap[]
   glyphs: string
+  /** Font stacks for map labels, on the glyphs server */
+  fonts: Fonts
   allowed_servers: string[]
   create_key_required: boolean
   read_only_public: boolean

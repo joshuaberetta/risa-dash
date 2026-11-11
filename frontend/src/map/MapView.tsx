@@ -176,7 +176,7 @@ export default function MapView(props: Props) {
       wanted.add(sid)
       const st = state[l.id] || { visible: l.visible_default, opacity: l.style.opacity ?? 1 }
       const styled = { ...l, style: { ...l.style, opacity: st.opacity } }
-      for (const spec of overlayLayers(styled, config.symbology)) {
+      for (const spec of overlayLayers(styled, config.symbology, config.fonts)) {
         if (!map.getLayer(spec.id)) map.addLayer(spec)
         else applyPaint(map, spec)
         map.setLayoutProperty(spec.id, 'visibility', st.visible ? 'visible' : 'none')

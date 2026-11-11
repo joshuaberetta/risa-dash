@@ -67,7 +67,7 @@ cp deploy/.env.example deploy/.env      # set SECRET_KEY, POSTGRES_PASSWORD, ALL
 docker compose -f deploy/compose.yaml --env-file deploy/.env up -d --build
 ```
 
-Files go on a volume (`STORAGE=filesystem`) and are served with range requests. Nothing calls the internet at runtime except the online basemaps, which `ONLINE_BASEMAPS=false` hides. On a kobo-in-a-box, add [`deploy/nginx/risa.conf`](deploy/nginx/risa.conf) to the edge nginx and set `ALLOWED_SERVERS=http://kf.kobo.local`, `PUBLIC_URL=http://risa.kobo.local`. Offline basemaps are PMTiles extracts under `basemaps/` in the media volume. **Offline gap today:** map label fonts (glyphs) still come from OpenFreeMap; bundling them is on the list.
+Files go on a volume (`STORAGE=filesystem`) and are served with range requests. Nothing calls the internet at runtime except the online basemaps, which `ONLINE_BASEMAPS=false` hides, and the map label fonts (`GLYPHS_URL`, OpenFreeMap by default), which offline point at a local tile server's fonts with `MAP_FONT` and `MAP_FONT_BOLD` set to names it has. Offline basemaps are PMTiles extracts under `basemaps/` in the media volume. **[`docs/self-hosting.md`](docs/self-hosting.md)** covers an install on your own server: HTTPS behind a proxy, object storage, no internet, access, bundles from the command line, backups and upgrades. On a kobo-in-a-box, use the box's RISA component instead (`remote/risa/` in kobo-in-a-box, with `risa.sh`), which wires it to the box's Kobo, map and fonts.
 
 ## Hosting (DigitalOcean)
 
@@ -85,6 +85,8 @@ All environment variables; see [`backend/config/settings.py`](backend/config/set
 | `READ_ONLY_PUBLIC` | `true` | `false`: viewing needs the edit key |
 | `STORAGE` | `filesystem` | or `s3` with `S3_*`, `MEDIA_PUBLIC_URL` |
 | `ONLINE_BASEMAPS` | `true` | `false` on an offline box |
+| `GLYPHS_URL` | OpenFreeMap | Map label fonts (`{fontstack}`, `{range}`); a local tile server's offline |
+| `MAP_FONT`, `MAP_FONT_BOLD` | Noto Sans Regular, Noto Sans Bold | Label font names on `GLYPHS_URL`; comma-separated for a fallback stack. `Noto Sans Medium` for bold with Protomaps' fonts |
 | `PRINT_BASE_URL` | `PUBLIC_URL` | Where the worker's Chromium opens the print route |
 | `MAX_BUNDLE_SIZE` | 64 GB | Largest bundle an import accepts |
 | `BUNDLE_KEEP_DAYS` | 7 | Exported bundles are deleted after this, as are unfinished bundle uploads |
