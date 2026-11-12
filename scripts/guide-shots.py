@@ -11,7 +11,9 @@ ONLY=bundle,bundle-import takes some of them. "landing", "summary", "products", 
 response (seed_sample.py --demo: SLUG=demo, its key), "page2" with page 2 turned on. The guide's other shots (the site, a
 feature with its Kobo photo, the Kobo dialog, the summary, the data table and the page 1
 editor) were taken by hand from the sample with the box's demo Kobo project
-(kobo-in-a-box remote/risa/demo-kobo.py) connected.
+(kobo-in-a-box remote/risa/demo-kobo.py) connected. The photo-faces and photo-camp before and
+after pairs are risa/redact.py's output on a NASA portrait (public domain) and a 1994 photo of
+Kibumba camp (CC0), from Wikimedia Commons, at 1200 px.
 """
 import os
 import urllib.request

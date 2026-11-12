@@ -209,6 +209,22 @@
   <li><strong>Left out (sensitive):</strong> questions that must never be copied onto this server, such as names or phone numbers.</li>
 </ul>
 
+<h4>Faces and people in photos</h4>
+<p>Photos from KoboCollect are never shown as they were taken. When a submission comes in, the dashboard reads its photos from Kobo once, hides the people in them, and removes everything a phone writes into a photo: the GPS position, the phone's make and model, and the time. The map's feature panel, the data table and the printed pages only ever show that copy. If a photo can't be checked, it shows as <strong>Photo hidden</strong> instead. The original stays in your Kobo project, so anyone with access to the project can still see it.</p>
+<ul>
+  <li><strong>Faces turned to the camera</strong> are smudged beyond recognition, down to faces about 20 pixels across. The rest of the person stays visible, so a photo of a water point with a child beside it still shows the water point.</li>
+  <li><strong>People whose face can't be seen</strong> (turned away, in profile, or too far away, as in a wide shot of the camp) are smudged whole. Someone who fills much of the photo has their head and upper body smudged.</li>
+</ul>
+<div class="figures figures--half">
+<figure><a href="static/shots/photo-faces-before.jpg"><img src="static/shots/photo-faces-before.jpg" width="1200" height="801" alt="Nine astronauts in blue flight suits standing in a row in front of two spacecraft, faces clearly visible." loading="lazy"></a><figcaption>Before: as it was taken. NASA astronauts, 2018 (Robert Markowitz, NASA, public domain).</figcaption></figure>
+<figure><a href="static/shots/photo-faces-after.jpg"><img src="static/shots/photo-faces-after.jpg" width="1200" height="801" alt="The same photo with every face smudged, including a person in the background; the flight suits and spacecraft are sharp." loading="lazy"></a><figcaption>After: every face hidden, the rest left sharp.</figcaption></figure>
+</div>
+<div class="figures figures--half">
+<figure><a href="static/shots/photo-camp-before.jpg"><img src="static/shots/photo-camp-before.jpg" width="1200" height="781" alt="A wide view of a camp of tents and plastic sheeting, with people cooking, sitting under shelters and standing in the foreground." loading="lazy"></a><figcaption>Before: a wide shot, where faces are too small or turned away. Kibumba camp near Goma, 1994 (TSgt Val Gempis, US DoD, CC0).</figcaption></figure>
+<figure><a href="static/shots/photo-camp-after.jpg"><img src="static/shots/photo-camp-after.jpg" width="1200" height="781" alt="The same camp with each person smudged, near and far; the tents, shelters, pots and jerrycan are sharp." loading="lazy"></a><figcaption>After: each person hidden; the shelters, pots and jerrycan are not.</figcaption></figure>
+</div>
+<p>No detector finds everyone. Someone half hidden behind a wall or a crowd, or very far away, can be missed, and now and then a sack or a coat is smudged by mistake. So the SOP's rule still applies: photograph the infrastructure, not people, and ask before anyone is in the shot. Look at the photos before you share a site's link widely, and also check for names, documents and number plates, which aren't hidden.</p>
+
 <h4>Syncing</h4>
 <p>The dashboard checks for new submissions every 10 minutes. After a team comes back into range, use <strong>⋯ › Sync now</strong> to bring them in straight away. If a sync fails (an expired token, a deleted form), the layer shows <strong>sync error</strong>; hover over it to see why.</p>
 </section>
@@ -437,8 +453,8 @@
 <ul>
   <li><strong>No personal accounts, no tracking, no analytics.</strong> Your browser keeps only the edit key, your layer and basemap choices for each site, and which tours you've seen. The edit key is stored on the server only as a hash.</li>
   <li><strong>Sensitive questions are left out.</strong> When you connect a Kobo project, list any question about a person (names, phone numbers, ages) under <strong>Left out (sensitive)</strong>. Those answers are never copied to the dashboard. For the RISA form, the collector's username, device and starting location are left out already.</li>
-  <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server; they never reach a browser. <strong>Photos</strong> are fetched from Kobo when someone opens them, not stored in the dashboard.</li>
-  <li><strong>No AI company sees your data.</strong> The shelter model runs on the dashboard's own server, the kit or the hub, and sends nothing anywhere. Larger models, when they come, run there too, or on a server rented from the same provider in the same region as the instance.</li>
+  <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server; they never reach a browser. <strong>Photos</strong> are kept only as a copy with faces and people hidden and no GPS, phone or time in it, and that copy is shown only to people who can view the site (<a href="#kobo">Faces and people in photos</a>).</li>
+  <li><strong>No AI company sees your data.</strong> The shelter model and the models that hide people in photos run on the dashboard's own server, the kit or the hub, and send nothing anywhere. Larger models, when they come, run there too, or on a server rented from the same provider in the same region as the instance.</li>
   <li><strong>Feedback</strong> goes into a Kobo form that the response's owner chooses, under their control.</li>
 </ul>
 
@@ -457,7 +473,7 @@
 <ul>
   <li>Agree with the data owner, before deploying, which instance to use and who the map may be shared with. A data-sharing agreement and, for drone imagery of sites, a protection review should come before anything is shared widely.</li>
   <li>Mark every question about a person as sensitive when you connect Kobo, and check the data table for anything personal that slipped into a label or a note.</li>
-  <li>Check photos for faces, documents and number plates before you share the site's link widely.</li>
+  <li>Check photos before you share the site's link widely: faces and people are hidden, but someone can be missed, and documents, names and number plates aren't hidden at all.</li>
   <li>Keep the key message and labels to facts about places and services, never about individuals.</li>
   <li>Delete layers you no longer need. Deleting a layer removes its files too; a whole response is removed by the instance's administrator.</li>
   <li>Moving data on a USB drive? Treat the drive as sensitive: a bundle holds everything about the response, imagery included. Encrypted bundles are planned, so a lost drive exposes nothing.</li>
