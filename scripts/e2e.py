@@ -149,7 +149,9 @@ def main():
     pdf = get(base + v["pdf"])
     if not pdf.startswith(b"%PDF") or len(pdf) < 50_000:
         sys.exit(f"FAIL: page 1 PDF looks wrong ({len(pdf)} bytes)")
-    ok(f"page 1 PDF, {len(pdf) // 1024} KB")
+    if not v.get("image") or not get(base + v["image"]).startswith(b"\x89PNG"):
+        sys.exit("FAIL: no image of the printed page")
+    ok(f"page 1 PDF, {len(pdf) // 1024} KB, and its image")
 
     gpkg = get(f"{base}/api/sites/{sid}/export.gpkg", timeout=120)
     if not gpkg.startswith(b"SQLite format 3"):

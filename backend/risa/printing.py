@@ -135,8 +135,13 @@ def render(version: ProductVersion) -> None:
         code = (product.code or "RISA").replace(" ", "_")
         name = f"{code}_{product.site.slug}_v{version.n:02d}_{timezone.now():%Y%m%d}.pdf"
         version.pdf_key = storage.save(f"products/{product.id}/{name}", out, content_type="application/pdf")
+        # The same page as an image, for people who can view but not edit (and for browsers without a PDF viewer)
+        png = os.path.join(tmp, "product.png")
+        _typst(tmp, png, ppi=110)
+        image_key = storage.save(f"products/{product.id}/v{version.n:02d}.png", png, content_type="image/png")
         # Keep the data the page was made from, for audit and reprints
-        version.snapshot = {**version.snapshot, "page": json.loads((Path(tmp) / "data.json").read_text())}
+        version.snapshot = {**version.snapshot, "page": json.loads((Path(tmp) / "data.json").read_text()),
+                            "image_key": image_key}
     version.status = "ready"
     version.error = ""
     version.save(update_fields=["pdf_key", "status", "error", "snapshot"])

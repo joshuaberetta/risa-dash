@@ -60,6 +60,8 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
   const qc = useQueryClient()
   const [p, setP] = useState<ProductT>(product)
   const [dirty, setDirty] = useState(false)
+  const printed = product.versions.find((v) => v.pdf)
+  const latestPdf = printed?.pdf
   useEffect(() => {
     // Keep versions and the preview fresh while the worker runs
     setP((cur) => ({ ...cur, versions: product.versions, preview: product.preview }))
@@ -162,17 +164,31 @@ function ProductEditor({ site, product, canEdit, captureView, onClose }: {
           </Stack>
         </ScrollArea>
         <Box style={{ flex: 1, height: '100%', overflow: 'auto', background: 'var(--mantine-color-gray-2)', borderRadius: 8, padding: 16 }}>
-          {p.preview?.url ? (
+          {!canEdit && (
+            <Text size="xs" c="dimmed" ta="center" mb={8}>
+              View only. To change the page or update its preview, unlock editing with the response's edit key (<b>Unlock editing</b> at the top).
+            </Text>
+          )}
+          {/* Viewers see the page as last printed; editors the draft of their changes */}
+          {!canEdit && printed?.image ? (
+            <>
+              <img src={printed.image} alt={`Page 1, version ${printed.n}, as printed`} style={{ display: 'block', width: '100%', maxWidth: 1400, margin: '0 auto', boxShadow: '0 2px 12px rgba(0,0,0,.15)', background: '#fff' }} />
+              <Text size="xs" ta="center" mt={8}>Version {printed.n}, printed {new Date(printed.rendered_at).toLocaleString()} · <Anchor size="xs" href={printed.pdf!} target="_blank">Open the PDF</Anchor></Text>
+            </>
+          ) : !canEdit && latestPdf ? (
+            <iframe src={latestPdf} title="Page 1 as last printed" style={{ display: 'block', width: '100%', height: 'calc(100% - 28px)', border: 0, background: '#fff', boxShadow: '0 2px 12px rgba(0,0,0,.15)' }} />
+          ) : p.preview?.url ? (
             <img src={p.preview.url} alt="Preview of page 1" style={{ display: 'block', width: '100%', maxWidth: 1400, margin: '0 auto', boxShadow: '0 2px 12px rgba(0,0,0,.15)', background: '#fff', opacity: p.preview.status === 'processing' ? 0.5 : 1 }} />
           ) : (
-            <Center h="60%"><Text c="dimmed">{p.preview?.status === 'processing' ? 'Rendering a draft…' : 'Click Update preview to see the page as it will print.'}</Text></Center>
+            <Center h="60%"><Text c="dimmed">{p.preview?.status === 'processing' ? 'Rendering a draft…'
+              : canEdit ? 'Click Update preview to see the page as it will print.' : 'Not printed yet.'}</Text></Center>
           )}
           <Group justify="center" gap={6} mt={8}>
             {p.preview?.status === 'processing' && <Loader size="xs" />}
-            <Text size="xs" c={p.preview?.status === 'failed' ? 'red' : 'dimmed'}>
+            {!(!canEdit && latestPdf) && <Text size="xs" c={p.preview?.status === 'failed' ? 'red' : 'dimmed'}>
               {p.preview?.status === 'failed' ? `Preview failed: ${p.preview.error.slice(0, 300)}`
                 : p.preview?.at ? `Draft at low resolution, ${new Date(p.preview.at).toLocaleTimeString()}. The PDF is 300 dpi.` : ''}
-            </Text>
+            </Text>}
           </Group>
         </Box>
       </Group>

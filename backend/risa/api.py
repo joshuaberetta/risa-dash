@@ -118,6 +118,7 @@ def version_dict(v: ProductVersion) -> dict:
     return {
         "n": v.n, "status": v.status, "error": v.error, "rendered_at": v.rendered_at,
         "pdf": f"/api/products/{v.product_id}/versions/{v.n}/pdf" if v.pdf_key else None,
+        "image": f"/api/products/{v.product_id}/versions/{v.n}/png" if (v.snapshot or {}).get("image_key") else None,
     }
 
 
@@ -1122,6 +1123,18 @@ def preview_png(request, pid: str, t: str = ""):
     return FileResponse(default_storage.open(p.preview_key, "rb"), content_type="image/png")
 
 
+@api.get("/products/{pid}/versions/{n}/png")
+def version_png(request, pid: str, n: int):
+    p = _product(request, pid, edit=False)
+    ver = get_object_or_404(ProductVersion, product=p, n=n)
+    key = (ver.snapshot or {}).get("image_key")
+    if not key:
+        raise HttpError(404, "No image of this version")
+    if storage.is_s3():
+        return HttpResponseRedirect(storage.url(key))
+    return FileResponse(default_storage.open(key, "rb"), content_type="image/png")
+
+
 @api.get("/products/{pid}/versions/{n}/pdf")
 def version_pdf(request, pid: str, n: int):
     p = _product(request, pid, edit=False)
@@ -1130,5 +1143,8 @@ def version_pdf(request, pid: str, n: int):
         raise HttpError(404, "Not rendered yet")
     if storage.is_s3():
         return HttpResponseRedirect(storage.url(ver.pdf_key))
-    return FileResponse(default_storage.open(ver.pdf_key, "rb"), content_type="application/pdf",
-                        filename=os.path.basename(ver.pdf_key))
+    r = FileResponse(default_storage.open(ver.pdf_key, "rb"), content_type="application/pdf",
+                     filename=os.path.basename(ver.pdf_key))
+    # The page 1 editor shows it in a frame to people who can't edit
+    r["X-Frame-Options"] = "SAMEORIGIN"
+    return r

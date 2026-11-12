@@ -136,6 +136,8 @@ export interface Glance {
 }
 
 export interface ProductVersionT {
+  /** The printed page as an image */
+  image?: string | null
   n: number
   status: 'processing' | 'ready' | 'failed'
   error: string
