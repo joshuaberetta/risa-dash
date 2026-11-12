@@ -215,7 +215,9 @@ export function ModelsPanel({ site, canEdit }: { site: SiteFull; canEdit: boolea
   const [ref, setRef] = useState<string | null>(guess?.id || null)
   const [busy, setBusy] = useState('')
   if (!runs.length) return null
-  const label = (l: LayerT) => config.detectors.find((d) => d.id === l.analysis?.detector)?.short || l.analysis?.model || 'Simulated'
+  // Runs from before detectors had ids were all the stand-in
+  const label = (l: LayerT) => config.detectors.find((d) => d.id === (l.analysis?.detector || (l.analysis?.simulated !== false ? 'simulated' : '')))?.short
+    || l.analysis?.model || 'Simulated'
   const evaluate = async (l: LayerT) => {
     if (!ref) return
     setBusy(l.id)

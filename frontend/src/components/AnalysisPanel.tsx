@@ -40,9 +40,9 @@ export default function AnalysisPanel({ analysis, active, onFocus }: {
     <Stack gap="sm" p="sm">
       <Alert color={AI_COLOR} variant="light" p="xs" icon={<IconInfoCircle size={16} />} title="Example output">
         <Text size="xs">
-          AI analysis isn't connected yet. This shows what it could return for this site.{' '}
+          No language model writes this brief yet: it shows what one could return for this site, made from the site's data.{' '}
           {analysis.imagery?.source === 'detected'
-            ? 'Shelter counts come from the latest shelter detection (simulated, including suggestions not yet reviewed). Use the figures on page 1, which count only accepted shelters.'
+            ? 'Shelter counts come from the latest shelter detection, including suggestions not yet reviewed. Use the figures on page 1, which count only accepted shelters.'
             : 'Shelter and people counts are illustrative: don’t use them. Run Detect shelters on imagery for counts from the image.'}
         </Text>
       </Alert>
