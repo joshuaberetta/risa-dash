@@ -72,8 +72,9 @@ export default function FeaturePanel({ config, feature, layer, canEdit, onClose,
   useEffect(() => setEditing(false), [feature.id])
   const p = feature.properties
   const editable = canEdit && layer && layer.kind !== 'kobo'
-  const photos = (typeof p._photos === 'string' ? JSON.parse(p._photos as string) : p._photos || []) as { url: string; large: string; name: string }[]
-  const photoUrl = (u: string) => `/api/layers/${feature.layerId}/kobo/photo?url=${encodeURIComponent(u)}`
+  const photos = (typeof p._photos === 'string' ? JSON.parse(p._photos as string) : p._photos || []) as { id: string | number; url: string; name: string }[]
+  // Only ever the server's copy, with faces hidden
+  const photoUrl = (id: string | number, size: string) => `/api/layers/${feature.layerId}/kobo/photos/${encodeURIComponent(String(id))}?size=${size}`
   // Prefer Kobo choice labels over raw choice names
   const rows = Object.entries(p).filter(([k, v]) => !HIDDEN.has(k) && !k.endsWith(':label') && v !== null && v !== '' && typeof v !== 'object')
     .map(([k, v]) => [k, String(p[`${k}:label`] ?? v)] as const)
@@ -130,7 +131,7 @@ export default function FeaturePanel({ config, feature, layer, canEdit, onClose,
       )}
       {photos.length > 0 && (
         <SimpleGrid cols={2} spacing={6} className="photo-grid">
-          {photos.map((ph) => <img key={ph.url} src={photoUrl(ph.url)} alt={ph.name} loading="lazy" style={{ cursor: 'zoom-in' }} onClick={() => setPhoto(photoUrl(ph.large || ph.url))} />)}
+          {photos.map((ph) => <img key={ph.url} src={photoUrl(ph.id, 'thumb')} alt={ph.name} loading="lazy" style={{ cursor: 'zoom-in' }} onClick={() => setPhoto(photoUrl(ph.id, 'large'))} />)}
         </SimpleGrid>
       )}
       {observation && photos.length === 0 && (

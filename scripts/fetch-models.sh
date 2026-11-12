@@ -22,4 +22,11 @@ get "https://github.com/alex6H/RefugeeCampShelterDetection-YOLOv8/raw/$SHELTERS/
 curl -fsSL --retry 3 -o "$dest/refugee-shelters-yolov8n.LICENSE" \
     "https://raw.githubusercontent.com/alex6H/RefugeeCampShelterDetection-YOLOv8/$SHELTERS/LICENSE"
 
+# Faces in Kobo photos, YuNet 2023mar (MIT), from the OpenCV model zoo (risa/redact.py)
+YUNET=f12e12798e8314f7c074a6656816c048dcc95b7a
+get "https://github.com/opencv/opencv_zoo/raw/$YUNET/models/face_detection_yunet/face_detection_yunet_2023mar.onnx" \
+    face-yunet-2023mar.onnx 8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4
+curl -fsSL --retry 3 -o "$dest/face-yunet-2023mar.LICENSE" \
+    "https://raw.githubusercontent.com/opencv/opencv_zoo/$YUNET/models/face_detection_yunet/LICENSE"
+
 echo "fetch-models: $(ls "$dest" | grep -c '\.onnx$') model(s) in $dest"

@@ -8,6 +8,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 from procrastinate.contrib.django import app
+from procrastinate.exceptions import AlreadyEnqueued
 
 from . import analysis, bundles, ingest, kobo, learning, printing, storage
 from .models import Detector, KoboSource, Layer, Product, ProductVersion, Response, Transfer, Upload
@@ -35,6 +36,11 @@ def sync_kobo(source_id: int, full: bool = False):
         n = kobo.sync(source, full=full)
         log.info("Kobo %s: %d submissions written", source.asset_uid, n)
         layer.status, layer.error = "ready", ""
+        if n:
+            try:
+                redact_kobo_photos.configure(queueing_lock=f"redact_photos_{source.id}").defer(source_id=source.id)
+            except AlreadyEnqueued:
+                pass
     except Exception as e:
         log.exception("Kobo sync %s failed", source_id)
         source.last_error = str(e)[:2000]
@@ -42,6 +48,13 @@ def sync_kobo(source_id: int, full: bool = False):
         layer.status = "ready" if layer.features.exists() else "failed"
         layer.error = str(e)[:2000]
     layer.save(update_fields=["status", "error", "updated_at"])
+
+
+@app.task(queue="kobo")
+def redact_kobo_photos(source_id: int):
+    """New photos, with their faces hidden, ready before anyone opens them."""
+    source = KoboSource.objects.select_related("layer").get(id=source_id)
+    log.info("Kobo %s: %d photos redacted", source.asset_uid, kobo.redact_photos(source))
 
 
 @app.periodic(cron="*/5 * * * *")

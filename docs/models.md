@@ -91,6 +91,12 @@ Only **fully reviewed** tiles go into `yolo/`: tiles where every suggestion was 
 - **Fully offline** on a kobo-in-a-box field kit: CPU, or a consumer GPU on the hub (an RTX-class card), shared with Kobo and local language models. Weights travel in the kit's content pack.
 - So: CPU inference in minutes for a site is the bar; ONNX (or a small PyTorch) model; a licence that allows redistribution inside an AGPL-3.0 tool by governments and NGOs (no non-commercial or research-only weights); a few hundred MB at most.
 
+## Faces in Kobo photos
+
+Photos from KoboCollect are shown only with their faces hidden ([`risa/redact.py`](../backend/risa/redact.py)). After each sync the worker reads each new photo from Kobo, turns it upright, finds faces with **YuNet** (2023mar, MIT, 230 KB, OpenCV model zoo) on the whole photo and in tiles, smudges each face beyond recognition, drops all metadata (GPS, phone, time), and keeps a large copy and a thumbnail under `photos/<layer>/`. The dashboard, the data table and printed pages only ever get that copy, through an access-checked endpoint. A photo that can't be checked shows as "Photo hidden". Kobo itself keeps the original.
+
+About half a second a photo on CPU. On test photos (camps, a water point, a crowd, a group portrait) it found faces turned to the camera down to about 20 px. It missed faces in profile, half out of frame, looking down, and very small ones in wide camp shots. So the SOP's rule stands: frame the infrastructure, not people. Next, if needed: blur whole people (a person detector) for wide shots, and text (names on tents, ID cards).
+
 ## What we'd like to build with a partner
 
 1. **A person-checked benchmark**: outlines of every shelter in reference areas from several sites, contexts and seasons (Haiti, Venezuela's stadium camp, Mozambique resettlement sites, Cox's Bazar), with a fixed test split.

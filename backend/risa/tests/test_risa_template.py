@@ -104,7 +104,7 @@ def test_photo_attachments_only_images():
     photo = kobo.to_feature_fields(sub, fm)["properties"]["_photos"][0]
     att = next(a for a in sub["_attachments"] if a["mimetype"].startswith("image/"))
     assert photo == {"id": att.get("id") or att["uid"], "name": att["media_file_basename"], "url": att["download_small_url"],
-                     "large": att["download_large_url"]}
+                     "large": att["download_large_url"], "original": att["download_url"]}
 
 
 def test_legacy_codes_and_labels_map_to_risa_types():

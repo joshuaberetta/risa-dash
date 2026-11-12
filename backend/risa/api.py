@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import tempfile
@@ -35,6 +36,8 @@ from .models import (
 )
 from .summary import site_summary
 from .symbology import symbology
+
+log = logging.getLogger(__name__)
 
 api = NinjaAPI(title="RISA Dashboard API", version="0.1", urls_namespace="api")
 
@@ -546,6 +549,7 @@ def patch_layer(request, layer_id: str, data: LayerPatch):
 def delete_layer(request, layer_id: str):
     lyr = _layer(request, layer_id)
     storage.delete_prefix(f"layers/{lyr.id}")
+    storage.delete_prefix(f"photos/{lyr.id}")
     lyr.delete()
     return {"ok": True}
 
@@ -1016,12 +1020,28 @@ def kobo_sync(request, layer_id: str):
     return {"ok": True}
 
 
-@api.get("/layers/{layer_id}/kobo/photo")
-def kobo_photo(request, layer_id: str, url: str):
+# Shown in place of a photo whose faces couldn't be checked: the photo itself never is
+PHOTO_HIDDEN = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160"><rect width="240" height="160" fill="#eceff1"/>'
+    '<text x="120" y="76" font-family="sans-serif" font-size="13" fill="#546e7a" text-anchor="middle">Photo hidden</text>'
+    '<text x="120" y="96" font-family="sans-serif" font-size="11" fill="#78909c" text-anchor="middle">'
+    "Faces couldn't be checked</text></svg>"
+)
+
+
+@api.get("/layers/{layer_id}/kobo/photos/{photo_id}")
+def kobo_photo(request, layer_id: str, photo_id: str, size: str = "thumb"):
+    """Only ever the copy with faces hidden (risa/redact.py)."""
     lyr = _layer(request, layer_id, edit=False)
     src = get_object_or_404(KoboSource, layer=lyr)
-    r = kobo.attachment(src, url)
-    out = HttpResponse(r.content, content_type=r.headers.get("content-type", "image/jpeg"))
+    try:
+        data = kobo.photo(src, photo_id, "thumb" if size == "thumb" else "large")
+    except Exception:
+        log.exception("Photo %s of layer %s", photo_id, layer_id)
+        out = HttpResponse(PHOTO_HIDDEN, content_type="image/svg+xml")
+        out["Cache-Control"] = "no-store"
+        return out
+    out = HttpResponse(data, content_type="image/jpeg")
     out["Cache-Control"] = "private, max-age=86400"
     return out
 

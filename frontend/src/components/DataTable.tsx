@@ -13,7 +13,7 @@ const SAMPLE_PHOTO = '/sample-photo.svg'
 const SKIP = new Set(['risa_id', 'risa_type', 'risa_status', 'risa_label', '_photos', 'observed_at', 'type', 'status', 'label', 'note', 'observed'])
 const MAX_COLUMNS = 12
 
-interface Photo { url: string; large?: string; name?: string }
+interface Photo { id?: string | number; url: string; large?: string; name?: string }
 
 /** Records of a vector layer (Kobo submissions first) with their photos. */
 export default function DataTable({ config, layers, data, onPick, onClose }: {
@@ -52,7 +52,9 @@ export default function DataTable({ config, layers, data, onPick, onClose }: {
   }
   const photosOf = (p: Record<string, unknown>): Photo[] => {
     const ph = (typeof p._photos === 'string' ? JSON.parse(p._photos) : p._photos || []) as Photo[]
-    return ph.map((x) => ({ ...x, url: `/api/layers/${layer.id}/kobo/photo?url=${encodeURIComponent(x.url)}`, large: x.large && `/api/layers/${layer.id}/kobo/photo?url=${encodeURIComponent(x.large)}` }))
+    // Only ever the server's copy, with faces hidden
+    const src = (x: Photo, size: string) => `/api/layers/${layer.id}/kobo/photos/${encodeURIComponent(String(x.id))}?size=${size}`
+    return ph.map((x) => ({ ...x, url: src(x, 'thumb'), large: src(x, 'large') }))
   }
   const statuses = config.symbology.status
 

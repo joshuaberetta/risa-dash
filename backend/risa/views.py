@@ -35,7 +35,7 @@ def _ranged(path: str, start: int, end: int, chunk: int = 256 * 1024):
 def media(request, key: str):
     """Filesystem storage only, with HTTP range requests so COGs can be read in place.
     In production on a box, nginx can serve MEDIA_ROOT directly instead."""
-    if settings.STORAGE != "filesystem" or ".." in key.split("/") or key.startswith(("uploads/", "bundles/")):
+    if settings.STORAGE != "filesystem" or ".." in key.split("/") or key.startswith(("uploads/", "bundles/", "photos/")):
         raise Http404
     path = default_storage.path(key)
     if not os.path.isfile(path):

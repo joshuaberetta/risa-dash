@@ -9,8 +9,10 @@ only ever sent to the server it was saved for.
 
 import base64
 import hashlib
+import io
 import json
 import logging
+import re
 from datetime import UTC, datetime
 from urllib.parse import urlsplit
 
@@ -18,6 +20,7 @@ import httpx
 from cryptography.fernet import Fernet
 from django.conf import settings
 from django.contrib.gis.geos import LineString, Point, Polygon
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.utils import timezone
 
@@ -347,7 +350,8 @@ def to_feature_fields(sub: dict, fm: dict) -> dict:
     props["_validation_status"] = vs.get("label", "") if isinstance(vs, dict) else ""
     props["_photos"] = [
         {"id": a.get("id") or a.get("uid"), "name": a.get("media_file_basename") or a.get("filename", "").split("/")[-1],
-         "url": a.get("download_small_url") or a.get("download_url"), "large": a.get("download_large_url") or a.get("download_url")}
+         "url": a.get("download_small_url") or a.get("download_url"), "large": a.get("download_large_url") or a.get("download_url"),
+         "original": a.get("download_url")}
         for a in sub.get("_attachments", [])
         if str(a.get("mimetype", "")).startswith("image/")
     ]
@@ -431,3 +435,55 @@ def attachment(source: KoboSource, url: str) -> httpx.Response:
         raise KoboError(f"Kobo answered {r.status_code} for the photo")
     return r
 
+
+
+# ---- photos, with faces hidden (risa/redact.py) ---------------------------------------
+
+
+def photo_key(layer_id, photo_id, size: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9_-]", "", str(photo_id))
+    return f"photos/{layer_id}/{safe}{'_thumb' if size == 'thumb' else ''}.jpg"
+
+
+def redact_photo(source: KoboSource, ph: dict) -> int:
+    """One photo from Kobo, kept with its faces hidden, large and as a thumbnail. Returns
+    the number of faces."""
+    from . import redact, storage
+
+    out = redact.redact(attachment(source, ph.get("original") or ph.get("large") or ph["url"]).content)
+    # The thumbnail last: with it there, both are
+    for size in ("large", "thumb"):
+        storage.save(photo_key(source.layer_id, ph["id"], size), io.BytesIO(out[size]), content_type="image/jpeg")
+    return out["faces"]
+
+
+def _photos(source: KoboSource):
+    for props in source.layer.features.values_list("properties", flat=True):
+        yield from props.get("_photos") or []
+
+
+def redact_photos(source: KoboSource) -> int:
+    """Every photo not yet kept. A photo that fails stays hidden, and is tried again on the
+    next sync or when someone opens it."""
+    done = 0
+    for ph in _photos(source):
+        if default_storage.exists(photo_key(source.layer_id, ph["id"], "thumb")):
+            continue
+        try:
+            redact_photo(source, ph)
+            done += 1
+        except Exception:
+            log.exception("Photo %s of layer %s not redacted", ph.get("id"), source.layer_id)
+    return done
+
+
+def photo(source: KoboSource, photo_id: str, size: str) -> bytes:
+    """A photo with its faces hidden; redacted now if the sync hasn't got to it yet."""
+    key = photo_key(source.layer_id, photo_id, size)
+    if not default_storage.exists(key):
+        ph = next((p for p in _photos(source) if str(p.get("id")) == photo_id), None)
+        if not ph:
+            raise KoboError("No such photo in this layer")
+        redact_photo(source, ph)
+    with default_storage.open(key, "rb") as f:
+        return f.read()
