@@ -73,7 +73,7 @@ export const responseTour = (): TourStep[] => [
   },
 ]
 
-export const siteTour = ({ showSummary, showAi }: { showSummary: () => void; showAi: () => void }): TourStep[] => [
+export const siteTour = ({ showSummary, showAi, showProducts }: { showSummary: () => void; showAi: () => void; showProducts: () => void }): TourStep[] => [
   {
     title: 'A RISA site',
     body: 'One site in a response: imagery, field observations and analysis on one map, with the figures and printed product built from them. Restart this tour any time from Tour at the top.',
@@ -118,10 +118,10 @@ export const siteTour = ({ showSummary, showAi }: { showSummary: () => void; sho
   },
   {
     target: 'products',
-    title: 'RISA pages 1 and 2',
-    body: 'Frame the map and make the Common Operational Picture at A3 or A4: key message, figures, legend, sources and a QR code to the live map. Add page 2, the key findings, with the gaps to act on suggested from the map. It’s rendered on the server at 300 dpi, small enough to send on WhatsApp, and every version is kept.',
+    title: 'The printed product',
+    body: 'Products, here and at the top, is where the RISA product is made: frame the map and make the Common Operational Picture at A3 or A4: key message, figures, legend, sources and a QR code to the live map. Add page 2, the key findings, with the gaps to act on suggested from the map. It’s rendered on the server at 300 dpi, small enough to send on WhatsApp, and every version is kept.',
     side: 'left',
-    before: showSummary,
+    before: showProducts,
   },
   {
     target: 'ai',

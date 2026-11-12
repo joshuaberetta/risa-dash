@@ -35,7 +35,7 @@
       <a class="button button--light" href="#run">Where it runs</a>
       <a class="button button--light" href="#checklist">Response checklist</a>
     </div>
-    <div class="shot"><a href="static/shots/landing.jpg"><img src="static/shots/landing.jpg" width="1440" height="900" alt="A site in the dashboard: layers and the legend on the left, a drone orthomosaic of Aviation Camp, Port-au-Prince, in the middle with water points, latrines, access routes and blocks drawn on it, and on the right the summary: figures at a glance, which services still work, which routes are open, and the printed products."></a></div>
+    <div class="shot"><a href="static/shots/landing.jpg"><img src="static/shots/landing.jpg" width="1440" height="900" alt="A site in the dashboard: layers and the legend on the left, a drone orthomosaic of Aviation Camp, Port-au-Prince, in the middle with the shelters the model found, water points, latrines, access routes and blocks, and on the right the summary: figures at a glance, which services still work and which routes are open. Products, at the top and as a tab, holds the printed product."></a></div>
   </div>
 </section>
 
@@ -244,7 +244,7 @@
 
 <h3>The summary</h3>
 <div class="figures">
-<figure><a href="static/shots/summary.jpg"><img src="static/shots/summary.jpg" width="680" height="1696" alt="The summary panel: four figures at a glance, a table of services by status, the access routes with their status badges, and the printed products."></a><figcaption>The summary, built from the map.</figcaption></figure>
+<figure><a href="static/shots/summary.jpg"><img src="static/shots/summary.jpg" width="678" height="1656" alt="The summary panel: four figures at a glance, a table of services by status, the access routes with their status badges, the detections waiting for review, and a link to Products."></a><figcaption>The summary, built from the map.</figcaption></figure>
 <div>
 <p>The <strong>Summary</strong> tab on the right answers the RISA questions from the data on the map:</p>
 <ul>
@@ -286,7 +286,7 @@
 <h4>Make it</h4>
 <ol>
   <li>Turn on the layers you want and frame the site on the map.</li>
-  <li>In <strong>Printed products</strong> (under the summary), choose <strong>Page 1 from this view</strong>.</li>
+  <li>Open <strong>Products</strong>, the button at the top of the site or the tab beside the summary, and choose <strong>New product from this view</strong>. Each product there shows its latest printed page, with <strong>Edit and print</strong> and its <strong>PDF</strong>.</li>
   <li>Fill in the page:
     <ul>
       <li><strong>A3 or A4</strong>;</li>
@@ -301,6 +301,7 @@
   <li><strong>Update preview</strong> shows a draft of the page. If you move the map, <strong>Use the map's current view and layers</strong> takes the new frame.</li>
   <li><strong>Render PDF</strong>. The server makes the pages at 300 dpi; an A3 page 1 is about 1.4 MB, small enough for WhatsApp or email.</li>
 </ol>
+<figure><a href="static/shots/products.jpg"><img src="static/shots/products.jpg" width="1440" height="900" alt="The site with its Products tab open: New product from this view, and the product's card with a picture of its latest page 1, its code, title and version, A3, pages 1–2, version 3 printed, and Edit and print and PDF buttons."></a><figcaption>Products: every product of the site, with its latest printed page.</figcaption></figure>
 <figure><a href="static/shots/product.jpg"><img src="static/shots/product.jpg" width="1440" height="900" alt="The page 1 editor: the key message, at-a-glance figures, sources, disclaimer and technical support on the left, with Update preview and Render PDF; on the right, a draft of the A3 page with its header band, the map with a locator inset, the key message, figures, legend, sources and QR code."></a><figcaption>The editor, on its Page 1 tab, with a draft of the page.</figcaption></figure>
 
 <h4>Page 2: key findings</h4>
@@ -325,7 +326,7 @@
 <h2>Share and export</h2>
 <ul>
   <li><strong>The site's link</strong> opens the live map for anyone, with no sign-in. Send it alongside the PDF.</li>
-  <li><strong>The PDF</strong> is the product to circulate. Open the latest version from the PDF icon next to the product.</li>
+  <li><strong>The PDF</strong> is the product to circulate. Open the latest version from <strong>Products</strong>: each product's <strong>PDF</strong> button.</li>
   <li><strong>Export › GeoPackage</strong> has every vector layer of the site in one file that opens in QGIS and ArcGIS Pro, for deeper analysis or a partner's own maps. In QGIS, each layer opens with the dashboard's RISA symbols, status colours and line styles, and labels, and its legend lists what's on the map. ArcGIS Pro opens the data without these styles.</li>
   <li><strong>Export › GeoJSON</strong> and <strong>Export › CSV</strong> give every vector layer as its own file, in a zip; each layer's <strong>⋯</strong> menu has <strong>Download GeoJSON</strong> and <strong>Download CSV</strong> for that layer alone. The CSV opens in Excel or LibreOffice: a row per point, line or area, its type and status as codes and in words, longitude and latitude (the centre of a line or area), and every answer or field it has.</li>
   <li>Each imagery layer's <strong>⋯ › Download COG</strong> gives the converted imagery, which QGIS and ArcGIS read directly; <strong>Download original</strong> gives the file as uploaded.</li>

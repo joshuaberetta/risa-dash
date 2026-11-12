@@ -91,6 +91,8 @@ export default function MapView(props: Props) {
       styleReady.current = true
       sync(map)
     })
+    // Sources and credits fold into the ⓘ button: open, they cover the bottom of the map
+    map.once('load', () => map.getContainer().querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'))
     map.on('idle', () => propsRef.current.onIdle?.(map))
     map.on('click', (e) => {
       const ids = interactiveLayerIds(map)

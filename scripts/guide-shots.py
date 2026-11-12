@@ -6,7 +6,8 @@ same response, which changes nothing.
     docker compose exec -T -e SLUG=<response> -e KEY=<edit-key> worker python - < scripts/guide-shots.py
     docker compose cp worker:/tmp/shots/. frontend/public/guide/static/shots/
 
-ONLY=bundle,bundle-import takes some of them. "ai", "product" and "page2" need the demo
+ONLY=bundle,bundle-import takes some of them. "landing", "summary", "products", "ai",
+"product" and "page2" need the demo
 response (seed_sample.py --demo: SLUG=demo, its key), "page2" with page 2 turned on. The guide's other shots (the site, a
 feature with its Kobo photo, the Kobo dialog, the summary, the data table and the page 1
 editor) were taken by hand from the sample with the box's demo Kobo project
@@ -53,6 +54,30 @@ def main():
             page.get_by_label("Country (ISO3)").fill("VEN")
             page.get_by_label("GLIDE number").fill("EQ-2026-000093-VEN")
             shot(page, "new-response")
+
+        if want("landing") or want("summary") or want("products"):
+            site = __import__("json").loads(urllib.request.urlopen(f"{API}/api/responses/{SLUG}").read())
+            page.goto(f"{BASE}/r/{SLUG}/{site['sites'][0]['slug']}", wait_until="networkidle")
+            page.wait_for_timeout(6000)
+            if want("landing"):
+                shot(page, "landing")
+            if want("summary"):
+                # The side panel alone, at twice the size, scrolled whole
+                hi = b.new_page(viewport={"width": 1440, "height": 1800}, device_scale_factor=2)
+                hi.goto(BASE + "/")
+                hi.evaluate("([s, k]) => { localStorage.setItem('risa-edit-key:' + s, k);"
+                            " for (const n of ['home', 'response', 'site']) localStorage.setItem('risa-tour-seen:' + n, '1') }", [SLUG, KEY])
+                hi.goto(f"{BASE}/r/{SLUG}/{site['sites'][0]['slug']}", wait_until="networkidle")
+                hi.wait_for_timeout(4000)
+                box = hi.locator("[data-tour=summary]").bounding_box()
+                hi.screenshot(path=str(OUT / "summary.jpg"), type="jpeg", quality=85,
+                              clip={"x": box["x"], "y": box["y"] - 40, "width": box["width"], "height": box["height"] + 90})
+                print("wrote summary")
+                hi.close()
+            if want("products"):
+                page.get_by_role("button", name="Products").first.click()
+                page.wait_for_timeout(2500)
+                shot(page, "products")
 
         if want("ai"):
             site = urllib.request.urlopen(f"{API}/api/responses/{SLUG}").read()

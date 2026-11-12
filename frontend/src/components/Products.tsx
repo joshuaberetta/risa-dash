@@ -1,4 +1,4 @@
-import { ActionIcon, Anchor, Badge, Box, Button, Center, Checkbox, Group, Loader, Modal, NumberInput, Paper, ScrollArea, SegmentedControl, Select, Stack, Switch, Tabs, Text, TextInput, Textarea, Tooltip } from '@mantine/core'
+import { ActionIcon, Anchor, Badge, Box, Button, Center, Checkbox, Group, Loader, Modal, NumberInput, Paper, ScrollArea, SegmentedControl, Select, Stack, Switch, Tabs, Text, TextInput, Textarea, Tooltip, UnstyledButton } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconArrowDown, IconArrowUp, IconCrop, IconFileTypePdf, IconPlus, IconPrinter, IconSparkles, IconTrash } from '@tabler/icons-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -17,33 +17,61 @@ export function ProductsPanel({ site, canEdit, captureView }: { site: SiteFull; 
   }
   const product = site.products.find((p) => p.id === editing)
   return (
-    <Stack gap="xs" p="sm">
-      <Group justify="space-between">
-        <Text fw={600} size="sm">Printed products</Text>
-        {canEdit && <Button size="compact-xs" variant="light" leftSection={<IconPlus size={14} />} onClick={create}>Page 1 from this view</Button>}
-      </Group>
-      {site.products.length === 0 && <Text size="xs" c="dimmed">Frame the map, then make a RISA page 1 (Common Operational Picture) to print at A3 or A4.</Text>}
-      {site.products.map((p) => {
-        const latest = p.versions[0]
-        return (
-          <Box key={p.id} className="layer-row" py={6}>
-            <Group justify="space-between" wrap="nowrap">
-              <div style={{ minWidth: 0 }}>
-                <Anchor size="sm" fw={500} onClick={() => setEditing(p.id)} truncate>{p.code ? `${p.code} · ` : ''}{p.title}</Anchor>
-                <Text size="xs" c="dimmed">{p.page_size} · {p.version_label}</Text>
-              </div>
-              {latest?.status === 'processing' && <Loader size="xs" />}
-              {latest?.pdf && (
-                <Tooltip label={`Version ${latest.n}, ${new Date(latest.rendered_at).toLocaleString()}`}>
-                  <ActionIcon component="a" href={latest.pdf} target="_blank" variant="light"><IconFileTypePdf size={16} /></ActionIcon>
-                </Tooltip>
-              )}
-            </Group>
-          </Box>
-        )
-      })}
+    <Stack gap="sm" p="sm">
+      <div>
+        <Text fw={700}>Printed products</Text>
+        <Text size="xs" c="dimmed">The RISA product for this site: page 1, the map, and page 2, the key findings, at A3 or A4. Every version is kept.</Text>
+      </div>
+      {canEdit && (
+        <Button fullWidth leftSection={<IconPlus size={16} />} onClick={create}>New product from this view</Button>
+      )}
+      {site.products.length === 0 && (
+        <Paper withBorder p="md" bg="gray.0">
+          <Text size="sm" fw={600}>No product yet</Text>
+          <Text size="xs" c="dimmed" mt={4}>
+            {canEdit ? 'Turn on the layers you want and frame the site on the map, then make a product from this view.'
+              : 'Unlock editing with the response’s edit key to make one.'}
+          </Text>
+        </Paper>
+      )}
+      {site.products.map((p) => <ProductCard key={p.id} product={p} canEdit={canEdit} onOpen={() => setEditing(p.id)} />)}
       {product && <ProductEditor site={site} product={product} canEdit={canEdit} captureView={captureView} onClose={() => setEditing(null)} />}
     </Stack>
+  )
+}
+
+/** One product: a picture of its latest printed page 1, what it is, and its PDF. */
+function ProductCard({ product: p, canEdit, onOpen }: { product: ProductT; canEdit: boolean; onOpen: () => void }) {
+  const printed = p.versions.find((v) => v.pdf)
+  const rendering = p.versions[0]?.status === 'processing'
+  const thumb = printed?.image || p.preview?.url
+  const pages = p.pages?.includes(2) ? 'Pages 1–2' : 'Page 1'
+  return (
+    <Paper withBorder radius="md" style={{ overflow: 'hidden' }}>
+      <UnstyledButton onClick={onOpen} style={{ display: 'block', width: '100%' }} aria-label={`Open ${p.title}`}>
+        <Box bg="gray.1" style={{ aspectRatio: '297 / 210', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {thumb
+            ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <Text size="xs" c="dimmed">Not printed yet</Text>}
+        </Box>
+        <Box p="sm" pb={6}>
+          <Text fw={600} size="sm" lineClamp={2}>{p.code ? `${p.code} · ` : ''}{p.title}</Text>
+          <Text size="xs" c="dimmed">{p.version_label}</Text>
+          <Group gap={6} mt={6}>
+            <Badge size="sm" variant="light" color="gray">{p.page_size}</Badge>
+            <Badge size="sm" variant="light" color="gray">{pages}</Badge>
+            {printed && <Badge size="sm" variant="light" color="teal">v{printed.n} printed</Badge>}
+            {rendering && <Badge size="sm" variant="light" color="blue" leftSection={<Loader size={8} color="blue" />}>Printing</Badge>}
+          </Group>
+        </Box>
+      </UnstyledButton>
+      <Group gap="xs" p="sm" pt={6} grow>
+        <Button size="xs" variant="default" onClick={onOpen}>{canEdit ? 'Edit and print' : 'View'}</Button>
+        <Button size="xs" variant="light" component="a" href={printed?.pdf || undefined} target="_blank" disabled={!printed?.pdf}
+          leftSection={<IconFileTypePdf size={14} />} title={printed ? `Version ${printed.n}, printed ${new Date(printed.rendered_at).toLocaleString()}` : undefined}>
+          {printed ? `PDF v${printed.n}` : 'No PDF yet'}</Button>
+      </Group>
+    </Paper>
   )
 }
 

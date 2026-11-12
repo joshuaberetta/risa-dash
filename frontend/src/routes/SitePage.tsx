@@ -1,6 +1,6 @@
 import { ActionIcon, AppShell, Button, Center, Divider, Group, Loader, Menu, Modal, Paper, ScrollArea, Select, Tabs, Text, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconRuler2, IconRulerMeasure, IconSparkles, IconTable, IconX } from '@tabler/icons-react'
+import { IconCheck, IconDownload, IconHome, IconLine, IconMapPin, IconPolygon, IconPrinter, IconRuler2, IconRulerMeasure, IconSparkles, IconTable, IconX } from '@tabler/icons-react'
 import turfBbox from '@turf/bbox'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Map as MLMap } from 'maplibre-gl'
@@ -241,6 +241,7 @@ export default function SitePage() {
   usePageTour('site', () => siteTour({
     showSummary: () => { setPicked(null); setTab('summary') },
     showAi: () => { setPicked(null); setTab('ai') },
+    showProducts: () => { setPicked(null); setTab('products') },
   }), !!site)
 
   if (q.error) return <Center h="100vh"><Text c="red">{String(q.error)}</Text></Center>
@@ -256,6 +257,10 @@ export default function SitePage() {
             / <Link to={`/r/${site.response.slug}`}>{site.response.name}</Link> / <b>{site.name}</b>
           </Text>
           <Group gap="xs" ml="auto" wrap="nowrap">
+            <Button size="xs" variant={tab === 'products' && !picked ? 'filled' : 'light'} leftSection={<IconPrinter size={14} />}
+              onClick={() => { setPicked(null); setTab('products') }}>
+              Products{site.products.length ? ` (${site.products.length})` : ''}
+            </Button>
             <Button size="xs" variant={tableOpen ? 'light' : 'default'} leftSection={<IconTable size={14} />} onClick={() => setTableOpen(!tableOpen)} data-tour="data-table">Data table</Button>
             <span data-tour="edit-key"><EditKeyButton slug={site.response.slug} canEdit={canEdit} /></span>
             <Menu position="bottom-end">
@@ -366,11 +371,18 @@ export default function SitePage() {
             <Tabs value={tab} onChange={setTab}>
               <Tabs.List grow>
                 <Tabs.Tab value="summary">Summary</Tabs.Tab>
+                <Tabs.Tab value="products" leftSection={<IconPrinter size={14} />}>Products</Tabs.Tab>
                 <Tabs.Tab value="ai" color={AI_COLOR} leftSection={<IconSparkles size={14} />}>AI analysis</Tabs.Tab>
               </Tabs.List>
               <Tabs.Panel value="summary">
                 <div data-tour="summary"><SummaryPanel config={config} summary={summary.data} /></div>
                 <Divider />
+                <Group p="sm" justify="space-between" wrap="nowrap">
+                  <Text size="xs" c="dimmed">These figures go onto page 1.</Text>
+                  <Button size="compact-xs" variant="light" leftSection={<IconPrinter size={13} />} onClick={() => setTab('products')}>Products</Button>
+                </Group>
+              </Tabs.Panel>
+              <Tabs.Panel value="products">
                 <div data-tour="products"><ProductsPanel site={site} canEdit={canEdit} captureView={captureView} /></div>
               </Tabs.Panel>
               <Tabs.Panel value="ai" data-tour="ai">
