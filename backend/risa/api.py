@@ -56,7 +56,7 @@ def response_dict(r: Response, request=None) -> dict:
     return {
         "id": r.id, "slug": r.slug, "name": r.name, "hazard": r.hazard, "country": r.country, "glide": r.glide,
         "start_date": r.start_date, "language": r.language, "private": r.private,
-        "feedback_url": r.feedback_url, "feedback": r.feedback_link(),
+        "feedback_url": r.feedback_url, "feedback": r.feedback_link(), "household_size": r.household_size,
         "can_edit": can_edit(request, r) if request else False,
     }
 
@@ -107,9 +107,12 @@ def product_dict(p: Product) -> dict:
         "disclaimer": p.disclaimer, "credits": p.credits, "locators": page1.locators(p.locators),
         "updated_at": p.updated_at,
         "versions": [version_dict(v) for v in p.versions.all()[:20]],
+        "pages": sorted({1, *(p.pages or [])}), "findings": p.findings or {"reach_note": "", "gaps": []},
         "preview": {
             "status": p.preview_status, "error": p.preview_error, "at": p.preview_at,
             "url": f"/api/products/{p.id}/preview.png?t={int(p.preview_at.timestamp())}" if p.preview_key and p.preview_at else None,
+            "pages": [f"/api/products/{p.id}/preview.png?page={i}&t={int(p.preview_at.timestamp())}"
+                      for i in range(1, (p.preview_pages or 1) + 1)] if p.preview_key and p.preview_at else [],
         },
     }
 
@@ -119,6 +122,8 @@ def version_dict(v: ProductVersion) -> dict:
         "n": v.n, "status": v.status, "error": v.error, "rendered_at": v.rendered_at,
         "pdf": f"/api/products/{v.product_id}/versions/{v.n}/pdf" if v.pdf_key else None,
         "image": f"/api/products/{v.product_id}/versions/{v.n}/png" if (v.snapshot or {}).get("image_key") else None,
+        "images": [f"/api/products/{v.product_id}/versions/{v.n}/png?page={i}"
+                   for i in range(1, len((v.snapshot or {}).get("image_keys") or []) + 1)],
     }
 
 
@@ -196,6 +201,7 @@ class ResponsePatch(Schema):
     language: str | None = None
     private: bool | None = None
     feedback_url: str | None = None
+    household_size: float | None = None
 
 
 def unique_slug(base: str, qs, field="slug") -> str:
@@ -236,6 +242,8 @@ def patch_response(request, slug: str, data: ResponsePatch):
     require_edit(request, r)
     _check_feedback_url(data.feedback_url)
     for k, v in data.dict(exclude_unset=True).items():
+        if k == "household_size" and v is not None:
+            v = min(max(float(v), 1.0), 20.0)
         setattr(r, k, (v or "").strip() if k == "feedback_url" else v)
     r.save()
     return response_dict(r, request)
@@ -1041,6 +1049,14 @@ class ProductPatch(Schema):
     disclaimer: str | None = None
     credits: str | None = None
     locators: dict | None = None
+    pages: list[int] | None = None
+    findings: dict | None = None
+
+
+def _clean_findings(f: dict) -> dict:
+    gaps = [{"status": g.get("status") if g.get("status") in ("no", "partial", "ok", "unknown") else "partial",
+             **{k: str(g.get(k, ""))[:300] for k in ("title", "text", "who")}} for g in (f.get("gaps") or [])[:8]]
+    return {"reach_note": str(f.get("reach_note", ""))[:300], "gaps": gaps}
 
 
 def _product(request, pid, edit=True) -> Product:
@@ -1073,9 +1089,25 @@ def get_product(request, pid: str, v: int | None = None):
 def patch_product(request, pid: str, data: ProductPatch):
     p = _product(request, pid)
     for k, val in data.dict(exclude_unset=True).items():
-        setattr(p, k, page1.locators(val) if k == "locators" else val)
+        if k == "locators":
+            val = page1.locators(val)
+        elif k == "pages":
+            val = sorted({1, *(n for n in val if n in (1, 2))})
+        elif k == "findings":
+            val = _clean_findings(val)
+        setattr(p, k, val)
     p.save()
     return product_dict(p)
+
+
+@api.get("/products/{pid}/suggested-gaps")
+def suggested_gaps(request, pid: str):
+    """Gaps for page 2 from the map: closed routes, services not working, hazards over
+    shelters (risa/page2.py), for the team to edit."""
+    from . import page2
+
+    p = _product(request, pid)
+    return page2.suggest_gaps(p)
 
 
 @api.delete("/products/{pid}")
@@ -1114,20 +1146,22 @@ def preview_product(request, pid: str):
 
 
 @api.get("/products/{pid}/preview.png")
-def preview_png(request, pid: str, t: str = ""):
+def preview_png(request, pid: str, t: str = "", page: int = 1):
     p = _product(request, pid, edit=False)
-    if not p.preview_key:
+    if not p.preview_key or not 1 <= page <= (p.preview_pages or 1):
         raise HttpError(404, "No preview yet")
+    key = p.preview_key if page == 1 else p.preview_key.replace("preview.png", f"preview-{page}.png")
     if storage.is_s3():
-        return HttpResponseRedirect(storage.url(p.preview_key))
-    return FileResponse(default_storage.open(p.preview_key, "rb"), content_type="image/png")
+        return HttpResponseRedirect(storage.url(key))
+    return FileResponse(default_storage.open(key, "rb"), content_type="image/png")
 
 
 @api.get("/products/{pid}/versions/{n}/png")
-def version_png(request, pid: str, n: int):
+def version_png(request, pid: str, n: int, page: int = 1):
     p = _product(request, pid, edit=False)
     ver = get_object_or_404(ProductVersion, product=p, n=n)
-    key = (ver.snapshot or {}).get("image_key")
+    keys = (ver.snapshot or {}).get("image_keys") or [(ver.snapshot or {}).get("image_key")]
+    key = keys[page - 1] if 1 <= page <= len(keys) else None
     if not key:
         raise HttpError(404, "No image of this version")
     if storage.is_s3():

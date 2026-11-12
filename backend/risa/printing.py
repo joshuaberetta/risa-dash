@@ -105,6 +105,12 @@ def _typst(root: str, out: str, ppi: int | None = None) -> None:
         raise RuntimeError(f"Typst: {(p.stderr or p.stdout).strip()[-2000:]}")
 
 
+def _typst_pages(root: str, ppi: int) -> list[str]:
+    """Every page as a PNG, in order."""
+    _typst(root, os.path.join(root, "page-{p}.png"), ppi=ppi)
+    return sorted((str(x) for x in Path(root).glob("page-*.png")), key=lambda x: int(x.rsplit("-", 1)[1][:-4]))
+
+
 def _basemap_attribution(view: dict) -> str:
     from .api import basemaps
 
@@ -135,13 +141,14 @@ def render(version: ProductVersion) -> None:
         code = (product.code or "RISA").replace(" ", "_")
         name = f"{code}_{product.site.slug}_v{version.n:02d}_{timezone.now():%Y%m%d}.pdf"
         version.pdf_key = storage.save(f"products/{product.id}/{name}", out, content_type="application/pdf")
-        # The same page as an image, for people who can view but not edit (and for browsers without a PDF viewer)
-        png = os.path.join(tmp, "product.png")
-        _typst(tmp, png, ppi=110)
-        image_key = storage.save(f"products/{product.id}/v{version.n:02d}.png", png, content_type="image/png")
+        # The same pages as images, for people who can view but not edit (and for browsers without a PDF viewer)
+        image_keys = []
+        for i, png in enumerate(_typst_pages(tmp, ppi=110), 1):
+            suffix = "" if i == 1 else f"-{i}"
+            image_keys.append(storage.save(f"products/{product.id}/v{version.n:02d}{suffix}.png", png, content_type="image/png"))
         # Keep the data the page was made from, for audit and reprints
         version.snapshot = {**version.snapshot, "page": json.loads((Path(tmp) / "data.json").read_text()),
-                            "image_key": image_key}
+                            "image_key": image_keys[0], "image_keys": image_keys}
     version.status = "ready"
     version.error = ""
     version.save(update_fields=["pdf_key", "status", "error", "snapshot"])
@@ -151,15 +158,19 @@ def render_preview(product: Product) -> None:
     """The current, unsaved-as-a-version product at low resolution, as a PNG."""
     layer_ids = [lyr["id"] for lyr in product.view.get("layers", []) if lyr.get("visible", True)] or None
     snapshot = {"product": {"view": product.view, "page_size": product.page_size, "glance": product.glance,
-                            "locators": page1.locators(product.locators)},
+                            "locators": page1.locators(product.locators), "pages": product.pages,
+                            "findings": product.findings},
                 "summary": site_summary(product.site, layer_ids)}
     snapshot = json.loads(json.dumps(snapshot, default=str))
     with tempfile.TemporaryDirectory() as tmp:
         _compose(product, snapshot, None, True, tmp)
-        out = os.path.join(tmp, "preview.png")
-        _typst(tmp, out, ppi=72)
-        product.preview_key = storage.save(f"products/{product.id}/preview.png", out, content_type="image/png")
+        pngs = _typst_pages(tmp, ppi=72)
+        for i, png in enumerate(pngs, 1):
+            key = storage.save(f"products/{product.id}/preview{'' if i == 1 else f'-{i}'}.png", png, content_type="image/png")
+            if i == 1:
+                product.preview_key = key
+        product.preview_pages = len(pngs)
     product.preview_status = "ready"
     product.preview_error = ""
     product.preview_at = timezone.now()
-    product.save(update_fields=["preview_key", "preview_status", "preview_error", "preview_at"])
+    product.save(update_fields=["preview_key", "preview_status", "preview_error", "preview_at", "preview_pages"])

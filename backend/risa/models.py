@@ -40,6 +40,8 @@ class Response(models.Model):
     edit_key_hash = models.CharField(max_length=64)
     private = models.BooleanField(default=False, help_text="Hidden from the index page")
     feedback_url = models.CharField(max_length=500, blank=True, help_text="Feedback form; blank = the instance's FEEDBACK_URL")
+    # People per shelter, for the population estimate on page 2 (always printed TBC)
+    household_size = models.FloatField(default=5.0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     # The newest bundle imported into it (when that bundle was made), and when it was
@@ -217,11 +219,17 @@ class Product(models.Model):
     credits = models.CharField(max_length=300, default="HI/Atlas Logistique · MapAction · Kobo")
     # {area, country, place}: which locator maps to print and where; empty = page1.DEFAULT_LOCATORS
     locators = models.JSONField(default=dict, blank=True)
+    # The pages to print: [1], or [1, 2] with key findings (risa/page2.py)
+    pages = models.JSONField(default=list, blank=True)
+    # Page 2: {reach_note, gaps: [{status, title, text, who}]}; gaps start from page2.suggest_gaps
+    findings = models.JSONField(default=dict, blank=True)
     # Draft render for the editor: the real Typst output at low resolution
     preview_key = models.CharField(max_length=500, blank=True)
     preview_status = models.CharField(max_length=20, blank=True)
     preview_error = models.TextField(blank=True)
     preview_at = models.DateTimeField(null=True, blank=True)
+    # The draft has a PNG per page: preview.png for page 1, preview-2.png for page 2
+    preview_pages = models.PositiveSmallIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

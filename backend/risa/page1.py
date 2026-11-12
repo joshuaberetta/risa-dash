@@ -252,7 +252,15 @@ def build(product: Product, snapshot: dict, map_state: dict, when, draft: bool, 
     feedback = ""
     if site.response.feedback_link(site, product):
         feedback = f"{settings.PUBLIC_URL}/f/{product.id}" + (f"/{version_n}" if version_n else "")
+    pages = sorted({1, *(p.get("pages") if "pages" in p else product.pages or [])} & {1, 2})
+    extra = {}
+    if 2 in pages:
+        from . import page2
+
+        extra["p2"] = page2.build(product, snapshot, summary)
     return {
+        **extra,
+        "pages": pages,
         "page": {**f["page"], "inset": list(f["inset"]), "overview": list(f["page"]["overview"]), "map": list(f["map"]),
                  "side_pad": list(SIDE_PAD), "locators": f["locators"]},
         "lang": lang,

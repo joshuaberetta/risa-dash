@@ -1,4 +1,4 @@
-// RISA page 1: Common Operational Picture.
+// RISA page 1: Common Operational Picture; and page 2, key findings, when d.pages has 2.
 //
 // Reads data.json, map.jpg, inset.jpg, overview.jpg, qr.svg, feedback.svg and sym/*.svg from the same folder,
 // all written by risa/page1.py. The map frame size comes from data.page, the same
@@ -26,7 +26,7 @@
 #let eyebrow(body) = text(size: 0.74em, weight: 600, tracking: 0.06em, fill: muted, upper(body))
 
 // ---- header band --------------------------------------------------------------
-#let band = block(width: 100%, height: P.band * mm, fill: rgb(C.band), inset: (x: 0.55 * P.band * mm, y: 0pt), {
+#let band(title: d.title, page-label: L.page) = block(width: 100%, height: P.band * mm, fill: rgb(C.band), inset: (x: 0.55 * P.band * mm, y: 0pt), {
   set text(fill: rgb(C.band_ink))
   align(horizon, grid(
     columns: (auto, 1fr, auto), column-gutter: 0.35 * P.band * mm, align: horizon,
@@ -39,7 +39,7 @@
       } else { text(size: 0.9em, weight: 700, fill: rgb(C.band_ink).transparentize(40%), "RISA") }
     }),
     stack(spacing: 0.55em,
-      text(size: 2.1em, weight: 700, d.title),
+      text(size: 2.1em, weight: 700, title),
       text(size: 0.95em, fill: rgb(C.band_ink).transparentize(15%), d.subtitle)),
     align(right, {
       if d.code != "" {
@@ -49,7 +49,7 @@
       }
       text(size: 0.85em, d.date)
       linebreak()
-      text(size: 0.85em, if d.glide != "" { d.glide } else { L.page })
+      text(size: 0.85em, if d.glide != "" { d.glide + " · " + page-label } else { page-label })
     }),
   ))
 })
@@ -208,4 +208,107 @@
 })
 
 // ---- page ---------------------------------------------------------------------
-#stack(spacing: 0pt, band, grid(columns: (map-w, side-w), map-frame, side), footer)
+#stack(spacing: 0pt, band(), grid(columns: (map-w, side-w), map-frame, side), footer)
+
+// ---- page 2: key findings ------------------------------------------------------
+#let pages = d.at("pages", default: (1,))
+#if pages.contains(2) {
+  let q = d.p2
+  let L2 = q.labels
+  let st-color(st) = rgb(C.status.at(st))
+  // A status pill: colour and a word, so it reads in black and white too
+  let pill(st, label) = box(stroke: 0.7pt + st-color(st), fill: st-color(st).transparentize(88%), radius: 6pt,
+    inset: (x: 0.45em, y: 0.18em), baseline: 18%, text(size: 0.78em, weight: 700, fill: st-color(st).darken(25%), label))
+  let heading(n, body) = block(below: 0.8em, grid(columns: (auto, 1fr), column-gutter: 0.55em, align: horizon,
+    box(width: 1.7em, height: 1.7em, radius: 50%, fill: ink, align(center + horizon, text(weight: 800, fill: white, str(n)))),
+    text(size: 1.45em, weight: 700, body)))
+  let sub(body, note: none) = block(above: 1.2em, below: 0.5em, {
+    eyebrow(body)
+    if note != none { h(0.4em); text(size: 0.74em, fill: muted, note) }
+  })
+  let empty(body) = text(size: 0.9em, fill: muted, body)
+  let col-h = (P.h - P.band - P.foot) * mm
+  let pad = 0.55 * P.band * mm
+
+  let q1 = {
+    heading(1, L2.q1)
+    if q.routes_open != "" { block(below: 0.8em, { pill(q.verdict, L.route_status.at(q.verdict)); h(0.5em); text(weight: 600, q.routes_open) }) }
+    if q.routes.len() == 0 { empty(L2.no_routes) }
+    stack(spacing: 0.55em, ..q.routes.map(r => grid(columns: (auto, auto, 1fr), column-gutter: 0.5em, align: (left + horizon, left + horizon, left),
+      route-swatch(r.status), text(weight: 700, if r.label != "" { r.label } else { "–" }),
+      text(size: 0.9em, fill: muted, [#L.route_status.at(r.status)#if r.note != "" [ · #r.note]]))))
+    if q.reach_note != "" {
+      block(above: 1em, width: 100%, fill: rgb(C.accent), inset: 0.75em, radius: 2pt, stroke: (left: 0.8mm + ink),
+        text(weight: 600, q.reach_note))
+    }
+    if q.logistics.len() > 0 {
+      sub(L2.logistics)
+      stack(spacing: 0.55em, ..q.logistics.map(x => grid(columns: (auto, 1fr), column-gutter: 0.5em,
+        pill(x.status, L.status.at(x.status)),
+        [#text(weight: 700, x.label)#if x.label != x.kind [ #text(size: 0.85em, fill: muted, x.kind)]#if x.note != "" [ \ #text(size: 0.88em, fill: muted, x.note)]])))
+    }
+  }
+
+  let q2 = {
+    heading(2, L2.q2)
+    if q.services.len() == 0 { empty(L2.no_services) } else {
+      set text(size: 0.95em)
+      let cell(v, st) = text(weight: 700, fill: if v > 0 { st-color(st).darken(20%) } else { muted }, if v > 0 { str(v) } else { "–" })
+      table(columns: (1fr, auto, auto, auto, auto), stroke: none, inset: (x: 0.35em, y: 0.42em),
+        align: (left, right, right, right, right),
+        table.hline(stroke: 0.6pt + ink),
+        text(weight: 700, L2.service), text(weight: 700, L2.total), text(weight: 700, fill: st-color("ok").darken(20%), L2.working),
+        text(weight: 700, fill: st-color("partial").darken(20%), L2.partly), text(weight: 700, fill: st-color("no").darken(20%), L2.not),
+        table.hline(stroke: 0.4pt + rule),
+        ..q.services.map(s => (s.label, str(s.total), cell(s.ok, "ok"), cell(s.partial, "partial"), cell(s.no, "no"))).flatten(),
+        table.hline(stroke: 0.4pt + rule))
+    }
+    sub(L2.by_block, note: L2.on_imagery)
+    if q.blocks.len() == 0 { empty(L2.no_blocks) }
+    stack(spacing: 0.4em, ..q.blocks.map(b => grid(columns: (4.5em, 1fr, 3em), column-gutter: 0.5em, align: horizon,
+      text(size: 0.9em, b.label),
+      box(width: 100%, height: 0.75em, fill: rgb(C.accent), radius: 1pt,
+        box(width: b.shelters / q.block_max * 100%, height: 100%, fill: rgb("#C8A86B"), radius: 1pt)),
+      align(right, text(weight: 700, str(b.shelters))))))
+    if q.people != "" {
+      block(above: 1em, {
+        text(size: 1.5em, weight: 800, q.people); h(0.3em); text(L2.people)
+        if q.households != "" { h(0.6em); text(size: 1.5em, weight: 800, q.households); h(0.3em); text(L2.households) }
+        h(0.5em)
+        box(stroke: 0.5pt + muted, inset: (x: 0.25em, y: 0.15em), radius: 1pt, baseline: 15%,
+          text(size: 0.7em, weight: 700, fill: muted, L2.estimate + ", " + L.tbc))
+        linebreak()
+        text(size: 0.8em, fill: muted, q.household_note)
+      })
+    }
+  }
+
+  let q3 = {
+    heading(3, L2.q3)
+    if q.gaps.len() == 0 { empty(L2.no_gaps) }
+    stack(spacing: 1em, ..q.gaps.enumerate().map(((i, g)) => grid(columns: (auto, 1fr), column-gutter: 0.7em,
+      box(width: 1.9em, height: 1.9em, radius: 2pt, fill: st-color(g.status), align(center + horizon,
+        text(size: 1.15em, weight: 800, fill: white, str(i + 1)))),
+      {
+        text(size: 1.1em, weight: 700, g.title)
+        if g.at("text", default: "") != "" { linebreak(); text(size: 0.95em, g.text) }
+        linebreak()
+        v(0.15em)
+        pill(g.status, if g.status == "no" { L2.urgent } else { L2.high })
+        if g.at("who", default: "") != "" { h(0.4em); text(size: 0.85em, weight: 600, fill: muted, g.who) }
+      })))
+  }
+
+  pagebreak()
+  // Read at a glance, often from a wall: larger than page 1's side panel
+  set text(size: P.base * 1.2pt)
+  stack(spacing: 0pt,
+    band(title: L2.title, page-label: L2.page),
+    block(width: 100%, height: col-h, inset: (x: pad, y: 0.6 * pad),
+      grid(columns: (1fr, 1fr, 1.15fr), column-gutter: 1.4 * pad,
+        // Headings level across the columns: the same top inset in each
+        block(inset: (top: 0.4 * pad), q1), block(stroke: (left: 0.5pt + rule), inset: (left: 0.7 * pad, top: 0.4 * pad), q2),
+        block(width: 100%, height: 100%, fill: rgb(C.accent).lighten(50%), inset: (x: 0.7 * pad, top: 0.4 * pad, bottom: 0.7 * pad),
+          radius: 2pt, q3))),
+    footer)
+}

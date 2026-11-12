@@ -131,7 +131,7 @@ def export_bundle(response: Response, out_path: str, imagery: bool = True, origi
         "layers": [_row(lyr, exclude=("error",)) for lyr in layers],
         "kobo": [_row(k, exclude=("id", "token_encrypted", "last_submission_id", "last_error"))
                  for k in KoboSource.objects.filter(layer__in=[lyr for lyr in layers if lyr.kind == "kobo"])],
-        "products": [_row(p, exclude=("preview_key", "preview_status", "preview_error", "preview_at")) for p in products],
+        "products": [_row(p, exclude=("preview_key", "preview_status", "preview_error", "preview_at", "preview_pages")) for p in products],
         "versions": [_row(v, exclude=("id",)) for v in versions],
         "logos": [_row(lg) for lg in logos],
         "detectors": [_row(d, exclude=("id",)) for d in Detector.objects.filter(response=response, status="ready")],

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from risa import page1
+from risa import page1, page2
 
 TEMPLATE = Path(page1.__file__).parent / "typst"
 
@@ -165,3 +165,46 @@ def test_printed_feedback_qr_is_short_and_redirects_to_the_form(client, settings
     assert to["Location"].endswith("source]=print")
     # A draft preview has no version yet: the current label
     assert "Day%205" in client.get(f"/f/{p.id}")["Location"]
+
+
+P2_SAMPLE = {
+    "labels": page2.LABELS["en"], "routes_open": "1 of 4 access routes open", "verdict": "partial",
+    "routes": [{"label": "R1", "status": "ok", "note": "Airport road, open to all vehicles"},
+               {"label": "R3", "status": "no", "note": "Canal path flooded"}],
+    "reach_note": "Use R1 from the west or east; R3 is closed.",
+    "logistics": [{"label": "WH-01", "kind": "Storage", "status": "ok", "note": "Dry, about 400 m²"},
+                  {"label": "Market crossing", "kind": "Choke point", "status": "partial", "note": ""}],
+    "services": [{"type": "water", "label": "Water point", "total": 6, "ok": 3, "partial": 1, "no": 2}],
+    "blocks": [{"label": "Block A", "shelters": 120}, {"label": "Block B", "shelters": 64}], "block_max": 120,
+    "people": "4,630", "households": "926", "household_note": "5 people per shelter",
+    "gaps": [{"status": "no", "title": "Water point: 2 of 6 not working", "text": "WP-02, WP-05. Repair them.",
+              "who": "WASH cluster"},
+             {"status": "partial", "title": "Access restricted on R2, R4", "text": "", "who": "Logistics cluster"}],
+}
+
+
+@pytest.mark.parametrize("size", ["A3", "A4"])
+def test_template_compiles_with_page_2(tmp_path, size):
+    f = page1.frames(size, {})
+    data = {
+        "pages": [1, 2], "p2": P2_SAMPLE,
+        "page": {**page1.LAYOUT[size], "inset": list(f["inset"]), "overview": list(f["page"]["overview"]), "map": list(f["map"]),
+                 "side_pad": list(page1.SIDE_PAD), "locators": f["locators"]},
+        "lang": "en", "labels": page1.LABELS["en"],
+        "colors": {**page1.COLORS, "ink": "#1D232B", "status": {"ok": "#1F9A62", "partial": "#E9A23B", "no": "#A8281A", "unknown": "#8C939C"}},
+        "draft": False, "has_inset": False, "has_overview": False, "marker": None,
+        "title": "Common Operational Picture", "subtitle": "Site", "code": "T01", "date": "12/11/2026 08:00",
+        "glide": "EQ-2026-1-HTI", "authority": "", "key_message": "", "glance": [],
+        "legend": {"routes": [], "services": [], "statuses": [], "areas": []},
+        "sources": "Test.", "disclaimer": "Test.", "credits": "Kobo", "url": "https://example.org/r/x/y", "feedback": "",
+        "bearing": 0, "scale": page1.scale_bar(3),
+    }
+    page1.write_assets(tmp_path, data)
+    shutil.copy(TEMPLATE / "page1.typ", tmp_path / "page1.typ")
+    (tmp_path / "map.jpg").write_bytes(JPEG)
+    out = tmp_path / "out-{p}.png"
+    p = subprocess.run(["typst", "compile", "--root", str(tmp_path), "--font-path", str(TEMPLATE / "fonts"),
+                        "--ignore-system-fonts", "--format", "png", "--ppi", "40", str(tmp_path / "page1.typ"), str(out)],
+                       capture_output=True, text=True)
+    assert p.returncode == 0, p.stderr
+    assert sorted(x.name for x in tmp_path.glob("out-*.png")) == ["out-1.png", "out-2.png"]

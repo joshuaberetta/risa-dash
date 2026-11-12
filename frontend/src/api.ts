@@ -82,6 +82,8 @@ export interface ResponseT {
   feedback_url: string
   /** The link to open: the form with this response (and site) filled in; '' = none */
   feedback: string
+  /** People per shelter, for the population estimate on page 2 */
+  household_size: number
   can_edit: boolean
   sites?: SiteT[] | number
 }
@@ -136,8 +138,9 @@ export interface Glance {
 }
 
 export interface ProductVersionT {
-  /** The printed page as an image */
+  /** The printed page as an image, and every page */
   image?: string | null
+  images?: string[]
   n: number
   status: 'processing' | 'ready' | 'failed'
   error: string
@@ -160,6 +163,19 @@ export interface ProductView {
   layers?: ViewLayer[]
 }
 
+export interface Gap {
+  status: 'no' | 'partial' | 'ok' | 'unknown'
+  title: string
+  text: string
+  who: string
+}
+
+/** Page 2: a line under the access routes, and the gaps to act on, most urgent first */
+export interface Findings {
+  reach_note: string
+  gaps: Gap[]
+}
+
 export interface ProductT {
   id: string
   site: string
@@ -177,9 +193,12 @@ export interface ProductT {
   credits: string
   /** Locator maps on page 1: the area round the site, a country overview, and where they go */
   locators: { area: boolean; country: boolean; place: 'map' | 'side' }
+  /** The pages printed: [1], or [1, 2] with key findings */
+  pages: number[]
+  findings: Findings
   updated_at: string
   versions: ProductVersionT[]
-  preview: { status: '' | 'processing' | 'ready' | 'failed'; error: string; at: string | null; url: string | null }
+  preview: { status: '' | 'processing' | 'ready' | 'failed'; error: string; at: string | null; url: string | null; pages: string[] }
 }
 
 export interface SiteT {
