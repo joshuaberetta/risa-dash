@@ -13,7 +13,16 @@ from risa.models import Feature, KoboSource, Layer, Response, Site
 # Five of NASA's Commercial Crew astronauts (public domain), with a phone's make, model,
 # time and GPS position written in
 FACES = (Path(__file__).parent / "fixtures" / "faces.jpg").read_bytes()
-needs_model = pytest.mark.skipif(bool(redact.available()), reason="no face model (scripts/fetch-models.sh)")
+# Kibumba camp near Goma, 1994 (US DoD, CC0): people at a cooking fire and under shelters,
+# all turned away or too small for their faces to be found
+CAMP = (Path(__file__).parent / "fixtures" / "camp.jpg").read_bytes()
+needs_model = pytest.mark.skipif(bool(redact.available()), reason="no models (scripts/fetch-models.sh)")
+NONE = (np.zeros((0, 4)), np.zeros(0))
+
+
+@pytest.fixture
+def no_people(monkeypatch):
+    monkeypatch.setattr(redact, "find_people", lambda img: NONE)
 
 
 def jpeg(img: Image.Image, **kw) -> bytes:
@@ -23,10 +32,10 @@ def jpeg(img: Image.Image, **kw) -> bytes:
 
 
 @needs_model
-def test_faces_found_and_hidden():
+def test_faces_found_and_hidden(no_people):
     img = Image.open(io.BytesIO(FACES)).convert("RGB")
     boxes, scores = redact.find_faces(img)
-    assert len(boxes) == 5 and scores.min() >= redact.MIN_SCORE
+    assert len(boxes) == 5 and scores.min() >= redact.FACES.min_score
     out = redact.redact(FACES)
     assert out["faces"] == 5
     before, after = np.asarray(img, np.float32), np.asarray(Image.open(io.BytesIO(out["large"])), np.float32)
@@ -39,8 +48,33 @@ def test_faces_found_and_hidden():
     assert np.abs(before[5:45, 5:60] - after[5:45, 5:60]).mean() < 4
 
 
-def test_metadata_dropped(monkeypatch):
-    monkeypatch.setattr(redact, "find_faces", lambda img: (np.zeros((0, 4)), np.zeros(0)))
+@needs_model
+def test_people_in_a_wide_shot_hidden():
+    img = Image.open(io.BytesIO(CAMP)).convert("RGB")
+    assert len(redact.find_faces(img)[0]) == 0
+    people, scores = redact.find_people(img)
+    assert len(people) >= 4 and scores.max() > 0.8
+    out = redact.redact(CAMP)
+    assert out["faces"] == 0 and out["people"] == len(people)
+    before, after = np.asarray(img, np.float32), np.asarray(Image.open(io.BytesIO(out["large"])), np.float32)
+    for x0, y0, x1, y1 in people[scores > 0.5].astype(int):
+        top = y0 + (y1 - y0) // 3  # at least the top third, for someone large in the photo
+        assert np.abs(np.diff(after[y0:top, x0:x1], axis=1)).mean() < 0.5 * np.abs(np.diff(before[y0:top, x0:x1], axis=1)).mean()
+
+
+def test_people_whose_face_was_found_keep_the_rest():
+    people = np.array([[100.0, 100, 200, 400],   # standing, face found at the top: only the face
+                       [300.0, 100, 400, 400],   # a face-sized box at their hand: not theirs
+                       [500.0, 100, 600, 400],   # no face, large in the photo: the top hidden
+                       [700.0, 100, 720, 140]])  # no face, small: hidden whole
+    faces = np.array([[130.0, 105, 170, 150], [330.0, 300, 370, 345]])
+    whole, tops = redact.unseen(people, faces, height=800)
+    assert whole.tolist() == [[700, 100, 720, 140]]
+    assert tops.tolist() == [[300, 100, 400, 220], [500, 100, 600, 220]]
+
+
+def test_metadata_dropped(monkeypatch, no_people):
+    monkeypatch.setattr(redact, "find_faces", lambda img: NONE)
     assert Image.open(io.BytesIO(FACES)).getexif().get_ifd(0x8825)  # the fixture has a position
     out = redact.redact(FACES)
     for size, long in (("large", 672), ("thumb", redact.THUMB)):
@@ -49,10 +83,10 @@ def test_metadata_dropped(monkeypatch):
         assert max(im.size) == long
 
 
-def test_photo_turned_upright_first(monkeypatch):
+def test_photo_turned_upright_first(monkeypatch, no_people):
     """Phones store the turn in EXIF: the faces are looked for, and kept, upright."""
     seen = []
-    monkeypatch.setattr(redact, "find_faces", lambda img: seen.append(img.size) or (np.zeros((0, 4)), np.zeros(0)))
+    monkeypatch.setattr(redact, "find_faces", lambda img: seen.append(img.size) or NONE)
     exif = Image.Exif()
     exif[0x0112] = 6  # rotate 90 on display
     out = redact.redact(jpeg(Image.new("RGB", (400, 300), "white"), exif=exif))
@@ -80,7 +114,7 @@ def source(db, media):
     return src
 
 
-def test_photos_kept_redacted_and_fetched_once(source, monkeypatch):
+def test_photos_kept_redacted_and_fetched_once(source, monkeypatch, no_people):
     fetched = []
     monkeypatch.setattr(kobo, "attachment", lambda src, url: fetched.append(url) or FakeResponse(FACES))
     monkeypatch.setattr(redact, "find_faces", lambda img: (np.array([[10.0, 10, 60, 70]]), np.array([0.9])))
@@ -93,7 +127,7 @@ def test_photos_kept_redacted_and_fetched_once(source, monkeypatch):
     assert kobo.photo(source, "41", "thumb")[:2] == b"\xff\xd8"
 
 
-def test_endpoint_serves_only_the_redacted_copy(source, client, monkeypatch):
+def test_endpoint_serves_only_the_redacted_copy(source, client, monkeypatch, no_people):
     lid = source.layer_id
     # Kobo down, or the model missing: a placeholder, never the original
     monkeypatch.setattr(kobo, "attachment", lambda src, url: FakeResponse(FACES))
@@ -102,7 +136,7 @@ def test_endpoint_serves_only_the_redacted_copy(source, client, monkeypatch):
     assert res.status_code == 200 and res["Content-Type"] == "image/svg+xml" and res["Cache-Control"] == "no-store"
     assert not default_storage.exists(f"photos/{lid}/41.jpg")
     # Redacted when first opened, if the sync hasn't got to it
-    monkeypatch.setattr(redact, "find_faces", lambda img: (np.zeros((0, 4)), np.zeros(0)))
+    monkeypatch.setattr(redact, "find_faces", lambda img: NONE)
     res = client.get(f"/api/layers/{lid}/kobo/photos/41?size=large")
     assert res["Content-Type"] == "image/jpeg" and res.content != FACES
     assert len(Image.open(io.BytesIO(res.content)).getexif()) == 0

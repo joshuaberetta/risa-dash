@@ -29,4 +29,10 @@ get "https://github.com/opencv/opencv_zoo/raw/$YUNET/models/face_detection_yunet
 curl -fsSL --retry 3 -o "$dest/face-yunet-2023mar.LICENSE" \
     "https://raw.githubusercontent.com/opencv/opencv_zoo/$YUNET/models/face_detection_yunet/LICENSE"
 
+# People in Kobo photos, for wide shots: YOLOX-s on COCO (Apache-2.0), Megvii's own export
+get "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.onnx" \
+    people-yolox-s.onnx c5c2d13e59ae883e6af3b45daea64af4833a4951c92d116ec270d9ddbe998063
+curl -fsSL --retry 3 -o "$dest/people-yolox-s.LICENSE" \
+    "https://raw.githubusercontent.com/Megvii-BaseDetection/YOLOX/ac379df3c97d1835ebd319afad0c031c36d03f36/LICENSE"
+
 echo "fetch-models: $(ls "$dest" | grep -c '\.onnx$') model(s) in $dest"

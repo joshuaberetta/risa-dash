@@ -91,11 +91,14 @@ Only **fully reviewed** tiles go into `yolo/`: tiles where every suggestion was 
 - **Fully offline** on a kobo-in-a-box field kit: CPU, or a consumer GPU on the hub (an RTX-class card), shared with Kobo and local language models. Weights travel in the kit's content pack.
 - So: CPU inference in minutes for a site is the bar; ONNX (or a small PyTorch) model; a licence that allows redistribution inside an AGPL-3.0 tool by governments and NGOs (no non-commercial or research-only weights); a few hundred MB at most.
 
-## Faces in Kobo photos
+## Faces and people in Kobo photos
 
-Photos from KoboCollect are shown only with their faces hidden ([`risa/redact.py`](../backend/risa/redact.py)). After each sync the worker reads each new photo from Kobo, turns it upright, finds faces with **YuNet** (2023mar, MIT, 230 KB, OpenCV model zoo) on the whole photo and in tiles, smudges each face beyond recognition, drops all metadata (GPS, phone, time), and keeps a large copy and a thumbnail under `photos/<layer>/`. The dashboard, the data table and printed pages only ever get that copy, through an access-checked endpoint. A photo that can't be checked shows as "Photo hidden". Kobo itself keeps the original.
+Photos from KoboCollect are shown only with their people hidden ([`risa/redact.py`](../backend/risa/redact.py)). After each sync the worker reads each new photo from Kobo once and turns it upright. Two models, both on CPU, read it whole and again in 640 px tiles. The worker hides what they find, drops all metadata (GPS, phone, time), and keeps a large copy and a thumbnail under `photos/<layer>/`. The dashboard, the data table and printed pages only ever get that copy, through an access-checked endpoint. A photo that can't be checked shows as "Photo hidden". Kobo itself keeps the original.
 
-About half a second a photo on CPU. On test photos (camps, a water point, a crowd, a group portrait) it found faces turned to the camera down to about 20 px. It missed faces in profile, half out of frame, looking down, and very small ones in wide camp shots. So the SOP's rule stands: frame the infrastructure, not people. Next, if needed: blur whole people (a person detector) for wide shots, and text (names on tents, ID cards).
+- **Faces: YuNet** (2023mar, MIT, 230 KB, OpenCV model zoo). Faces turned to the camera, down to about 20 px, are smudged in an oval; the rest of the person stays.
+- **People: YOLOX-s** on COCO (Apache-2.0, 35 MB, Megvii's own ONNX export). A person whose face wasn't found (turned away, in profile, too small, as in a wide camp shot) is smudged whole, or from the head to about the waist if they fill more than 30% of the photo's height. A face counts as a person's only if it sits where their head would be and is a head's size. Otherwise a false "face" on a hand, or a neighbour's face in a crowd, would leave them unhidden.
+
+About 3 s a photo on a laptop's CPU in Docker. On test photos (two camps, a water point, a water tank, a crowded market, a group portrait), it hid everyone facing the camera, and in a wide camp shot everyone from the foreground to people a few dozen pixels tall. In a dense 1940s market crowd it still missed a woman in profile and a man looking down, and smudged some coats by mistake. So the SOP's rule stands: frame the infrastructure, not people. Next, if needed: text (names on tents, ID cards, number plates).
 
 ## What we'd like to build with a partner
 
