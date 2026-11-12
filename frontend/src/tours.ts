@@ -118,8 +118,8 @@ export const siteTour = ({ showSummary, showAi }: { showSummary: () => void; sho
   },
   {
     target: 'products',
-    title: 'RISA page 1',
-    body: 'Frame the map and make the Common Operational Picture at A3 or A4: key message, figures, legend, sources and a QR code to the live map. It’s rendered on the server at 300 dpi, small enough to send on WhatsApp, and every version is kept.',
+    title: 'RISA pages 1 and 2',
+    body: 'Frame the map and make the Common Operational Picture at A3 or A4: key message, figures, legend, sources and a QR code to the live map. Add page 2, the key findings, with the gaps to act on suggested from the map. It’s rendered on the server at 300 dpi, small enough to send on WhatsApp, and every version is kept.',
     side: 'left',
     before: showSummary,
   },

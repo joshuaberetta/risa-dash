@@ -6,8 +6,8 @@ same response, which changes nothing.
     docker compose exec -T -e SLUG=<response> -e KEY=<edit-key> worker python - < scripts/guide-shots.py
     docker compose cp worker:/tmp/shots/. frontend/public/guide/static/shots/
 
-ONLY=bundle,bundle-import takes some of them. "ai" needs the demo response
-(seed_sample.py --demo: SLUG=demo, its key). The guide's other shots (the site, a
+ONLY=bundle,bundle-import takes some of them. "ai", "product" and "page2" need the demo
+response (seed_sample.py --demo: SLUG=demo, its key), "page2" with page 2 turned on. The guide's other shots (the site, a
 feature with its Kobo photo, the Kobo dialog, the summary, the data table and the page 1
 editor) were taken by hand from the sample with the box's demo Kobo project
 (kobo-in-a-box remote/risa/demo-kobo.py) connected.
@@ -61,6 +61,30 @@ def main():
             page.get_by_role("tab", name="AI analysis").click()
             page.wait_for_timeout(6000)
             shot(page, "ai")
+
+        if want("product") or want("page2"):
+            # The demo's product, with page 2 on: page 1's tab, then page 2's, each previewed
+            site = __import__("json").loads(urllib.request.urlopen(f"{API}/api/responses/{SLUG}").read())
+            page.goto(f"{BASE}/r/{SLUG}/{site['sites'][0]['slug']}", wait_until="networkidle")
+            page.locator(".layer-row a").first.click()
+            page.wait_for_timeout(1500)
+            if want("product"):
+                page.get_by_role("button", name="Update preview").click()
+                page.wait_for_timeout(25000)
+                page.get_by_role("button", name="Page 1", exact=True).click(timeout=2000) if page.get_by_role(
+                    "button", name="Page 1", exact=True).count() else None
+                # The editor's fields from the top, with its tabs
+                page.get_by_role("dialog").locator(".mantine-ScrollArea-viewport").first.evaluate("e => e.scrollTo(0, 0)")
+                page.wait_for_timeout(1500)
+                shot(page, "product")
+            if want("page2"):
+                page.get_by_role("tab", name="Page 2 · findings").click()
+                page.wait_for_timeout(1500)
+                if page.get_by_text("Page 2", exact=True).count():
+                    page.get_by_text("Page 2", exact=True).last.click()
+                page.wait_for_timeout(2500)
+                shot(page, "page2")
+            page.keyboard.press("Escape")
 
         bundle = "/tmp/sample.risa.zip"
         if want("bundle") or want("bundle-import"):

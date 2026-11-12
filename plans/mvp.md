@@ -31,7 +31,7 @@ The test for the MVP is the Venezuela response (MapAction is sharing the data). 
 
 ### Not in the MVP
 
-User accounts and roles. Pages 2 and 3 of the product (key findings, hotspot); the layout engine is built so they can be added next. Live sync between instances (the bundle covers it for now; federation is planned in section 2). Local text and vision models, the MCP server and the assistant (planned in sections 2 and 4, built after the MVP; the MVP's settings and API are shaped so they fit). Kobo webhooks (polling first). Interface translations; text on the printed product is free text, so Spanish and French maps work from day one. A real segmentation model (the MVP ships the review workflow with a simulated detector), in-browser photogrammetry.
+User accounts and roles. Page 3 of the product (hotspot); page 2 (key findings) was added on 12/11/2026, with gaps suggested from the map. Live sync between instances (the bundle covers it for now; federation is planned in section 2). Local text and vision models, the MCP server and the assistant (planned in sections 2 and 4, built after the MVP; the MVP's settings and API are shaped so they fit). Kobo webhooks (polling first). Interface translations; text on the printed product is free text, so Spanish and French maps work from day one. A real segmentation model (the MVP ships the review workflow with a simulated detector), in-browser photogrammetry.
 
 ---
 

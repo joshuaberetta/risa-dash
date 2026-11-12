@@ -186,6 +186,7 @@ The MVP is running at **risa-dash.kobolabs.dev** with real drone imagery (IOM's 
 | Part | Status |
 |---|---|
 | Map, imagery, Kobo, drawing, measuring, page 1, exports | Working |
+| Page 2 of the product: key findings, with the gaps to act on suggested from the map | Working; page 3 (the hotspot, with before and after imagery) planned |
 | Locator maps and the feedback QR code and link | Working; the consortium's feedback form is still to be written in Kobo |
 | Sharing a site's live map by link | Working |
 | Embedding in partners' dashboards and websites (e.g. the Virtual OSOCC) | Planned: an embed view, links that keep the view, a per-response switch and a list of allowed sites, and a fixed link to the latest page 1. About 1–2 weeks of development |

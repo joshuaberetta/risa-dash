@@ -16,7 +16,7 @@
       <li><a href="#run">Where it runs</a></li>
       <li><a href="#start">Getting started</a></li>
       <li><a href="#kobo">Kobo data</a></li>
-      <li><a href="#page1">Page 1</a></li>
+      <li><a href="#page1">Pages 1–2</a></li>
       <li><a href="#offline">Offline</a></li>
       <li><a href="#privacy">Data protection</a></li>
       <li><a href="#checklist">Checklist</a></li>
@@ -61,7 +61,7 @@
     <li><a href="#map">The map</a></li>
     <li><a href="#figures">Figures and table</a></li>
     <li><a href="#ai">Imagery analysis</a></li>
-    <li><a href="#page1">Page 1</a></li>
+    <li><a href="#page1">Pages 1–2</a></li>
     <li><a href="#share">Share and export</a></li>
     <li><a href="#offline">Offline and low bandwidth</a></li>
     <li><a href="#checklist">Checklist</a></li>
@@ -84,7 +84,7 @@
   <li><strong>Runs where your data must stay</strong>On the consortium's instance, self-hosted on your own server, fully offline on a field kit, or (planned) as a network of kits with a hub.</li>
 </ul>
 <p>Everything belongs to a <strong>response</strong> (an emergency, such as "Venezuela: earthquake, June 2026"), and each response has <strong>sites</strong>. A site has its own map, layers, figures and printed products.</p>
-<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, page 1, the locator maps and exports work. The imagery analysis finds shelters with a real, open model trained on camp imagery, as suggestions for a person to review; a simulated stand-in remains for comparison, and the analysis tab's situation brief is example output. Embedding the map in other websites is planned. Pages 2 and 3 of the RISA product are still to come.</p></div>
+<div class="note"><p>This is the MVP. The map, imagery, Kobo, drawing, measuring, pages 1 and 2 of the RISA product, the locator maps and exports work. The imagery analysis finds shelters with a real, open model trained on camp imagery, as suggestions for a person to review; a simulated stand-in remains for comparison, and the analysis tab's situation brief is example output. Embedding the map in other websites is planned. Page 3 of the RISA product (the hotspot, with before and after imagery) is still to come.</p></div>
 </section>
 
 <section id="run">
@@ -136,7 +136,7 @@
   <li>On the home page, choose <strong>New response</strong>.</li>
   <li>Give it a name people will recognise (for example <em>Venezuela: earthquake, June 2026</em>), the hazard, the country's three-letter code (<code>VEN</code>), the GLIDE number if there is one, and the start date.</li>
   <li>Choose the <strong>product language</strong>. Page 1's headings and legend follow it: English, Spanish or French. Portuguese uses the English headings for now. Everything you type on the page can be in any language.</li>
-  <li>If your team has a feedback form, paste its link (see <a href="#page1">Page 1</a>). You can add one later.</li>
+  <li>If your team has a feedback form, paste its link (see <a href="#page1">Pages 1 and 2</a>). You can add one later.</li>
   <li>Some instances need a <strong>create key</strong> to start a response. Ask whoever runs the instance.</li>
 </ol>
 <figure><a href="static/shots/new-response.jpg"><img src="static/shots/new-response.jpg" width="1440" height="900" alt="The New response form: name, hazard, country, GLIDE number, start date, product language and an optional feedback form."></a><figcaption>Creating a response.</figcaption></figure>
@@ -280,8 +280,8 @@
 </section>
 
 <section id="page1">
-<h2>RISA page 1</h2>
-<p>Page 1 is the Common Operational Picture: one landscape page that a site manager, a cluster coordinator or a national authority can read in a minute.</p>
+<h2>RISA pages 1 and 2</h2>
+<p>Page 1 is the Common Operational Picture: one landscape page that a site manager, a cluster coordinator or a national authority can read in a minute. Page 2, optional, sets out the key findings: one column per RISA question, ending with where to act first. Both print in one PDF.</p>
 
 <h4>Make it</h4>
 <ol>
@@ -299,9 +299,19 @@
     </ul>
   </li>
   <li><strong>Update preview</strong> shows a draft of the page. If you move the map, <strong>Use the map's current view and layers</strong> takes the new frame.</li>
-  <li><strong>Render PDF</strong>. The server makes the page at 300 dpi; an A3 is about 1.4 MB, small enough for WhatsApp or email.</li>
+  <li><strong>Render PDF</strong>. The server makes the pages at 300 dpi; an A3 page 1 is about 1.4 MB, small enough for WhatsApp or email.</li>
 </ol>
-<figure><a href="static/shots/product.jpg"><img src="static/shots/product.jpg" width="1440" height="900" alt="The page 1 editor: the key message, at-a-glance figures, sources, disclaimer and technical support on the left, with Update preview and Render PDF; on the right, a draft of the A3 page with its header band, the map with a locator inset, the key message, figures, legend, sources and QR code."></a><figcaption>The page 1 editor and its preview.</figcaption></figure>
+<figure><a href="static/shots/product.jpg"><img src="static/shots/product.jpg" width="1440" height="900" alt="The page 1 editor: the key message, at-a-glance figures, sources, disclaimer and technical support on the left, with Update preview and Render PDF; on the right, a draft of the A3 page with its header band, the map with a locator inset, the key message, figures, legend, sources and QR code."></a><figcaption>The editor, on its Page 1 tab, with a draft of the page.</figcaption></figure>
+
+<h4>Page 2: key findings</h4>
+<p>On the editor's <strong>Page 2 · findings</strong> tab, turn on <strong>Print page 2</strong>. Most of it comes from the map:</p>
+<ul>
+  <li><strong>Can we reach people?</strong> The access routes and their status, then the <strong>logistics conditions</strong>: storage, landing zones, gates and choke points you've mapped. Add a line <strong>On access</strong>, such as which route trucks should use.</li>
+  <li><strong>Which services still work?</strong> The services table; <strong>shelters by block</strong>, counting accepted shelters inside the blocks you drew (or the detected blocks if you drew none); and the people and households, estimated from <strong>People per shelter</strong> (5 unless you change it) and always printed TBC.</li>
+  <li><strong>Where do we act first?</strong> Up to five gaps, most urgent first, each with what to do and who acts. <strong>Suggest from the map</strong> drafts them: closed routes, services not working, hazard areas over shelters, then restricted routes and services partly working, in the response's language. Then edit them: the map can't know which matters most on the ground, or who's already acting. Mark each <strong>Urgent</strong> or <strong>High</strong>, reorder, remove or add your own.</li>
+</ul>
+<figure><a href="static/shots/page2.jpg"><img src="static/shots/page2.jpg" width="1440" height="900" alt="The editor on its Page 2 tab: Print page 2 turned on, the line on access, people per shelter, and five suggested gaps with their status, text and who acts. On the right, a draft of page 2: access routes and logistics, the services table and shelters by block with the population estimate, and the five gaps ranked."></a><figcaption>Page 2, with the gaps suggested from the map and edited.</figcaption></figure>
+<p>The preview switches between the pages. Anyone who opens a product without the edit key sees the pages as last printed, with a link to the PDF.</p>
 
 <h4>Versions and QR codes</h4>
 <ul>
@@ -378,7 +388,8 @@
   <li>Connect the Kobo project and check <strong>Map form to RISA</strong>: types and statuses right, sensitive questions left out.</li>
   <li>Draw what the form doesn't cover: the site boundary, blocks, routes and their status, flooded areas.</li>
   <li>Check the data table and the summary. Do the figures make sense?</li>
-  <li>Make page 1: frame, key message, figures (TBC where estimated), version label. Render it.</li>
+  <li>Make page 1: frame, key message, figures (TBC where estimated), version label.</li>
+  <li>Turn on page 2: suggest the gaps from the map, then put them in order and say who acts. Check the people per shelter. Render the PDF.</li>
   <li>Send the PDF and the site link, and note the version you sent.</li>
 </ol>
 
