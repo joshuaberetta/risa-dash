@@ -1,4 +1,4 @@
-import { Button, Group, Loader, Modal, PasswordInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
+import { Alert, Button, Group, Loader, Modal, PasswordInput, Select, Stack, Table, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
@@ -33,8 +33,9 @@ export function KoboConnectModal({ site, opened, onClose }: { site: SiteFull; op
     setBusy(true)
     try {
       const p = projects?.find((x) => x.uid === uid)
-      await api(`/sites/${site.id}/kobo`, { body: { server, token, asset_uid: uid, name: p?.name || '' } })
-      notifications.show({ message: 'Connected. Pulling submissions…' })
+      const l = await api<LayerT>(`/sites/${site.id}/kobo`, { body: { server, token, asset_uid: uid, name: p?.name || '' } })
+      notifications.show({ message: l.kobo?.preset === 'risa' ? 'Connected. Recognised as the RISA template, so it maps itself. Pulling submissions…'
+        : 'Connected. Pulling submissions… Check the guessed mapping in the layer menu, Map form to RISA.' })
       qc.invalidateQueries({ queryKey: ['site'] })
       onClose()
     } catch (e) {
@@ -53,7 +54,7 @@ export function KoboConnectModal({ site, opened, onClose }: { site: SiteFull; op
           <>
             <Select label="Project" searchable data={projects.map((p) => ({ value: p.uid, label: `${p.name} (${p.submissions})` }))} value={uid} onChange={setUid}
               nothingFoundMessage="No deployed projects" />
-            <Text size="xs" c="dimmed">Points come from the first geopoint question. Type and status are guessed from the form (works with the RISA form as is) and can be adjusted after.</Text>
+            <Text size="xs" c="dimmed">A form made from the RISA template maps itself: location, type, status, label, comment and count come from its questions. For any other form they are guessed from the questions' names and choices (points from the first geopoint question), and can be adjusted after.</Text>
             <Group justify="flex-end"><Button onClick={connect} loading={busy} disabled={!uid}>Connect and sync</Button></Group>
           </>
         )}
@@ -102,6 +103,11 @@ export function KoboMappingModal({ layer, onClose }: { layer: LayerT; onClose: (
     <Modal opened onClose={onClose} title={`Map ${layer.name} to RISA`} size="xl">
       {!map ? <Loader /> : (
         <Stack>
+          {map.preset === 'risa' && (
+            <Alert color="green" title="Recognised as the RISA template">
+              These come from the template's questions, and its choices are already RISA types and statuses. Change them only if your country's copy renamed a question.
+            </Alert>
+          )}
           <Select label="Location question" data={opts(['geopoint', 'geotrace', 'geoshape'])} value={map.geo || null} onChange={(v) => set({ geo: v || '' })} />
           <Group grow align="flex-start">
             <Stack gap="xs">
@@ -114,7 +120,13 @@ export function KoboMappingModal({ layer, onClose }: { layer: LayerT; onClose: (
               {choiceMap('status_map', statusQ, statusOpts)}
             </Stack>
           </Group>
-          <Select label="Label" data={opts()} value={map.label || null} onChange={(v) => set({ label: v || '' })} clearable />
+          <Group grow align="flex-start">
+            <Select label="Label" data={opts()} value={map.label || null} onChange={(v) => set({ label: v || '' })} clearable />
+            <Select label="Comment" data={opts(['text'])} value={map.note || null} onChange={(v) => set({ note: v || '' })} clearable
+              description="Shown on page 2 and in the analysis" />
+            <Select label="Count" data={opts(['integer', 'decimal'])} value={map.count || null} onChange={(v) => set({ count: v || '' })} clearable
+              description="Units at the point, e.g. taps" />
+          </Group>
           <TextInput label="Left out (sensitive)" description="Question paths, comma separated. Not stored on this server." value={(map.sensitive || []).join(', ')}
             onChange={(e) => set({ sensitive: e.currentTarget.value.split(',').map((s) => s.trim()).filter(Boolean) })} />
           <Group justify="flex-end"><Button onClick={save}>Save and re-sync</Button></Group>

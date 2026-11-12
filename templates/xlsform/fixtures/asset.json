@@ -1,0 +1,3356 @@
+{
+ "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/?format=json",
+ "owner": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+ "owner__username": "bob_kobo",
+ "parent": null,
+ "settings": {
+  "sector": {},
+  "country": [],
+  "description": "",
+  "organization": "",
+  "country_codes": []
+ },
+ "asset_type": "survey",
+ "files": [],
+ "summary": {
+  "geo": true,
+  "labels": [
+   "Date of observation",
+   "Organisation",
+   "Which organisation?",
+   "Province / state",
+   "District / municipality"
+  ],
+  "columns": [
+   "name",
+   "type",
+   "label",
+   "default",
+   "required",
+   "appearance",
+   "constraint",
+   "constraint_message",
+   "select_from_list_name",
+   "hint",
+   "relevant",
+   "choice_filter",
+   "calculation",
+   "parameters"
+  ],
+  "lock_all": false,
+  "lock_any": false,
+  "languages": [
+   "English (en)"
+  ],
+  "row_count": 77,
+  "name_quality": {
+   "ok": 0,
+   "bad": 0,
+   "good": 77,
+   "total": 77,
+   "firsts": {}
+  },
+  "default_translation": "English (en)"
+ },
+ "date_created": "2026-11-12T08:33:05.759017Z",
+ "date_modified": "2026-11-12T08:33:10.687939Z",
+ "date_deployed": "2026-11-12T08:33:10.687273Z",
+ "version_id": "vxQPsjnJnakmjrP2d9uhx7",
+ "version__content_hash": "b4f42bd1e3f0a5e872e601f3447211ad7b56caa4",
+ "version_count": 3,
+ "has_deployment": true,
+ "deployed_version_id": "vxQPsjnJnakmjrP2d9uhx7",
+ "deployed_versions": {
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+   {
+    "uid": "vxQPsjnJnakmjrP2d9uhx7",
+    "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/versions/vxQPsjnJnakmjrP2d9uhx7/?format=json",
+    "content_hash": "b4f42bd1e3f0a5e872e601f3447211ad7b56caa4",
+    "date_deployed": "2026-11-12T08:33:10.676710Z",
+    "date_modified": "2026-11-12T08:33:10.676710Z",
+    "version_number": "1"
+   }
+  ]
+ },
+ "deployment__links": {
+  "url": "https://ee.kobotoolbox.org/EL9k4Ib7",
+  "single_url": "https://ee.kobotoolbox.org/single/EL9k4Ib7",
+  "single_once_url": "https://ee.kobotoolbox.org/single/f1a3225c156b0f6b97dfb3d3d48e5b77",
+  "offline_url": "https://ee.kobotoolbox.org/x/EL9k4Ib7",
+  "preview_url": "https://ee.kobotoolbox.org/preview/EL9k4Ib7",
+  "iframe_url": "https://ee.kobotoolbox.org/i/EL9k4Ib7",
+  "single_iframe_url": "https://ee.kobotoolbox.org/single/i/EL9k4Ib7",
+  "single_once_iframe_url": "https://ee.kobotoolbox.org/single/i/f1a3225c156b0f6b97dfb3d3d48e5b77"
+ },
+ "deployment__active": true,
+ "deployment__data_download_links": {
+  "xls_legacy": "https://kc.kobotoolbox.org/bob_kobo/exports/aDwoMTyEm5ndfWSh3JCUqS/xls/",
+  "csv_legacy": "https://kc.kobotoolbox.org/bob_kobo/exports/aDwoMTyEm5ndfWSh3JCUqS/csv/",
+  "zip_legacy": "https://kc.kobotoolbox.org/bob_kobo/exports/aDwoMTyEm5ndfWSh3JCUqS/zip/",
+  "xls": "https://kc.kobotoolbox.org/bob_kobo/reports/aDwoMTyEm5ndfWSh3JCUqS/export.xlsx",
+  "csv": "https://kc.kobotoolbox.org/bob_kobo/reports/aDwoMTyEm5ndfWSh3JCUqS/export.csv"
+ },
+ "deployment__submission_count": 40,
+ "deployment__last_submission_time": "2026-11-12T08:33:30.657173Z",
+ "deployment__encrypted": false,
+ "deployment__uuid": "7bb1086428ef4079a7dbd6237cf0f089",
+ "deployment_status": "deployed",
+ "report_styles": {
+  "default": {},
+  "specified": {
+   "end": {},
+   "obs": {},
+   "org": {},
+   "date": {},
+   "note": {},
+   "site": {},
+   "audit": {},
+   "count": {},
+   "photo": {},
+   "start": {},
+   "today": {},
+   "visit": {},
+   "sector": {},
+   "status": {},
+   "level_1": {},
+   "level_2": {},
+   "photo_2": {},
+   "photo_3": {},
+   "deviceid": {},
+   "location": {},
+   "username": {},
+   "cTdYV2Cwh": {},
+   "next_note": {},
+   "org_other": {},
+   "tap_count": {},
+   "xVSMaF2ml": {},
+   "feature_id": {},
+   "health_ngo": {},
+   "note_audio": {},
+   "permanence": {},
+   "site_label": {},
+   "site_other": {},
+   "energy_uses": {},
+   "health_cost": {},
+   "space_users": {},
+   "wash_access": {},
+   "feature_type": {},
+   "health_level": {},
+   "road_hotspot": {},
+   "shelter_type": {},
+   "storage_type": {},
+   "water_source": {},
+   "energy_source": {},
+   "level_1_label": {},
+   "level_2_label": {},
+   "lighting_type": {},
+   "space_setting": {},
+   "status_reason": {},
+   "wash_features": {},
+   "water_storage": {},
+   "health_manager": {},
+   "inpatient_beds": {},
+   "lighting_power": {},
+   "start_geopoint": {},
+   "waste_disposal": {},
+   "health_services": {},
+   "location_method": {},
+   "location_notice": {},
+   "site_management": {},
+   "location_warning": {},
+   "observation_beds": {},
+   "shelter_capacity": {},
+   "water_storage_m3": {},
+   "access_constraint": {},
+   "energy_uses_other": {},
+   "location_accuracy": {},
+   "space_users_other": {},
+   "access_description": {},
+   "crossing_structure": {},
+   "distribution_items": {},
+   "feature_type_other": {},
+   "last_mile_services": {},
+   "road_hotspot_other": {},
+   "shelter_type_other": {},
+   "status_access_note": {},
+   "storage_type_other": {},
+   "water_distribution": {},
+   "water_source_other": {},
+   "energy_source_other": {},
+   "space_setting_other": {},
+   "storage_capacity_m3": {},
+   "water_storage_other": {},
+   "health_manager_other": {},
+   "lighting_power_other": {},
+   "waste_disposal_other": {},
+   "health_services_other": {},
+   "site_management_other": {},
+   "access_constraint_other": {},
+   "crossing_structure_other": {},
+   "distribution_items_other": {},
+   "last_mile_services_other": {},
+   "water_distribution_other": {}
+  },
+  "kuid_names": {
+   "end": "cbH63Nc4l",
+   "obs": "nNkFiyOpo",
+   "org": "ogkJnig4W",
+   "date": "aEY8YyU4L",
+   "note": "VhlmnCexG",
+   "site": "11SJOg1f2",
+   "audit": "iQEDQsTFU",
+   "count": "ENR3Cf74G",
+   "photo": "o9RBzUmyC",
+   "start": "z3ZPHq51E",
+   "today": "gv9euYYSd",
+   "visit": "BDwVWOh8V",
+   "sector": "SYhYcsKqt",
+   "status": "PdJeKzo3o",
+   "level_1": "o2HOGlC2z",
+   "level_2": "r2LvRyUtK",
+   "photo_2": "1vXTvHyeZ",
+   "photo_3": "BdB2NhBBW",
+   "deviceid": "pywknQtU1",
+   "location": "7T1jEc84a",
+   "username": "BsfzRQuai",
+   "cTdYV2Cwh": "cTdYV2Cwh",
+   "next_note": "g7CXUKtI5",
+   "org_other": "OAixx8oDo",
+   "tap_count": "S41XQlp0l",
+   "xVSMaF2ml": "xVSMaF2ml",
+   "feature_id": "ABugCWZNB",
+   "health_ngo": "rLVpaLKro",
+   "note_audio": "1NWwkeqLa",
+   "permanence": "y0MRnBYsh",
+   "site_label": "cCkmBbKL0",
+   "site_other": "fLW5XiAqT",
+   "energy_uses": "tNlpOv7Y9",
+   "health_cost": "uB25xHwG4",
+   "space_users": "59WBNFOIF",
+   "wash_access": "BgzFKFSav",
+   "feature_type": "nP3uWfS52",
+   "health_level": "m2hElje5J",
+   "road_hotspot": "AyaNxd9Au",
+   "shelter_type": "SRRs5HDQx",
+   "storage_type": "v1I9zK4wR",
+   "water_source": "VNA7OnYCT",
+   "energy_source": "5ZXugMgHD",
+   "level_1_label": "8NBB1Ztb4",
+   "level_2_label": "aZ1o0gmse",
+   "lighting_type": "qWIYxM367",
+   "space_setting": "sWcpTGbts",
+   "status_reason": "uLmeqFIjC",
+   "wash_features": "u5YR8csLP",
+   "water_storage": "K5W8F1ueU",
+   "health_manager": "MaThd6uFU",
+   "inpatient_beds": "Nq94TK1hV",
+   "lighting_power": "t3wdOoaQi",
+   "start_geopoint": "BO4axRcTj",
+   "waste_disposal": "8tLtA6MJn",
+   "health_services": "YtmoIdgB4",
+   "location_method": "JKz8pfgDo",
+   "location_notice": "TGRyVb7ut",
+   "site_management": "MfZIa1Gxi",
+   "location_warning": "Nj9X7EyFX",
+   "observation_beds": "THzWaHjNM",
+   "shelter_capacity": "FOigWWXtu",
+   "water_storage_m3": "yMulMmxqm",
+   "access_constraint": "eYJgr7RcP",
+   "energy_uses_other": "nOs3KGW6O",
+   "location_accuracy": "WMwDeTMzB",
+   "space_users_other": "p38AHa6Ac",
+   "access_description": "GhEOsaSDh",
+   "crossing_structure": "iWjxja09e",
+   "distribution_items": "2KMmyd7ST",
+   "feature_type_other": "P9cLqDLwR",
+   "last_mile_services": "6SPJYUrUZ",
+   "road_hotspot_other": "EhX3Xr7KL",
+   "shelter_type_other": "LYku27Ls2",
+   "status_access_note": "f4InNEPs5",
+   "storage_type_other": "X7XCZrAuQ",
+   "water_distribution": "tpYxrxNp8",
+   "water_source_other": "AXQyQIaXZ",
+   "energy_source_other": "WdMPi9fLo",
+   "space_setting_other": "q5z0xHsaN",
+   "storage_capacity_m3": "xEpFJDkxT",
+   "water_storage_other": "LbaIfIQUD",
+   "health_manager_other": "IysAFfliQ",
+   "lighting_power_other": "DjZQtNfqy",
+   "waste_disposal_other": "QSeJescOB",
+   "health_services_other": "lSUlH5bg1",
+   "site_management_other": "JGdHRiWzM",
+   "access_constraint_other": "zc6ADjXZT",
+   "crossing_structure_other": "cl7uIJtwO",
+   "distribution_items_other": "vFa48IPlV",
+   "last_mile_services_other": "luxPo2SnF",
+   "water_distribution_other": "qqfbRWKou"
+  }
+ },
+ "report_custom": {},
+ "advanced_features": {
+  "_version": "20250820"
+ },
+ "map_styles": {},
+ "map_custom": {},
+ "content": {
+  "adapt": [],
+  "schema": "1",
+  "survey": [
+   {
+    "name": "start",
+    "type": "start",
+    "$kuid": "z3ZPHq51E",
+    "$xpath": "start",
+    "$autoname": "start"
+   },
+   {
+    "name": "end",
+    "type": "end",
+    "$kuid": "cbH63Nc4l",
+    "$xpath": "end",
+    "$autoname": "end"
+   },
+   {
+    "name": "today",
+    "type": "today",
+    "$kuid": "gv9euYYSd",
+    "$xpath": "today",
+    "$autoname": "today"
+   },
+   {
+    "name": "username",
+    "type": "username",
+    "$kuid": "BsfzRQuai",
+    "$xpath": "username",
+    "$autoname": "username"
+   },
+   {
+    "name": "deviceid",
+    "type": "deviceid",
+    "$kuid": "pywknQtU1",
+    "$xpath": "deviceid",
+    "$autoname": "deviceid"
+   },
+   {
+    "name": "audit",
+    "type": "audit",
+    "$kuid": "iQEDQsTFU",
+    "$xpath": "audit",
+    "$autoname": "audit",
+    "parameters": "location-priority=high-accuracy location-min-interval=10 location-max-age=20 track-changes=true"
+   },
+   {
+    "name": "start_geopoint",
+    "type": "start-geopoint",
+    "$kuid": "BO4axRcTj",
+    "$xpath": "start_geopoint",
+    "$autoname": "start_geopoint"
+   },
+   {
+    "name": "visit",
+    "type": "begin_group",
+    "$kuid": "BDwVWOh8V",
+    "label": [
+     "Visit"
+    ],
+    "$xpath": "visit",
+    "$autoname": "visit",
+    "appearance": "field-list"
+   },
+   {
+    "name": "location_notice",
+    "type": "note",
+    "$kuid": "TGRyVb7ut",
+    "label": [
+     "**This form records your location** while it is open (KoboCollect). It is used to check where observations were made. Form version 2026111201."
+    ],
+    "$xpath": "visit/location_notice",
+    "$autoname": "location_notice"
+   },
+   {
+    "name": "date",
+    "type": "date",
+    "$kuid": "aEY8YyU4L",
+    "label": [
+     "Date of observation"
+    ],
+    "$xpath": "visit/date",
+    "default": "today()",
+    "required": true,
+    "$autoname": "date",
+    "appearance": "w2",
+    "constraint": ". <= today() and decimal-date-time(.) >= decimal-date-time(today()) - 60",
+    "constraint_message": [
+     "The date can't be in the future or more than 60 days ago."
+    ]
+   },
+   {
+    "name": "org",
+    "type": "select_one",
+    "$kuid": "ogkJnig4W",
+    "label": [
+     "Organisation"
+    ],
+    "$xpath": "visit/org",
+    "default": "${last-saved#org}",
+    "required": true,
+    "$autoname": "org",
+    "appearance": "w2 minimal",
+    "select_from_list_name": "org"
+   },
+   {
+    "hint": [
+     "Its usual short name, e.g. WFP or MSF."
+    ],
+    "name": "org_other",
+    "type": "text",
+    "$kuid": "OAixx8oDo",
+    "label": [
+     "Which organisation?"
+    ],
+    "$xpath": "visit/org_other",
+    "default": "${last-saved#org_other}",
+    "relevant": "${org} = 'un_agency' or ${org} = 'ngo' or ${org} = 'other'",
+    "required": true,
+    "$autoname": "org_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "level_1",
+    "type": "select_one",
+    "$kuid": "o2HOGlC2z",
+    "label": [
+     "Province / state"
+    ],
+    "$xpath": "visit/level_1",
+    "default": "${last-saved#level_1}",
+    "required": true,
+    "$autoname": "level_1",
+    "appearance": "w2 minimal",
+    "select_from_list_name": "level_1"
+   },
+   {
+    "name": "level_2",
+    "type": "select_one",
+    "$kuid": "r2LvRyUtK",
+    "label": [
+     "District / municipality"
+    ],
+    "$xpath": "visit/level_2",
+    "default": "${last-saved#level_2}",
+    "required": true,
+    "$autoname": "level_2",
+    "appearance": "w2 minimal",
+    "choice_filter": "level_1=${level_1}",
+    "select_from_list_name": "level_2"
+   },
+   {
+    "name": "site",
+    "type": "select_one",
+    "$kuid": "11SJOg1f2",
+    "label": [
+     "Site (camp or collective centre)"
+    ],
+    "$xpath": "visit/site",
+    "default": "${last-saved#site}",
+    "required": true,
+    "$autoname": "site",
+    "appearance": "w2 minimal",
+    "choice_filter": "level_2=${level_2} or name='other'",
+    "select_from_list_name": "site"
+   },
+   {
+    "hint": [
+     "The name people use for it."
+    ],
+    "name": "site_other",
+    "type": "text",
+    "$kuid": "fLW5XiAqT",
+    "label": [
+     "Site name"
+    ],
+    "$xpath": "visit/site_other",
+    "default": "${last-saved#site_other}",
+    "relevant": "${site} = 'other'",
+    "required": true,
+    "$autoname": "site_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "level_1_label",
+    "type": "calculate",
+    "$kuid": "8NBB1Ztb4",
+    "$xpath": "visit/level_1_label",
+    "$autoname": "level_1_label",
+    "calculation": "jr:choice-name(${level_1}, '${level_1}')"
+   },
+   {
+    "name": "level_2_label",
+    "type": "calculate",
+    "$kuid": "aZ1o0gmse",
+    "$xpath": "visit/level_2_label",
+    "$autoname": "level_2_label",
+    "calculation": "jr:choice-name(${level_2}, '${level_2}')"
+   },
+   {
+    "name": "site_label",
+    "type": "calculate",
+    "$kuid": "cCkmBbKL0",
+    "$xpath": "visit/site_label",
+    "$autoname": "site_label",
+    "calculation": "if(${site} = 'other', ${site_other}, jr:choice-name(${site}, '${site}'))"
+   },
+   {
+    "type": "end_group",
+    "$kuid": "xVSMaF2ml"
+   },
+   {
+    "name": "obs",
+    "type": "begin_group",
+    "$kuid": "nNkFiyOpo",
+    "label": [
+     "Observation"
+    ],
+    "$xpath": "obs",
+    "$autoname": "obs",
+    "appearance": "field-list"
+   },
+   {
+    "name": "sector",
+    "type": "select_one",
+    "$kuid": "SYhYcsKqt",
+    "label": [
+     "Sector"
+    ],
+    "$xpath": "obs/sector",
+    "required": true,
+    "$autoname": "sector",
+    "appearance": "w2",
+    "select_from_list_name": "sector"
+   },
+   {
+    "name": "feature_type",
+    "type": "select_one",
+    "$kuid": "nP3uWfS52",
+    "label": [
+     "What is it?"
+    ],
+    "$xpath": "obs/feature_type",
+    "required": true,
+    "$autoname": "feature_type",
+    "appearance": "w2",
+    "choice_filter": "sector=${sector}",
+    "select_from_list_name": "feature_type"
+   },
+   {
+    "hint": [
+     "A few words, e.g. school, church, playground."
+    ],
+    "name": "feature_type_other",
+    "type": "text",
+    "$kuid": "P9cLqDLwR",
+    "label": [
+     "What is it?"
+    ],
+    "$xpath": "obs/feature_type_other",
+    "relevant": "${feature_type} = 'other'",
+    "required": true,
+    "$autoname": "feature_type_other"
+   },
+   {
+    "hint": [
+     "Short and unique on this site, e.g. WP-03. Use the same ID when you come back to this point."
+    ],
+    "name": "feature_id",
+    "type": "text",
+    "$kuid": "ABugCWZNB",
+    "label": [
+     "Feature ID"
+    ],
+    "$xpath": "obs/feature_id",
+    "$autoname": "feature_id",
+    "appearance": "w2",
+    "constraint": "string-length(.) <= 12",
+    "constraint_message": [
+     "Keep the ID to 12 characters or fewer."
+    ]
+   },
+   {
+    "hint": [
+     "e.g. 6 latrine cubicles, 20 tents, 2 water tanks. Leave empty if it can't be counted."
+    ],
+    "name": "count",
+    "type": "integer",
+    "$kuid": "ENR3Cf74G",
+    "label": [
+     "How many units are at this point?"
+    ],
+    "$xpath": "obs/count",
+    "$autoname": "count",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 1000",
+    "constraint_message": [
+     "Enter a number from 0 to 1000."
+    ]
+   },
+   {
+    "hint": [
+     "Observe, don't ask."
+    ],
+    "name": "status",
+    "type": "select_one",
+    "$kuid": "PdJeKzo3o",
+    "label": [
+     "Is it working?"
+    ],
+    "$xpath": "obs/status",
+    "required": true,
+    "$autoname": "status",
+    "select_from_list_name": "status"
+   },
+   {
+    "name": "status_access_note",
+    "type": "note",
+    "$kuid": "f4InNEPs5",
+    "label": [
+     "For an access constraint or a hazard: Working = passable, Partly working = restricted, Not working = blocked."
+    ],
+    "$xpath": "obs/status_access_note",
+    "relevant": "${feature_type} = 'choke' or ${feature_type} = 'hazard'",
+    "$autoname": "status_access_note"
+   },
+   {
+    "hint": [
+     "What you saw, e.g. 2 of 6 taps broken, flooded, locked."
+    ],
+    "name": "status_reason",
+    "type": "text",
+    "$kuid": "uLmeqFIjC",
+    "label": [
+     "What is wrong?"
+    ],
+    "$xpath": "obs/status_reason",
+    "relevant": "${status} = 'partial' or ${status} = 'no'",
+    "$autoname": "status_reason"
+   },
+   {
+    "name": "permanence",
+    "type": "select_one",
+    "$kuid": "y0MRnBYsh",
+    "label": [
+     "How permanent is it?"
+    ],
+    "$xpath": "obs/permanence",
+    "relevant": "${feature_type} = 'latrine' or ${feature_type} = 'bathing'",
+    "$autoname": "permanence",
+    "appearance": "w2",
+    "select_from_list_name": "permanence"
+   },
+   {
+    "name": "wash_features",
+    "type": "select_multiple",
+    "$kuid": "u5YR8csLP",
+    "label": [
+     "What does it have?"
+    ],
+    "$xpath": "obs/wash_features",
+    "relevant": "${feature_type} = 'latrine' or ${feature_type} = 'bathing'",
+    "$autoname": "wash_features",
+    "appearance": "w2",
+    "constraint": "not(selected(., 'none') and count-selected(.) > 1)",
+    "constraint_message": [
+     "\"None\" can't be combined with other answers."
+    ],
+    "select_from_list_name": "wash_features"
+   },
+   {
+    "name": "wash_access",
+    "type": "select_multiple",
+    "$kuid": "BgzFKFSav",
+    "label": [
+     "Who can use it safely?"
+    ],
+    "$xpath": "obs/wash_access",
+    "relevant": "${feature_type} = 'latrine' or ${feature_type} = 'bathing'",
+    "$autoname": "wash_access",
+    "appearance": "w2",
+    "constraint": "not(selected(., 'none') and count-selected(.) > 1)",
+    "constraint_message": [
+     "\"None\" can't be combined with other answers."
+    ],
+    "select_from_list_name": "wash_access"
+   },
+   {
+    "name": "water_source",
+    "type": "select_one",
+    "$kuid": "VNA7OnYCT",
+    "label": [
+     "Water source"
+    ],
+    "$xpath": "obs/water_source",
+    "relevant": "${feature_type} = 'water'",
+    "$autoname": "water_source",
+    "appearance": "w2",
+    "select_from_list_name": "water_source"
+   },
+   {
+    "name": "water_source_other",
+    "type": "text",
+    "$kuid": "AXQyQIaXZ",
+    "label": [
+     "Specify the water source"
+    ],
+    "$xpath": "obs/water_source_other",
+    "relevant": "${water_source} = 'other'",
+    "required": true,
+    "$autoname": "water_source_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "water_storage",
+    "type": "select_multiple",
+    "$kuid": "K5W8F1ueU",
+    "label": [
+     "Water storage"
+    ],
+    "$xpath": "obs/water_storage",
+    "relevant": "${feature_type} = 'water'",
+    "$autoname": "water_storage",
+    "appearance": "w2",
+    "constraint": "not(selected(., 'none') and count-selected(.) > 1)",
+    "constraint_message": [
+     "\"None\" can't be combined with other answers."
+    ],
+    "select_from_list_name": "water_storage"
+   },
+   {
+    "name": "water_storage_other",
+    "type": "text",
+    "$kuid": "LbaIfIQUD",
+    "label": [
+     "Specify the water storage"
+    ],
+    "$xpath": "obs/water_storage_other",
+    "relevant": "selected(${water_storage}, 'other')",
+    "required": true,
+    "$autoname": "water_storage_other",
+    "appearance": "w2"
+   },
+   {
+    "hint": [
+     "All tanks at this point together. 1 m³ = 1,000 litres."
+    ],
+    "name": "water_storage_m3",
+    "type": "decimal",
+    "$kuid": "yMulMmxqm",
+    "label": [
+     "Storage volume (m³)"
+    ],
+    "$xpath": "obs/water_storage_m3",
+    "relevant": "(${feature_type} = 'water') and ${water_storage} != '' and not(selected(${water_storage}, 'none'))",
+    "$autoname": "water_storage_m3",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 5000",
+    "constraint_message": [
+     "Enter a number from 0 to 5000 m³."
+    ]
+   },
+   {
+    "name": "water_distribution",
+    "type": "select_one",
+    "$kuid": "tpYxrxNp8",
+    "label": [
+     "How is water handed out?"
+    ],
+    "$xpath": "obs/water_distribution",
+    "relevant": "${feature_type} = 'water'",
+    "$autoname": "water_distribution",
+    "appearance": "w2",
+    "select_from_list_name": "water_distribution"
+   },
+   {
+    "name": "water_distribution_other",
+    "type": "text",
+    "$kuid": "qqfbRWKou",
+    "label": [
+     "Specify how water is handed out"
+    ],
+    "$xpath": "obs/water_distribution_other",
+    "relevant": "${water_distribution} = 'other'",
+    "required": true,
+    "$autoname": "water_distribution_other",
+    "appearance": "w2"
+   },
+   {
+    "hint": [
+     "All taps at this point, working or not."
+    ],
+    "name": "tap_count",
+    "type": "integer",
+    "$kuid": "S41XQlp0l",
+    "label": [
+     "Number of taps"
+    ],
+    "$xpath": "obs/tap_count",
+    "relevant": "(${feature_type} = 'water') and (${water_distribution} = 'tap_stand' or ${water_distribution} = 'single_tap')",
+    "$autoname": "tap_count",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 200",
+    "constraint_message": [
+     "Enter a number from 0 to 200 taps."
+    ]
+   },
+   {
+    "name": "waste_disposal",
+    "type": "select_one",
+    "$kuid": "8tLtA6MJn",
+    "label": [
+     "Type of waste point"
+    ],
+    "$xpath": "obs/waste_disposal",
+    "relevant": "${feature_type} = 'waste'",
+    "$autoname": "waste_disposal",
+    "appearance": "w2",
+    "select_from_list_name": "waste_disposal"
+   },
+   {
+    "name": "waste_disposal_other",
+    "type": "text",
+    "$kuid": "QSeJescOB",
+    "label": [
+     "Specify the waste point"
+    ],
+    "$xpath": "obs/waste_disposal_other",
+    "relevant": "${waste_disposal} = 'other'",
+    "required": true,
+    "$autoname": "waste_disposal_other",
+    "appearance": "w2"
+   },
+   {
+    "hint": [
+     "Count similar shelters in this area in the count question above."
+    ],
+    "name": "shelter_type",
+    "type": "select_one",
+    "$kuid": "SRRs5HDQx",
+    "label": [
+     "Type of shelter"
+    ],
+    "$xpath": "obs/shelter_type",
+    "relevant": "${feature_type} = 'shelter'",
+    "$autoname": "shelter_type",
+    "appearance": "w2",
+    "select_from_list_name": "shelter_type"
+   },
+   {
+    "name": "shelter_type_other",
+    "type": "text",
+    "$kuid": "LYku27Ls2",
+    "label": [
+     "Specify the shelter type"
+    ],
+    "$xpath": "obs/shelter_type_other",
+    "relevant": "${shelter_type} = 'other'",
+    "required": true,
+    "$autoname": "shelter_type_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "shelter_capacity",
+    "type": "integer",
+    "$kuid": "FOigWWXtu",
+    "label": [
+     "How many people can one shelter hold?"
+    ],
+    "$xpath": "obs/shelter_capacity",
+    "relevant": "${feature_type} = 'shelter'",
+    "$autoname": "shelter_capacity",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 2000",
+    "constraint_message": [
+     "Enter a number from 0 to 2000 people."
+    ]
+   },
+   {
+    "name": "health_level",
+    "type": "select_one",
+    "$kuid": "m2hElje5J",
+    "label": [
+     "Level of care"
+    ],
+    "$xpath": "obs/health_level",
+    "relevant": "${feature_type} = 'health'",
+    "$autoname": "health_level",
+    "appearance": "w2",
+    "select_from_list_name": "health_level"
+   },
+   {
+    "name": "health_manager",
+    "type": "select_one",
+    "$kuid": "MaThd6uFU",
+    "label": [
+     "Who runs it?"
+    ],
+    "$xpath": "obs/health_manager",
+    "relevant": "${feature_type} = 'health'",
+    "$autoname": "health_manager",
+    "appearance": "w2",
+    "select_from_list_name": "health_manager"
+   },
+   {
+    "name": "health_ngo",
+    "type": "text",
+    "$kuid": "rLVpaLKro",
+    "label": [
+     "Which NGO?"
+    ],
+    "$xpath": "obs/health_ngo",
+    "relevant": "(${feature_type} = 'health') and (${health_manager} = 'ngo_international' or ${health_manager} = 'ngo_national')",
+    "$autoname": "health_ngo",
+    "appearance": "w2"
+   },
+   {
+    "name": "health_manager_other",
+    "type": "text",
+    "$kuid": "IysAFfliQ",
+    "label": [
+     "Specify who runs it"
+    ],
+    "$xpath": "obs/health_manager_other",
+    "relevant": "${health_manager} = 'other'",
+    "required": true,
+    "$autoname": "health_manager_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "health_cost",
+    "type": "select_one",
+    "$kuid": "uB25xHwG4",
+    "label": [
+     "Do patients pay?"
+    ],
+    "$xpath": "obs/health_cost",
+    "relevant": "${feature_type} = 'health'",
+    "$autoname": "health_cost",
+    "appearance": "w2",
+    "select_from_list_name": "health_cost"
+   },
+   {
+    "name": "health_services",
+    "type": "select_multiple",
+    "$kuid": "YtmoIdgB4",
+    "label": [
+     "Services offered"
+    ],
+    "$xpath": "obs/health_services",
+    "relevant": "${feature_type} = 'health'",
+    "$autoname": "health_services",
+    "appearance": "w2",
+    "select_from_list_name": "health_services"
+   },
+   {
+    "name": "health_services_other",
+    "type": "text",
+    "$kuid": "lSUlH5bg1",
+    "label": [
+     "Specify the other services"
+    ],
+    "$xpath": "obs/health_services_other",
+    "relevant": "selected(${health_services}, 'other')",
+    "required": true,
+    "$autoname": "health_services_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "observation_beds",
+    "type": "integer",
+    "$kuid": "THzWaHjNM",
+    "label": [
+     "Observation beds"
+    ],
+    "$xpath": "obs/observation_beds",
+    "relevant": "${feature_type} = 'health'",
+    "$autoname": "observation_beds",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 500",
+    "constraint_message": [
+     "Enter a number from 0 to 500 beds."
+    ]
+   },
+   {
+    "name": "inpatient_beds",
+    "type": "integer",
+    "$kuid": "Nq94TK1hV",
+    "label": [
+     "Inpatient beds"
+    ],
+    "$xpath": "obs/inpatient_beds",
+    "relevant": "${feature_type} = 'health'",
+    "$autoname": "inpatient_beds",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 2000",
+    "constraint_message": [
+     "Enter a number from 0 to 2000 beds."
+    ]
+   },
+   {
+    "name": "site_management",
+    "type": "select_multiple",
+    "$kuid": "MfZIa1Gxi",
+    "label": [
+     "What happens here?"
+    ],
+    "$xpath": "obs/site_management",
+    "relevant": "${feature_type} = 'registration'",
+    "$autoname": "site_management",
+    "appearance": "w2",
+    "select_from_list_name": "site_management"
+   },
+   {
+    "name": "site_management_other",
+    "type": "text",
+    "$kuid": "JGdHRiWzM",
+    "label": [
+     "Specify what else happens here"
+    ],
+    "$xpath": "obs/site_management_other",
+    "relevant": "selected(${site_management}, 'other')",
+    "required": true,
+    "$autoname": "site_management_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "space_users",
+    "type": "select_multiple",
+    "$kuid": "59WBNFOIF",
+    "label": [
+     "Who is the space for?"
+    ],
+    "$xpath": "obs/space_users",
+    "relevant": "${feature_type} = 'cfs' or ${feature_type} = 'safe_space'",
+    "$autoname": "space_users",
+    "appearance": "w2",
+    "select_from_list_name": "space_users"
+   },
+   {
+    "name": "space_users_other",
+    "type": "text",
+    "$kuid": "p38AHa6Ac",
+    "label": [
+     "Specify who the space is for"
+    ],
+    "$xpath": "obs/space_users_other",
+    "relevant": "selected(${space_users}, 'other')",
+    "required": true,
+    "$autoname": "space_users_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "space_setting",
+    "type": "select_multiple",
+    "$kuid": "sWcpTGbts",
+    "label": [
+     "What is the space like?"
+    ],
+    "$xpath": "obs/space_setting",
+    "relevant": "${feature_type} = 'cfs' or ${feature_type} = 'safe_space'",
+    "$autoname": "space_setting",
+    "appearance": "w2",
+    "select_from_list_name": "space_setting"
+   },
+   {
+    "name": "space_setting_other",
+    "type": "text",
+    "$kuid": "q5z0xHsaN",
+    "label": [
+     "Specify what the space is like"
+    ],
+    "$xpath": "obs/space_setting_other",
+    "relevant": "selected(${space_setting}, 'other')",
+    "required": true,
+    "$autoname": "space_setting_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "distribution_items",
+    "type": "select_multiple",
+    "$kuid": "2KMmyd7ST",
+    "label": [
+     "What is distributed?"
+    ],
+    "$xpath": "obs/distribution_items",
+    "relevant": "${feature_type} = 'dist'",
+    "$autoname": "distribution_items",
+    "appearance": "w2",
+    "select_from_list_name": "distribution_items"
+   },
+   {
+    "name": "distribution_items_other",
+    "type": "text",
+    "$kuid": "vFa48IPlV",
+    "label": [
+     "Specify what is distributed"
+    ],
+    "$xpath": "obs/distribution_items_other",
+    "relevant": "selected(${distribution_items}, 'other')",
+    "required": true,
+    "$autoname": "distribution_items_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "storage_type",
+    "type": "select_one",
+    "$kuid": "v1I9zK4wR",
+    "label": [
+     "Type of storage"
+    ],
+    "$xpath": "obs/storage_type",
+    "relevant": "${feature_type} = 'storage'",
+    "$autoname": "storage_type",
+    "appearance": "w2",
+    "select_from_list_name": "storage_type"
+   },
+   {
+    "name": "storage_type_other",
+    "type": "text",
+    "$kuid": "X7XCZrAuQ",
+    "label": [
+     "Specify the storage type"
+    ],
+    "$xpath": "obs/storage_type_other",
+    "relevant": "${storage_type} = 'other'",
+    "required": true,
+    "$autoname": "storage_type_other",
+    "appearance": "w2"
+   },
+   {
+    "hint": [
+     "Usable volume. A 10 × 24 m mobile storage unit is about 700 m³."
+    ],
+    "name": "storage_capacity_m3",
+    "type": "decimal",
+    "$kuid": "xEpFJDkxT",
+    "label": [
+     "Storage capacity (m³)"
+    ],
+    "$xpath": "obs/storage_capacity_m3",
+    "relevant": "${feature_type} = 'storage'",
+    "$autoname": "storage_capacity_m3",
+    "appearance": "w2",
+    "constraint": ". >= 0 and . <= 50000",
+    "constraint_message": [
+     "Enter a number from 0 to 50000 m³."
+    ]
+   },
+   {
+    "name": "access_constraint",
+    "type": "select_one",
+    "$kuid": "eYJgr7RcP",
+    "label": [
+     "Type of constraint"
+    ],
+    "$xpath": "obs/access_constraint",
+    "relevant": "${feature_type} = 'choke'",
+    "$autoname": "access_constraint",
+    "appearance": "w2",
+    "select_from_list_name": "access_constraint"
+   },
+   {
+    "name": "access_constraint_other",
+    "type": "text",
+    "$kuid": "zc6ADjXZT",
+    "label": [
+     "Specify the constraint"
+    ],
+    "$xpath": "obs/access_constraint_other",
+    "relevant": "${access_constraint} = 'other'",
+    "required": true,
+    "$autoname": "access_constraint_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "road_hotspot",
+    "type": "select_multiple",
+    "$kuid": "AyaNxd9Au",
+    "label": [
+     "What is on the road?"
+    ],
+    "$xpath": "obs/road_hotspot",
+    "relevant": "(${feature_type} = 'choke') and (${access_constraint} = 'road')",
+    "$autoname": "road_hotspot",
+    "appearance": "w2",
+    "select_from_list_name": "road_hotspot"
+   },
+   {
+    "name": "road_hotspot_other",
+    "type": "text",
+    "$kuid": "EhX3Xr7KL",
+    "label": [
+     "Specify what is on the road"
+    ],
+    "$xpath": "obs/road_hotspot_other",
+    "relevant": "selected(${road_hotspot}, 'other')",
+    "required": true,
+    "$autoname": "road_hotspot_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "crossing_structure",
+    "type": "select_multiple",
+    "$kuid": "iWjxja09e",
+    "label": [
+     "Which crossing?"
+    ],
+    "$xpath": "obs/crossing_structure",
+    "relevant": "(${feature_type} = 'choke') and (${access_constraint} = 'crossing')",
+    "$autoname": "crossing_structure",
+    "appearance": "w2",
+    "select_from_list_name": "crossing_structure"
+   },
+   {
+    "name": "crossing_structure_other",
+    "type": "text",
+    "$kuid": "cl7uIJtwO",
+    "label": [
+     "Specify the crossing"
+    ],
+    "$xpath": "obs/crossing_structure_other",
+    "relevant": "selected(${crossing_structure}, 'other')",
+    "required": true,
+    "$autoname": "crossing_structure_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "last_mile_services",
+    "type": "select_multiple",
+    "$kuid": "6SPJYUrUZ",
+    "label": [
+     "Which services can't be reached?"
+    ],
+    "$xpath": "obs/last_mile_services",
+    "relevant": "(${feature_type} = 'choke') and (${access_constraint} = 'last_mile')",
+    "$autoname": "last_mile_services",
+    "appearance": "w2",
+    "select_from_list_name": "last_mile_services"
+   },
+   {
+    "name": "last_mile_services_other",
+    "type": "text",
+    "$kuid": "luxPo2SnF",
+    "label": [
+     "Specify the services"
+    ],
+    "$xpath": "obs/last_mile_services_other",
+    "relevant": "selected(${last_mile_services}, 'other')",
+    "required": true,
+    "$autoname": "last_mile_services_other",
+    "appearance": "w2"
+   },
+   {
+    "hint": [
+     "Which vehicles can pass, water depth, length, detour."
+    ],
+    "name": "access_description",
+    "type": "text",
+    "$kuid": "GhEOsaSDh",
+    "label": [
+     "Describe the constraint"
+    ],
+    "$xpath": "obs/access_description",
+    "relevant": "${feature_type} = 'choke'",
+    "$autoname": "access_description"
+   },
+   {
+    "name": "lighting_type",
+    "type": "select_one",
+    "$kuid": "qWIYxM367",
+    "label": [
+     "Type of lighting"
+    ],
+    "$xpath": "obs/lighting_type",
+    "relevant": "${feature_type} = 'lighting'",
+    "$autoname": "lighting_type",
+    "appearance": "w2",
+    "select_from_list_name": "lighting_type"
+   },
+   {
+    "name": "lighting_power",
+    "type": "select_one",
+    "$kuid": "t3wdOoaQi",
+    "label": [
+     "Power source"
+    ],
+    "$xpath": "obs/lighting_power",
+    "relevant": "${feature_type} = 'lighting'",
+    "$autoname": "lighting_power",
+    "appearance": "w2",
+    "select_from_list_name": "energy_source"
+   },
+   {
+    "name": "lighting_power_other",
+    "type": "text",
+    "$kuid": "DjZQtNfqy",
+    "label": [
+     "Specify the power source"
+    ],
+    "$xpath": "obs/lighting_power_other",
+    "relevant": "${lighting_power} = 'other'",
+    "required": true,
+    "$autoname": "lighting_power_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "energy_source",
+    "type": "select_one",
+    "$kuid": "5ZXugMgHD",
+    "label": [
+     "Energy source"
+    ],
+    "$xpath": "obs/energy_source",
+    "relevant": "${feature_type} = 'energy'",
+    "$autoname": "energy_source",
+    "appearance": "w2",
+    "select_from_list_name": "energy_source"
+   },
+   {
+    "name": "energy_source_other",
+    "type": "text",
+    "$kuid": "WdMPi9fLo",
+    "label": [
+     "Specify the energy source"
+    ],
+    "$xpath": "obs/energy_source_other",
+    "relevant": "${energy_source} = 'other'",
+    "required": true,
+    "$autoname": "energy_source_other",
+    "appearance": "w2"
+   },
+   {
+    "name": "energy_uses",
+    "type": "select_multiple",
+    "$kuid": "tNlpOv7Y9",
+    "label": [
+     "What is the power used for?"
+    ],
+    "$xpath": "obs/energy_uses",
+    "relevant": "${feature_type} = 'energy'",
+    "$autoname": "energy_uses",
+    "appearance": "w2",
+    "select_from_list_name": "energy_uses"
+   },
+   {
+    "name": "energy_uses_other",
+    "type": "text",
+    "$kuid": "nOs3KGW6O",
+    "label": [
+     "Specify the other uses"
+    ],
+    "$xpath": "obs/energy_uses_other",
+    "relevant": "selected(${energy_uses}, 'other')",
+    "required": true,
+    "$autoname": "energy_uses_other",
+    "appearance": "w2"
+   },
+   {
+    "hint": [
+     "Stand at the point and wait for the accuracy to drop below 10 m, or place the pin on the map."
+    ],
+    "name": "location",
+    "type": "geopoint",
+    "$kuid": "7T1jEc84a",
+    "label": [
+     "Location"
+    ],
+    "$xpath": "obs/location",
+    "required": true,
+    "$autoname": "location",
+    "appearance": "placement-map",
+    "parameters": "capture-accuracy=5 warning-accuracy=10"
+   },
+   {
+    "name": "location_accuracy",
+    "type": "calculate",
+    "$kuid": "WMwDeTMzB",
+    "$xpath": "obs/location_accuracy",
+    "$autoname": "location_accuracy",
+    "calculation": "if(${location} = '', '', selected-at(${location}, 3))"
+   },
+   {
+    "name": "location_warning",
+    "type": "note",
+    "$kuid": "Nj9X7EyFX",
+    "label": [
+     "GPS accuracy is ${location_accuracy} m. Wait for a better fix, or place the pin by hand and choose \"Placed on the map\" below."
+    ],
+    "$xpath": "obs/location_warning",
+    "relevant": "${location_accuracy} != '' and number(${location_accuracy}) > 10",
+    "$autoname": "location_warning"
+   },
+   {
+    "name": "location_method",
+    "type": "select_one",
+    "$kuid": "JKz8pfgDo",
+    "label": [
+     "How was the location taken?"
+    ],
+    "$xpath": "obs/location_method",
+    "default": "gps",
+    "required": true,
+    "$autoname": "location_method",
+    "appearance": "w2",
+    "select_from_list_name": "location_method"
+   },
+   {
+    "hint": [
+     "Avoid faces, children and people in vulnerable situations. Skip the photo if it isn't safe or allowed."
+    ],
+    "name": "photo",
+    "type": "image",
+    "$kuid": "o9RBzUmyC",
+    "label": [
+     "Photo"
+    ],
+    "$xpath": "obs/photo",
+    "$autoname": "photo",
+    "parameters": "max-pixels=1600"
+   },
+   {
+    "hint": [
+     "Avoid faces, children and people in vulnerable situations."
+    ],
+    "name": "photo_2",
+    "type": "image",
+    "$kuid": "1vXTvHyeZ",
+    "label": [
+     "Second photo (optional)"
+    ],
+    "$xpath": "obs/photo_2",
+    "relevant": "${photo} != ''",
+    "$autoname": "photo_2",
+    "parameters": "max-pixels=1600"
+   },
+   {
+    "hint": [
+     "Avoid faces, children and people in vulnerable situations."
+    ],
+    "name": "photo_3",
+    "type": "image",
+    "$kuid": "BdB2NhBBW",
+    "label": [
+     "Third photo (optional)"
+    ],
+    "$xpath": "obs/photo_3",
+    "relevant": "${photo_2} != ''",
+    "$autoname": "photo_3",
+    "parameters": "max-pixels=1600"
+   },
+   {
+    "type": "end_group",
+    "$kuid": "cTdYV2Cwh"
+   },
+   {
+    "hint": [
+     "What the map should say about this point: what is wrong, who runs it, what is missing, other organisations present."
+    ],
+    "name": "note",
+    "type": "text",
+    "$kuid": "VhlmnCexG",
+    "label": [
+     "Comments"
+    ],
+    "$xpath": "note",
+    "$autoname": "note",
+    "appearance": "multiline"
+   },
+   {
+    "hint": [
+     "Instead of, or as well as, typing the comment."
+    ],
+    "name": "note_audio",
+    "type": "audio",
+    "$kuid": "1NWwkeqLa",
+    "label": [
+     "Voice note (optional)"
+    ],
+    "$xpath": "note_audio",
+    "$autoname": "note_audio"
+   },
+   {
+    "name": "next_note",
+    "type": "note",
+    "$kuid": "g7CXUKtI5",
+    "label": [
+     "**Save and send this observation.** Then open a new form for the next point. The organisation, place and site carry over."
+    ],
+    "$xpath": "next_note",
+    "$autoname": "next_note"
+   }
+  ],
+  "choices": [
+   {
+    "name": "ndma",
+    "$kuid": "6XZLQDzkq",
+    "label": [
+     "National disaster management agency (NDMA / NEMA)"
+    ],
+    "list_name": "org",
+    "$autovalue": "ndma"
+   },
+   {
+    "name": "iom",
+    "$kuid": "VdZJHWzCq",
+    "label": [
+     "IOM"
+    ],
+    "list_name": "org",
+    "$autovalue": "iom"
+   },
+   {
+    "name": "unhcr",
+    "$kuid": "gN4biC5sH",
+    "label": [
+     "UNHCR"
+    ],
+    "list_name": "org",
+    "$autovalue": "unhcr"
+   },
+   {
+    "name": "un_agency",
+    "$kuid": "w4jefizN2",
+    "label": [
+     "Other UN agency"
+    ],
+    "list_name": "org",
+    "$autovalue": "un_agency"
+   },
+   {
+    "name": "ngo",
+    "$kuid": "N8rxrX090",
+    "label": [
+     "NGO"
+    ],
+    "list_name": "org",
+    "$autovalue": "ngo"
+   },
+   {
+    "name": "undac",
+    "$kuid": "lbhj0RKD3",
+    "label": [
+     "UNDAC"
+    ],
+    "list_name": "org",
+    "$autovalue": "undac"
+   },
+   {
+    "name": "other",
+    "$kuid": "us9QATTlT",
+    "label": [
+     "Other"
+    ],
+    "list_name": "org",
+    "$autovalue": "other"
+   },
+   {
+    "name": "XX01",
+    "$kuid": "41ag7Bfjp",
+    "label": [
+     "Placeholder province 1"
+    ],
+    "list_name": "level_1",
+    "$autovalue": "XX01"
+   },
+   {
+    "name": "XX02",
+    "$kuid": "B7WKW8Tpv",
+    "label": [
+     "Placeholder province 2"
+    ],
+    "list_name": "level_1",
+    "$autovalue": "XX02"
+   },
+   {
+    "name": "XX0101",
+    "$kuid": "L5z5401Ym",
+    "label": [
+     "Placeholder district 1.1"
+    ],
+    "level_1": "XX01",
+    "list_name": "level_2",
+    "$autovalue": "XX0101"
+   },
+   {
+    "name": "XX0102",
+    "$kuid": "OKZsdUfSH",
+    "label": [
+     "Placeholder district 1.2"
+    ],
+    "level_1": "XX01",
+    "list_name": "level_2",
+    "$autovalue": "XX0102"
+   },
+   {
+    "name": "XX0201",
+    "$kuid": "OQywt5WVM",
+    "label": [
+     "Placeholder district 2.1"
+    ],
+    "level_1": "XX02",
+    "list_name": "level_2",
+    "$autovalue": "XX0201"
+   },
+   {
+    "name": "XX0202",
+    "$kuid": "bXgYmbeNA",
+    "label": [
+     "Placeholder district 2.2"
+    ],
+    "level_1": "XX02",
+    "list_name": "level_2",
+    "$autovalue": "XX0202"
+   },
+   {
+    "name": "XX010101",
+    "$kuid": "NFkgLoiNl",
+    "label": [
+     "Placeholder camp A"
+    ],
+    "level_2": "XX0101",
+    "list_name": "site",
+    "$autovalue": "XX010101"
+   },
+   {
+    "name": "XX010102",
+    "$kuid": "kQCNuGPDs",
+    "label": [
+     "Placeholder camp B"
+    ],
+    "level_2": "XX0101",
+    "list_name": "site",
+    "$autovalue": "XX010102"
+   },
+   {
+    "name": "XX010201",
+    "$kuid": "MyNdsO5D4",
+    "label": [
+     "Placeholder collective centre C"
+    ],
+    "level_2": "XX0102",
+    "list_name": "site",
+    "$autovalue": "XX010201"
+   },
+   {
+    "name": "XX020101",
+    "$kuid": "DR0S3a1we",
+    "label": [
+     "Placeholder camp D"
+    ],
+    "level_2": "XX0201",
+    "list_name": "site",
+    "$autovalue": "XX020101"
+   },
+   {
+    "name": "XX020201",
+    "$kuid": "iGwmZKzLs",
+    "label": [
+     "Placeholder collective centre E"
+    ],
+    "level_2": "XX0202",
+    "list_name": "site",
+    "$autovalue": "XX020201"
+   },
+   {
+    "name": "other",
+    "$kuid": "uc6zBfsFL",
+    "label": [
+     "Other site (not in the list)"
+    ],
+    "list_name": "site",
+    "$autovalue": "other"
+   },
+   {
+    "name": "wash",
+    "$kuid": "RGnyq0rSh",
+    "label": [
+     "Water, sanitation and hygiene (WASH)"
+    ],
+    "list_name": "sector",
+    "$autovalue": "wash"
+   },
+   {
+    "name": "shelter",
+    "$kuid": "RSccnKF92",
+    "label": [
+     "Shelter"
+    ],
+    "list_name": "sector",
+    "$autovalue": "shelter"
+   },
+   {
+    "name": "health",
+    "$kuid": "qhKlJvBak",
+    "label": [
+     "Health"
+    ],
+    "list_name": "sector",
+    "$autovalue": "health"
+   },
+   {
+    "name": "protection",
+    "$kuid": "O937G18Rj",
+    "label": [
+     "Protection and site management"
+    ],
+    "list_name": "sector",
+    "$autovalue": "protection"
+   },
+   {
+    "name": "food",
+    "$kuid": "RvIDcuXyR",
+    "label": [
+     "Food"
+    ],
+    "list_name": "sector",
+    "$autovalue": "food"
+   },
+   {
+    "name": "logistics",
+    "$kuid": "IBtSDBGPF",
+    "label": [
+     "Logistics"
+    ],
+    "list_name": "sector",
+    "$autovalue": "logistics"
+   },
+   {
+    "name": "access",
+    "$kuid": "UEYoHZ91J",
+    "label": [
+     "Access"
+    ],
+    "list_name": "sector",
+    "$autovalue": "access"
+   },
+   {
+    "name": "energy",
+    "$kuid": "0VMA2HikJ",
+    "label": [
+     "Energy and lighting"
+    ],
+    "list_name": "sector",
+    "$autovalue": "energy"
+   },
+   {
+    "name": "environment",
+    "$kuid": "JtJn47oxp",
+    "label": [
+     "Environment and hazards"
+    ],
+    "list_name": "sector",
+    "$autovalue": "environment"
+   },
+   {
+    "name": "commerce",
+    "$kuid": "zzcf1RxAG",
+    "label": [
+     "Markets"
+    ],
+    "list_name": "sector",
+    "$autovalue": "commerce"
+   },
+   {
+    "name": "other",
+    "$kuid": "hEtISCA1o",
+    "label": [
+     "Other"
+    ],
+    "list_name": "sector",
+    "$autovalue": "other"
+   },
+   {
+    "name": "water",
+    "$kuid": "8bAs1YTWs",
+    "label": [
+     "Water point"
+    ],
+    "sector": "wash",
+    "list_name": "feature_type",
+    "$autovalue": "water"
+   },
+   {
+    "name": "latrine",
+    "$kuid": "FAaD7BFoR",
+    "label": [
+     "Latrine"
+    ],
+    "sector": "wash",
+    "list_name": "feature_type",
+    "$autovalue": "latrine"
+   },
+   {
+    "name": "bathing",
+    "$kuid": "pIuH1ye4c",
+    "label": [
+     "Bathing facility"
+    ],
+    "sector": "wash",
+    "list_name": "feature_type",
+    "$autovalue": "bathing"
+   },
+   {
+    "name": "hand",
+    "$kuid": "6sQFYYTrw",
+    "label": [
+     "Handwashing station"
+    ],
+    "sector": "wash",
+    "list_name": "feature_type",
+    "$autovalue": "hand"
+   },
+   {
+    "name": "waste",
+    "$kuid": "svTWZWQX7",
+    "label": [
+     "Waste point (bins, pit)"
+    ],
+    "sector": "wash",
+    "list_name": "feature_type",
+    "$autovalue": "waste"
+   },
+   {
+    "name": "shelter",
+    "$kuid": "N6Ue5VMKK",
+    "label": [
+     "Shelter"
+    ],
+    "sector": "shelter",
+    "list_name": "feature_type",
+    "$autovalue": "shelter"
+   },
+   {
+    "name": "health",
+    "$kuid": "H9HGcC9M0",
+    "label": [
+     "Health facility"
+    ],
+    "sector": "health",
+    "list_name": "feature_type",
+    "$autovalue": "health"
+   },
+   {
+    "name": "cfs",
+    "$kuid": "yg8h4EaKZ",
+    "label": [
+     "Child-friendly space"
+    ],
+    "sector": "protection",
+    "list_name": "feature_type",
+    "$autovalue": "cfs"
+   },
+   {
+    "name": "safe_space",
+    "$kuid": "4hRTtMnzi",
+    "label": [
+     "Safe space (women and girls, other groups)"
+    ],
+    "sector": "protection",
+    "list_name": "feature_type",
+    "$autovalue": "safe_space"
+   },
+   {
+    "name": "registration",
+    "$kuid": "ltXU2BLrS",
+    "label": [
+     "Site management, registration, reception"
+    ],
+    "sector": "protection",
+    "list_name": "feature_type",
+    "$autovalue": "registration"
+   },
+   {
+    "name": "kitchen",
+    "$kuid": "uWk9yaVux",
+    "label": [
+     "Kitchen / communal dining"
+    ],
+    "sector": "food",
+    "list_name": "feature_type",
+    "$autovalue": "kitchen"
+   },
+   {
+    "name": "dist",
+    "$kuid": "5ny4OAfyT",
+    "label": [
+     "Distribution point"
+    ],
+    "sector": "food",
+    "list_name": "feature_type",
+    "$autovalue": "dist"
+   },
+   {
+    "name": "storage",
+    "$kuid": "WVtsKxVP0",
+    "label": [
+     "Storage"
+    ],
+    "sector": "logistics",
+    "list_name": "feature_type",
+    "$autovalue": "storage"
+   },
+   {
+    "name": "landing",
+    "$kuid": "sIUzupOHJ",
+    "label": [
+     "Landing zone / helipad"
+    ],
+    "sector": "logistics",
+    "list_name": "feature_type",
+    "$autovalue": "landing"
+   },
+   {
+    "name": "gate",
+    "$kuid": "Fyql52UJ8",
+    "label": [
+     "Gate / entrance"
+    ],
+    "sector": "logistics",
+    "list_name": "feature_type",
+    "$autovalue": "gate"
+   },
+   {
+    "name": "choke",
+    "$kuid": "Eg7sMKS3W",
+    "label": [
+     "Access constraint"
+    ],
+    "sector": "access",
+    "list_name": "feature_type",
+    "$autovalue": "choke"
+   },
+   {
+    "name": "lighting",
+    "$kuid": "zbb7DWHoW",
+    "label": [
+     "Lighting"
+    ],
+    "sector": "energy",
+    "list_name": "feature_type",
+    "$autovalue": "lighting"
+   },
+   {
+    "name": "energy",
+    "$kuid": "1SurraPzb",
+    "label": [
+     "Energy point (power, charging)"
+    ],
+    "sector": "energy",
+    "list_name": "feature_type",
+    "$autovalue": "energy"
+   },
+   {
+    "name": "hazard",
+    "$kuid": "kfnmqM2UM",
+    "label": [
+     "Environmental hazard"
+    ],
+    "sector": "environment",
+    "list_name": "feature_type",
+    "$autovalue": "hazard"
+   },
+   {
+    "name": "market",
+    "$kuid": "WMdiiDrc5",
+    "label": [
+     "Market"
+    ],
+    "sector": "commerce",
+    "list_name": "feature_type",
+    "$autovalue": "market"
+   },
+   {
+    "name": "other",
+    "$kuid": "YmlUiJDP5",
+    "label": [
+     "Other"
+    ],
+    "sector": "other",
+    "list_name": "feature_type",
+    "$autovalue": "other"
+   },
+   {
+    "name": "ok",
+    "$kuid": "IfPTUXM6G",
+    "label": [
+     "Working"
+    ],
+    "list_name": "status",
+    "$autovalue": "ok"
+   },
+   {
+    "name": "partial",
+    "$kuid": "BEkAzizfq",
+    "label": [
+     "Partly working"
+    ],
+    "list_name": "status",
+    "$autovalue": "partial"
+   },
+   {
+    "name": "no",
+    "$kuid": "6xhWr3J1o",
+    "label": [
+     "Not working"
+    ],
+    "list_name": "status",
+    "$autovalue": "no"
+   },
+   {
+    "name": "unknown",
+    "$kuid": "QK9OKLI8S",
+    "label": [
+     "Can't see"
+    ],
+    "list_name": "status",
+    "$autovalue": "unknown"
+   },
+   {
+    "name": "emergency",
+    "$kuid": "hbv0Xf38s",
+    "label": [
+     "Emergency (first days)"
+    ],
+    "list_name": "permanence",
+    "$autovalue": "emergency"
+   },
+   {
+    "name": "temporary",
+    "$kuid": "v1q5cQyK6",
+    "label": [
+     "Temporary"
+    ],
+    "list_name": "permanence",
+    "$autovalue": "temporary"
+   },
+   {
+    "name": "semi_permanent",
+    "$kuid": "Ak3Q2seev",
+    "label": [
+     "Semi-permanent"
+    ],
+    "list_name": "permanence",
+    "$autovalue": "semi_permanent"
+   },
+   {
+    "name": "permanent",
+    "$kuid": "hpT6hxmoe",
+    "label": [
+     "Permanent"
+    ],
+    "list_name": "permanence",
+    "$autovalue": "permanent"
+   },
+   {
+    "name": "hand_washing",
+    "$kuid": "Pkfs7nJ5A",
+    "label": [
+     "Handwashing point"
+    ],
+    "list_name": "wash_features",
+    "$autovalue": "hand_washing"
+   },
+   {
+    "name": "light_inside",
+    "$kuid": "kkyWZ5g1e",
+    "label": [
+     "Light inside"
+    ],
+    "list_name": "wash_features",
+    "$autovalue": "light_inside"
+   },
+   {
+    "name": "light_outside",
+    "$kuid": "oGT0aLRie",
+    "label": [
+     "Light outside"
+    ],
+    "list_name": "wash_features",
+    "$autovalue": "light_outside"
+   },
+   {
+    "name": "lock_inside",
+    "$kuid": "9lVSHvAwd",
+    "label": [
+     "Lock on the inside"
+    ],
+    "list_name": "wash_features",
+    "$autovalue": "lock_inside"
+   },
+   {
+    "name": "none",
+    "$kuid": "Nl8XN9VTt",
+    "label": [
+     "None of these"
+    ],
+    "list_name": "wash_features",
+    "$autovalue": "none"
+   },
+   {
+    "name": "gender_separated",
+    "$kuid": "9unqcO7SN",
+    "label": [
+     "Separate for women and men"
+    ],
+    "list_name": "wash_access",
+    "$autovalue": "gender_separated"
+   },
+   {
+    "name": "child_accessible",
+    "$kuid": "LXa0B36m1",
+    "label": [
+     "Usable by children"
+    ],
+    "list_name": "wash_access",
+    "$autovalue": "child_accessible"
+   },
+   {
+    "name": "disability_accessible",
+    "$kuid": "blegat4WX",
+    "label": [
+     "Usable by people with disabilities"
+    ],
+    "list_name": "wash_access",
+    "$autovalue": "disability_accessible"
+   },
+   {
+    "name": "none",
+    "$kuid": "u5oMMjVjT",
+    "label": [
+     "None of these"
+    ],
+    "list_name": "wash_access",
+    "$autovalue": "none"
+   },
+   {
+    "name": "piped",
+    "$kuid": "KBWrFJ6oL",
+    "label": [
+     "Piped network"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "piped"
+   },
+   {
+    "name": "borehole",
+    "$kuid": "vDbAi6z2A",
+    "label": [
+     "Borehole"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "borehole"
+   },
+   {
+    "name": "well",
+    "$kuid": "J3GCaUbOr",
+    "label": [
+     "Well"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "well"
+   },
+   {
+    "name": "spring",
+    "$kuid": "i3eFXxEnb",
+    "label": [
+     "Spring"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "spring"
+   },
+   {
+    "name": "rainwater",
+    "$kuid": "6WsOLhSgp",
+    "label": [
+     "Rainwater"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "rainwater"
+   },
+   {
+    "name": "river",
+    "$kuid": "424a6MExt",
+    "label": [
+     "River"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "river"
+   },
+   {
+    "name": "surface",
+    "$kuid": "ob1iwNO85",
+    "label": [
+     "Other surface water (lake, pond)"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "surface"
+   },
+   {
+    "name": "trucked",
+    "$kuid": "fWrIy7tQZ",
+    "label": [
+     "Water trucking"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "trucked"
+   },
+   {
+    "name": "other",
+    "$kuid": "aw3pCgb7S",
+    "label": [
+     "Other"
+    ],
+    "list_name": "water_source",
+    "$autovalue": "other"
+   },
+   {
+    "name": "tank",
+    "$kuid": "Txg4ZsnTq",
+    "label": [
+     "Tank"
+    ],
+    "list_name": "water_storage",
+    "$autovalue": "tank"
+   },
+   {
+    "name": "bladder",
+    "$kuid": "gE27b3TEt",
+    "label": [
+     "Bladder"
+    ],
+    "list_name": "water_storage",
+    "$autovalue": "bladder"
+   },
+   {
+    "name": "open_tank",
+    "$kuid": "ZdOxBkJjs",
+    "label": [
+     "Open tank (onion tank, pool)"
+    ],
+    "list_name": "water_storage",
+    "$autovalue": "open_tank"
+   },
+   {
+    "name": "none",
+    "$kuid": "TOL44fG0U",
+    "label": [
+     "No storage"
+    ],
+    "list_name": "water_storage",
+    "$autovalue": "none"
+   },
+   {
+    "name": "other",
+    "$kuid": "HA1bryz4f",
+    "label": [
+     "Other"
+    ],
+    "list_name": "water_storage",
+    "$autovalue": "other"
+   },
+   {
+    "name": "tap_stand",
+    "$kuid": "k0cZ4Riiu",
+    "label": [
+     "Tap stand, several taps"
+    ],
+    "list_name": "water_distribution",
+    "$autovalue": "tap_stand"
+   },
+   {
+    "name": "single_tap",
+    "$kuid": "NwNkltxm8",
+    "label": [
+     "Single tap"
+    ],
+    "list_name": "water_distribution",
+    "$autovalue": "single_tap"
+   },
+   {
+    "name": "continuous_flow",
+    "$kuid": "zZWbLPbuw",
+    "label": [
+     "Constant flow, no tap"
+    ],
+    "list_name": "water_distribution",
+    "$autovalue": "continuous_flow"
+   },
+   {
+    "name": "other",
+    "$kuid": "RuHADW2hZ",
+    "label": [
+     "Other"
+    ],
+    "list_name": "water_distribution",
+    "$autovalue": "other"
+   },
+   {
+    "name": "bin",
+    "$kuid": "d5QhNQpIS",
+    "label": [
+     "Bin"
+    ],
+    "list_name": "waste_disposal",
+    "$autovalue": "bin"
+   },
+   {
+    "name": "pit",
+    "$kuid": "yrbfAMXzy",
+    "label": [
+     "Pit"
+    ],
+    "list_name": "waste_disposal",
+    "$autovalue": "pit"
+   },
+   {
+    "name": "pile",
+    "$kuid": "L4KcVdnnh",
+    "label": [
+     "Pile"
+    ],
+    "list_name": "waste_disposal",
+    "$autovalue": "pile"
+   },
+   {
+    "name": "other",
+    "$kuid": "8LYgSZPDk",
+    "label": [
+     "Other"
+    ],
+    "list_name": "waste_disposal",
+    "$autovalue": "other"
+   },
+   {
+    "name": "emergency",
+    "$kuid": "Q6dieFDPO",
+    "label": [
+     "Emergency (plastic sheeting)"
+    ],
+    "list_name": "shelter_type",
+    "$autovalue": "emergency"
+   },
+   {
+    "name": "tent",
+    "$kuid": "2jKFJi4oe",
+    "label": [
+     "Tent"
+    ],
+    "list_name": "shelter_type",
+    "$autovalue": "tent"
+   },
+   {
+    "name": "semi_permanent",
+    "$kuid": "a9ACzlwlo",
+    "label": [
+     "Semi-permanent (wood frame, corrugated sheet)"
+    ],
+    "list_name": "shelter_type",
+    "$autovalue": "semi_permanent"
+   },
+   {
+    "name": "permanent",
+    "$kuid": "sKR0jRMbc",
+    "label": [
+     "Permanent (built shelter, house)"
+    ],
+    "list_name": "shelter_type",
+    "$autovalue": "permanent"
+   },
+   {
+    "name": "collective",
+    "$kuid": "s9k8TPTz0",
+    "label": [
+     "Collective (school, hall, church)"
+    ],
+    "list_name": "shelter_type",
+    "$autovalue": "collective"
+   },
+   {
+    "name": "other",
+    "$kuid": "8xCFVV8G8",
+    "label": [
+     "Other"
+    ],
+    "list_name": "shelter_type",
+    "$autovalue": "other"
+   },
+   {
+    "name": "primary",
+    "$kuid": "Vhrk9SC3i",
+    "label": [
+     "Primary care: basic, first-contact services"
+    ],
+    "list_name": "health_level",
+    "$autovalue": "primary"
+   },
+   {
+    "name": "secondary",
+    "$kuid": "nrIMF5nSc",
+    "label": [
+     "Secondary care: specialist care at hospital level"
+    ],
+    "list_name": "health_level",
+    "$autovalue": "secondary"
+   },
+   {
+    "name": "tertiary",
+    "$kuid": "NmDhvJYlG",
+    "label": [
+     "Tertiary care: highly specialised hospital care"
+    ],
+    "list_name": "health_level",
+    "$autovalue": "tertiary"
+   },
+   {
+    "name": "government",
+    "$kuid": "Ys0DlBIIF",
+    "label": [
+     "Government"
+    ],
+    "list_name": "health_manager",
+    "$autovalue": "government"
+   },
+   {
+    "name": "ngo_international",
+    "$kuid": "R1H7gB6x2",
+    "label": [
+     "International NGO"
+    ],
+    "list_name": "health_manager",
+    "$autovalue": "ngo_international"
+   },
+   {
+    "name": "ngo_national",
+    "$kuid": "lTD2cm0NY",
+    "label": [
+     "National NGO"
+    ],
+    "list_name": "health_manager",
+    "$autovalue": "ngo_national"
+   },
+   {
+    "name": "other",
+    "$kuid": "ua6iBvx9d",
+    "label": [
+     "Other"
+    ],
+    "list_name": "health_manager",
+    "$autovalue": "other"
+   },
+   {
+    "name": "free",
+    "$kuid": "CzA5BKRwC",
+    "label": [
+     "Free"
+    ],
+    "list_name": "health_cost",
+    "$autovalue": "free"
+   },
+   {
+    "name": "paid",
+    "$kuid": "pMNAbkLSa",
+    "label": [
+     "Paid"
+    ],
+    "list_name": "health_cost",
+    "$autovalue": "paid"
+   },
+   {
+    "name": "consultation",
+    "$kuid": "zfv7uRhr2",
+    "label": [
+     "Consultations"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "consultation"
+   },
+   {
+    "name": "first_aid",
+    "$kuid": "A6q8E0AGu",
+    "label": [
+     "First aid, trauma"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "first_aid"
+   },
+   {
+    "name": "vaccination",
+    "$kuid": "Ogkz6d1uH",
+    "label": [
+     "Vaccination"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "vaccination"
+   },
+   {
+    "name": "maternal",
+    "$kuid": "ZMKEo6Akc",
+    "label": [
+     "Maternal and newborn care"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "maternal"
+   },
+   {
+    "name": "reproductive",
+    "$kuid": "Yv60iKog5",
+    "label": [
+     "Sexual and reproductive health"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "reproductive"
+   },
+   {
+    "name": "mental_health",
+    "$kuid": "4DW1tg2N8",
+    "label": [
+     "Mental health, psychosocial support"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "mental_health"
+   },
+   {
+    "name": "nutrition",
+    "$kuid": "nwMaEWc7v",
+    "label": [
+     "Nutrition"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "nutrition"
+   },
+   {
+    "name": "referral",
+    "$kuid": "Mr79rSBCq",
+    "label": [
+     "Referral to hospital"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "referral"
+   },
+   {
+    "name": "other",
+    "$kuid": "WFlBkmOSg",
+    "label": [
+     "Other"
+    ],
+    "list_name": "health_services",
+    "$autovalue": "other"
+   },
+   {
+    "name": "camp_management",
+    "$kuid": "lBEb6O1fj",
+    "label": [
+     "Camp management, coordination"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "camp_management"
+   },
+   {
+    "name": "registration",
+    "$kuid": "j14ffxbdN",
+    "label": [
+     "Registration"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "registration"
+   },
+   {
+    "name": "reception",
+    "$kuid": "XRfbuCMHV",
+    "label": [
+     "Entry point, reception"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "reception"
+   },
+   {
+    "name": "assembly_point",
+    "$kuid": "ohEwc781J",
+    "label": [
+     "Emergency assembly point"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "assembly_point"
+   },
+   {
+    "name": "information_point",
+    "$kuid": "7oR5sHC8j",
+    "label": [
+     "Information and display point"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "information_point"
+   },
+   {
+    "name": "help_desk",
+    "$kuid": "4aRq1meHx",
+    "label": [
+     "Help desk, complaints"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "help_desk"
+   },
+   {
+    "name": "other",
+    "$kuid": "ZNlbULlMa",
+    "label": [
+     "Other"
+    ],
+    "list_name": "site_management",
+    "$autovalue": "other"
+   },
+   {
+    "name": "children",
+    "$kuid": "rsTM0uqtd",
+    "label": [
+     "Children"
+    ],
+    "list_name": "space_users",
+    "$autovalue": "children"
+   },
+   {
+    "name": "women_girls",
+    "$kuid": "G4gI3rOg3",
+    "label": [
+     "Women and girls"
+    ],
+    "list_name": "space_users",
+    "$autovalue": "women_girls"
+   },
+   {
+    "name": "older_people",
+    "$kuid": "mZSqULllV",
+    "label": [
+     "Older people"
+    ],
+    "list_name": "space_users",
+    "$autovalue": "older_people"
+   },
+   {
+    "name": "disability",
+    "$kuid": "6azqWU23o",
+    "label": [
+     "People with disabilities"
+    ],
+    "list_name": "space_users",
+    "$autovalue": "disability"
+   },
+   {
+    "name": "lgbtiq",
+    "$kuid": "Jwc7zoZ7O",
+    "label": [
+     "LGBTIQ+ people"
+    ],
+    "list_name": "space_users",
+    "$autovalue": "lgbtiq"
+   },
+   {
+    "name": "other",
+    "$kuid": "pWHMiPGwA",
+    "label": [
+     "Other"
+    ],
+    "list_name": "space_users",
+    "$autovalue": "other"
+   },
+   {
+    "name": "indoor",
+    "$kuid": "zI3W5w8FN",
+    "label": [
+     "Indoor"
+    ],
+    "list_name": "space_setting",
+    "$autovalue": "indoor"
+   },
+   {
+    "name": "outdoor",
+    "$kuid": "ZT8oGv1Sz",
+    "label": [
+     "Outdoor"
+    ],
+    "list_name": "space_setting",
+    "$autovalue": "outdoor"
+   },
+   {
+    "name": "shade",
+    "$kuid": "SA0oBalfX",
+    "label": [
+     "Shade"
+    ],
+    "list_name": "space_setting",
+    "$autovalue": "shade"
+   },
+   {
+    "name": "play_area",
+    "$kuid": "TC3mpOgIf",
+    "label": [
+     "Play area"
+    ],
+    "list_name": "space_setting",
+    "$autovalue": "play_area"
+   },
+   {
+    "name": "seating",
+    "$kuid": "TmiuiPXdB",
+    "label": [
+     "Seating"
+    ],
+    "list_name": "space_setting",
+    "$autovalue": "seating"
+   },
+   {
+    "name": "other",
+    "$kuid": "oSv9WAPLg",
+    "label": [
+     "Other"
+    ],
+    "list_name": "space_setting",
+    "$autovalue": "other"
+   },
+   {
+    "name": "meals",
+    "$kuid": "Tau0ldVMF",
+    "label": [
+     "Daily meals"
+    ],
+    "list_name": "distribution_items",
+    "$autovalue": "meals"
+   },
+   {
+    "name": "food_rations",
+    "$kuid": "ivJGSe0fb",
+    "label": [
+     "Food rations"
+    ],
+    "list_name": "distribution_items",
+    "$autovalue": "food_rations"
+   },
+   {
+    "name": "kits",
+    "$kuid": "PpJPlPivf",
+    "label": [
+     "Kits (hygiene, shelter, household items)"
+    ],
+    "list_name": "distribution_items",
+    "$autovalue": "kits"
+   },
+   {
+    "name": "water",
+    "$kuid": "a46N7DBrc",
+    "label": [
+     "Water"
+    ],
+    "list_name": "distribution_items",
+    "$autovalue": "water"
+   },
+   {
+    "name": "cash",
+    "$kuid": "qiP9iTAPS",
+    "label": [
+     "Cash or vouchers"
+    ],
+    "list_name": "distribution_items",
+    "$autovalue": "cash"
+   },
+   {
+    "name": "other",
+    "$kuid": "hgA0Plw1v",
+    "label": [
+     "Other"
+    ],
+    "list_name": "distribution_items",
+    "$autovalue": "other"
+   },
+   {
+    "name": "permanent_building",
+    "$kuid": "T8AYRliEA",
+    "label": [
+     "Permanent storage building"
+    ],
+    "list_name": "storage_type",
+    "$autovalue": "permanent_building"
+   },
+   {
+    "name": "msu",
+    "$kuid": "xB3mRUZJv",
+    "label": [
+     "Mobile storage unit (MSU)"
+    ],
+    "list_name": "storage_type",
+    "$autovalue": "msu"
+   },
+   {
+    "name": "temp_building",
+    "$kuid": "KZE7vjeP7",
+    "label": [
+     "Building used as temporary storage"
+    ],
+    "list_name": "storage_type",
+    "$autovalue": "temp_building"
+   },
+   {
+    "name": "msu_space",
+    "$kuid": "Slmp4uhrS",
+    "label": [
+     "Open space suitable for an MSU"
+    ],
+    "list_name": "storage_type",
+    "$autovalue": "msu_space"
+   },
+   {
+    "name": "other",
+    "$kuid": "rSYjFWXB5",
+    "label": [
+     "Other"
+    ],
+    "list_name": "storage_type",
+    "$autovalue": "other"
+   },
+   {
+    "name": "road",
+    "$kuid": "8NkZIMIlC",
+    "label": [
+     "Road"
+    ],
+    "list_name": "access_constraint",
+    "$autovalue": "road"
+   },
+   {
+    "name": "crossing",
+    "$kuid": "o5qFU1uhc",
+    "label": [
+     "Crossing (bridge, ford, culvert)"
+    ],
+    "list_name": "access_constraint",
+    "$autovalue": "crossing"
+   },
+   {
+    "name": "last_mile",
+    "$kuid": "ELQ8jYtw6",
+    "label": [
+     "Last mile to key services"
+    ],
+    "list_name": "access_constraint",
+    "$autovalue": "last_mile"
+   },
+   {
+    "name": "other",
+    "$kuid": "PXjOEfLkj",
+    "label": [
+     "Other"
+    ],
+    "list_name": "access_constraint",
+    "$autovalue": "other"
+   },
+   {
+    "name": "debris",
+    "$kuid": "Be08mH1l2",
+    "label": [
+     "Debris"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "debris"
+   },
+   {
+    "name": "landslide",
+    "$kuid": "vIzYV3a8g",
+    "label": [
+     "Landslide"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "landslide"
+   },
+   {
+    "name": "mud",
+    "$kuid": "gKyt1pshj",
+    "label": [
+     "Mud"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "mud"
+   },
+   {
+    "name": "flooding",
+    "$kuid": "NGvyIjVZa",
+    "label": [
+     "Flooding"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "flooding"
+   },
+   {
+    "name": "erosion",
+    "$kuid": "3iDTBciGf",
+    "label": [
+     "Erosion"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "erosion"
+   },
+   {
+    "name": "crack",
+    "$kuid": "QCRcjvobC",
+    "label": [
+     "Crack, seismic fault"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "crack"
+   },
+   {
+    "name": "pothole",
+    "$kuid": "hkN0bsgod",
+    "label": [
+     "Hole"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "pothole"
+   },
+   {
+    "name": "other",
+    "$kuid": "uj8AnKmgw",
+    "label": [
+     "Other"
+    ],
+    "list_name": "road_hotspot",
+    "$autovalue": "other"
+   },
+   {
+    "name": "ford",
+    "$kuid": "BmiwyzZm1",
+    "label": [
+     "Ford"
+    ],
+    "list_name": "crossing_structure",
+    "$autovalue": "ford"
+   },
+   {
+    "name": "culvert",
+    "$kuid": "BUTxmmogv",
+    "label": [
+     "Culvert"
+    ],
+    "list_name": "crossing_structure",
+    "$autovalue": "culvert"
+   },
+   {
+    "name": "bridge",
+    "$kuid": "8KmunWtqH",
+    "label": [
+     "Bridge"
+    ],
+    "list_name": "crossing_structure",
+    "$autovalue": "bridge"
+   },
+   {
+    "name": "other",
+    "$kuid": "ziOuib95g",
+    "label": [
+     "Other"
+    ],
+    "list_name": "crossing_structure",
+    "$autovalue": "other"
+   },
+   {
+    "name": "health",
+    "$kuid": "qFnKdm0kq",
+    "label": [
+     "Health facility"
+    ],
+    "list_name": "last_mile_services",
+    "$autovalue": "health"
+   },
+   {
+    "name": "storage",
+    "$kuid": "TWEvhMlIj",
+    "label": [
+     "Storage"
+    ],
+    "list_name": "last_mile_services",
+    "$autovalue": "storage"
+   },
+   {
+    "name": "site_management",
+    "$kuid": "NsbKVeY0o",
+    "label": [
+     "Site management"
+    ],
+    "list_name": "last_mile_services",
+    "$autovalue": "site_management"
+   },
+   {
+    "name": "distribution",
+    "$kuid": "PtL0ChHpM",
+    "label": [
+     "Distribution point"
+    ],
+    "list_name": "last_mile_services",
+    "$autovalue": "distribution"
+   },
+   {
+    "name": "other",
+    "$kuid": "fBpa2APWx",
+    "label": [
+     "Other"
+    ],
+    "list_name": "last_mile_services",
+    "$autovalue": "other"
+   },
+   {
+    "name": "street",
+    "$kuid": "a41sgIUzq",
+    "label": [
+     "Public or street lighting"
+    ],
+    "list_name": "lighting_type",
+    "$autovalue": "street"
+   },
+   {
+    "name": "outdoor",
+    "$kuid": "5KYR2VbGD",
+    "label": [
+     "Lighting of an outdoor area"
+    ],
+    "list_name": "lighting_type",
+    "$autovalue": "outdoor"
+   },
+   {
+    "name": "shelter",
+    "$kuid": "pBuONNBd1",
+    "label": [
+     "Lighting inside shelters"
+    ],
+    "list_name": "lighting_type",
+    "$autovalue": "shelter"
+   },
+   {
+    "name": "individual",
+    "$kuid": "hMoo6ghpO",
+    "label": [
+     "Individual lamps, torches, candles"
+    ],
+    "list_name": "lighting_type",
+    "$autovalue": "individual"
+   },
+   {
+    "name": "grid",
+    "$kuid": "oBMgstcQH",
+    "label": [
+     "Grid"
+    ],
+    "list_name": "energy_source",
+    "$autovalue": "grid"
+   },
+   {
+    "name": "generator",
+    "$kuid": "rdNRd7knH",
+    "label": [
+     "Generator"
+    ],
+    "list_name": "energy_source",
+    "$autovalue": "generator"
+   },
+   {
+    "name": "solar",
+    "$kuid": "AT8aGo9zO",
+    "label": [
+     "Solar"
+    ],
+    "list_name": "energy_source",
+    "$autovalue": "solar"
+   },
+   {
+    "name": "battery",
+    "$kuid": "zxaCy5ZXD",
+    "label": [
+     "Battery"
+    ],
+    "list_name": "energy_source",
+    "$autovalue": "battery"
+   },
+   {
+    "name": "other",
+    "$kuid": "3B9859kyh",
+    "label": [
+     "Other"
+    ],
+    "list_name": "energy_source",
+    "$autovalue": "other"
+   },
+   {
+    "name": "charging",
+    "$kuid": "uKuolC2xb",
+    "label": [
+     "Phone charging"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "charging"
+   },
+   {
+    "name": "power_strip",
+    "$kuid": "vlpWgwATb",
+    "label": [
+     "Extension lead, plug hub"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "power_strip"
+   },
+   {
+    "name": "outdoor_lighting",
+    "$kuid": "KBGJQuKMD",
+    "label": [
+     "Outdoor lighting"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "outdoor_lighting"
+   },
+   {
+    "name": "internet",
+    "$kuid": "LpzFPvFve",
+    "label": [
+     "Internet, cyber café"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "internet"
+   },
+   {
+    "name": "music",
+    "$kuid": "pTHgwQAHv",
+    "label": [
+     "Music, loudspeaker"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "music"
+   },
+   {
+    "name": "shop",
+    "$kuid": "DGJCW179U",
+    "label": [
+     "Shop"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "shop"
+   },
+   {
+    "name": "other",
+    "$kuid": "0vuX7ZUAs",
+    "label": [
+     "Other"
+    ],
+    "list_name": "energy_uses",
+    "$autovalue": "other"
+   },
+   {
+    "name": "gps",
+    "$kuid": "aLfCqUSrW",
+    "label": [
+     "GPS, standing at the point"
+    ],
+    "list_name": "location_method",
+    "$autovalue": "gps"
+   },
+   {
+    "name": "manual",
+    "$kuid": "sm0YE7hQ9",
+    "label": [
+     "Placed on the map"
+    ],
+    "list_name": "location_method",
+    "$autovalue": "manual"
+   }
+  ],
+  "codebook": [],
+  "settings": {
+   "style": "pages theme-grid",
+   "version": "2026111201",
+   "id_string": "risa_obs",
+   "instance_name": "concat(${site_label}, ' - ', jr:choice-name(${feature_type}, '${feature_type}'), ' ', ${feature_id}, ' - ', format-date-time(${end}, '%Y-%m-%d %H:%M'))",
+   "default_language": "English (en)"
+  },
+  "translated": [
+   "constraint_message",
+   "hint",
+   "label"
+  ],
+  "translations": [
+   "English (en)"
+  ]
+ },
+ "downloads": [
+  {
+   "format": "xls",
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/?format=json.xls"
+  },
+  {
+   "format": "xml",
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/?format=json.xml"
+  }
+ ],
+ "embeds": [
+  {
+   "format": "xls",
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/xls/?format=json"
+  },
+  {
+   "format": "xform",
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/xform/?format=json"
+  }
+ ],
+ "analysis_form_json": {
+  "additional_fields": []
+ },
+ "xform_link": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/xform/?format=json",
+ "hooks_link": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/hooks/?format=json",
+ "tag_string": "",
+ "uid": "aDwoMTyEm5ndfWSh3JCUqS",
+ "kind": "asset",
+ "xls_link": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/xls/?format=json",
+ "name": "RISA template test (delete me)",
+ "assignable_permissions": [
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/view_asset/?format=json",
+   "label": "View form"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/change_asset/?format=json",
+   "label": "Edit form"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/manage_asset/?format=json",
+   "label": "Manage project"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/add_submissions/?format=json",
+   "label": "Add submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/view_submissions/?format=json",
+   "label": "View submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/partial_submissions/?format=json",
+   "label": {
+    "default": "Act on submissions only from specific users",
+    "view_submissions": "View submissions only from specific users",
+    "change_submissions": "Edit submissions only from specific users",
+    "delete_submissions": "Delete submissions only from specific users",
+    "validate_submissions": "Validate submissions only from specific users"
+   }
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/change_submissions/?format=json",
+   "label": "Edit submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/delete_submissions/?format=json",
+   "label": "Delete submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/permissions/validate_submissions/?format=json",
+   "label": "Validate submissions"
+  }
+ ],
+ "permissions": [
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/po62fYv4DxBawWVsvq9RcH/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/add_submissions/?format=json",
+   "label": "Add submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/pebtzRxUaUK5BrwqRxrYqj/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/change_asset/?format=json",
+   "label": "Edit form"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/pbZL3KXWCnT5Lfx9mdTuxt/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/change_submissions/?format=json",
+   "label": "Edit submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/pqRGS2RPtLFjx6pe8iCBqr/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/delete_submissions/?format=json",
+   "label": "Delete submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/p6BGQwGBtUuUNhQyGSqaPj/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/manage_asset/?format=json",
+   "label": "Manage project"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/pinRzy6D5XkPErkBAXpffE/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/validate_submissions/?format=json",
+   "label": "Validate submissions"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/pWrdGJNYkChTdEwP2SxUCg/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/view_asset/?format=json",
+   "label": "View form"
+  },
+  {
+   "url": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/permission-assignments/pJ8FRVjTfwNJaXqgE3EnQZ/?format=json",
+   "user": "https://kf.kobotoolbox.org/api/v2/users/bob_kobo/?format=json",
+   "permission": "https://kf.kobotoolbox.org/api/v2/permissions/view_submissions/?format=json",
+   "label": "View submissions"
+  }
+ ],
+ "effective_permissions": [
+  {
+   "codename": "manage_asset"
+  },
+  {
+   "codename": "change_asset"
+  },
+  {
+   "codename": "view_asset"
+  },
+  {
+   "codename": "validate_submissions"
+  },
+  {
+   "codename": "view_submissions"
+  },
+  {
+   "codename": "delete_submissions"
+  },
+  {
+   "codename": "change_submissions"
+  },
+  {
+   "codename": "delete_asset"
+  },
+  {
+   "codename": "add_submissions"
+  }
+ ],
+ "exports": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/exports/?format=json",
+ "export_settings": [],
+ "data": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/data/?format=json",
+ "children": {
+  "count": 0
+ },
+ "subscribers_count": 0,
+ "status": "private",
+ "access_types": null,
+ "data_sharing": {},
+ "paired_data": "https://kf.kobotoolbox.org/api/v2/assets/aDwoMTyEm5ndfWSh3JCUqS/paired-data/?format=json",
+ "project_ownership": null,
+ "owner_label": "bob_kobo",
+ "last_modified_by": "bob_kobo",
+ "created_by": "bob_kobo"
+}

@@ -50,13 +50,22 @@ def match_type(value) -> str:
 
 
 STATUS_KEYS = ("risa_status", "status", "estado", "statut", "condition", "functionality", "functional")
-TYPE_KEYS = ("risa_type", "type", "tipo", "category", "categoria", "service", "servicio", "kind")
-LABEL_KEYS = ("label", "name", "nombre", "nom", "title", "id", "code")
+# feature_type and feature_id: the RISA template's questions, in a Kobo export
+TYPE_KEYS = ("risa_type", "feature_type", "type", "tipo", "category", "categoria", "service", "servicio", "kind")
+LABEL_KEYS = ("feature_id", "label", "name", "nombre", "nom", "title", "id", "code")
+
+
+def leaf(key: str) -> str:
+    """A Kobo export's column without its group: obs/feature_type, obs-feature_type and
+    obs.feature_type are feature_type."""
+    return re.split(r"[/.\-]", str(key))[-1]
 
 
 def classify(props: dict) -> tuple[str, str, str]:
     """Best-effort RISA type, status and label from an uploaded feature's attributes."""
     lower = {str(k).lower(): v for k, v in props.items()}
+    for k, v in props.items():
+        lower.setdefault(leaf(k).lower(), v)
 
     def first(keys, fn=None):
         for k in keys:

@@ -128,6 +128,7 @@ export interface LayerT {
     last_error: string
     submissions: number
     auto_sync: boolean
+    preset?: string
   }
 }
 
@@ -240,10 +241,15 @@ export interface FieldMap {
   type: string
   status: string
   label: string
+  /** The free-text comment and the number of units, stored as `note` and `count` */
+  note?: string
+  count?: string
   popup: string[]
   sensitive: string[]
   type_map?: Record<string, string>
   status_map?: Record<string, string>
+  /** 'risa': the RISA template, mapped from its questions without guessing */
+  preset?: string
 }
 
 // ---- edit keys --------------------------------------------------------------------

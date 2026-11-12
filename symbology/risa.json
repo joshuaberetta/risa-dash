@@ -96,6 +96,34 @@
       "glyph": "!",
       "label": "Choke point"
     },
+    "bathing": {
+      "glyph": "Ba",
+      "label": "Bathing facility"
+    },
+    "waste": {
+      "glyph": "Ws",
+      "label": "Waste point"
+    },
+    "safe_space": {
+      "glyph": "Sf",
+      "label": "Women's safe space"
+    },
+    "lighting": {
+      "glyph": "Li",
+      "label": "Lighting"
+    },
+    "energy": {
+      "glyph": "E",
+      "label": "Energy / charging"
+    },
+    "market": {
+      "glyph": "M",
+      "label": "Market"
+    },
+    "hazard": {
+      "glyph": "Hz",
+      "label": "Hazard"
+    },
     "route": {
       "glyph": "",
       "label": "Access route"
@@ -145,7 +173,9 @@
         "sí",
         "ouvert",
         "fonctionnel",
-        "oui"
+        "oui",
+        "sim",
+        "aberto"
       ],
       "partial": [
         "partial",
@@ -181,7 +211,11 @@
         "bloqueado",
         "fermé",
         "ferme",
-        "non"
+        "non",
+        "nao",
+        "não",
+        "nao_funciona",
+        "fechado"
       ],
       "unknown": [
         "unknown",
@@ -192,7 +226,14 @@
         "n/a",
         "desconocido",
         "ns",
-        "inconnu"
+        "inconnu",
+        "can_t_see",
+        "cant_see",
+        "not_visible",
+        "no_se_ve",
+        "ne_se_voit_pas",
+        "desconhecido",
+        "nao_sei"
       ]
     },
     "type": {
@@ -206,7 +247,11 @@
         "agua",
         "punto_de_agua",
         "eau",
-        "point_d_eau"
+        "point_d_eau",
+        "ponto_de_agua",
+        "furo",
+        "poco",
+        "poço"
       ],
       "latrine": [
         "latrine",
@@ -216,14 +261,19 @@
         "sanitation",
         "letrina",
         "letrinas",
-        "latrines_block"
+        "latrines_block",
+        "latrina",
+        "latrinas"
       ],
       "hand": [
         "handwashing",
         "hand_washing",
         "handwash",
         "lavamanos",
-        "lavado_de_manos"
+        "lavado_de_manos",
+        "lave_mains",
+        "lavagem_das_maos",
+        "lavagem_de_maos"
       ],
       "health": [
         "health",
@@ -234,19 +284,32 @@
         "puesto_de_salud",
         "ambulatorio",
         "sante",
-        "santé"
+        "santé",
+        "saude",
+        "saúde",
+        "posto_de_saude",
+        "centro_de_saude"
       ],
       "cfs": [
         "cfs",
         "child_friendly_space",
-        "espacio_seguro",
-        "espace_ami_des_enfants"
+        "espace_ami_des_enfants",
+        "child_friendly",
+        "childcare",
+        "prot_safe_space_children",
+        "prot_childcare_friendly_space",
+        "prot_friendly_facilities",
+        "espacio_amigable",
+        "espaco_amigo_da_crianca",
+        "espaço_amigo_da_criança"
       ],
       "dist": [
         "distribution",
         "distribution_point",
         "distribucion",
-        "distribución"
+        "distribución",
+        "distribuicao",
+        "distribuição"
       ],
       "storage": [
         "storage",
@@ -254,7 +317,9 @@
         "almacen",
         "almacén",
         "entrepot",
-        "entrepôt"
+        "entrepôt",
+        "armazem",
+        "armazém"
       ],
       "shelter": [
         "shelter",
@@ -262,19 +327,37 @@
         "carpa",
         "tienda",
         "abri",
-        "tente"
+        "tente",
+        "abrigo",
+        "tenda"
       ],
       "registration": [
         "registration",
         "registro",
-        "enregistrement"
+        "enregistrement",
+        "site_management",
+        "camp_management",
+        "entry_point",
+        "reception",
+        "help_desk",
+        "prot_site_management",
+        "prot_entry_point",
+        "gestion_del_sitio",
+        "punto_de_entrada",
+        "accueil",
+        "registo",
+        "rececao",
+        "receção"
       ],
       "kitchen": [
         "kitchen",
         "dining",
         "comedor",
         "cocina",
-        "cuisine"
+        "cuisine",
+        "cozinha",
+        "refeitorio",
+        "refeitório"
       ],
       "gate": [
         "gate",
@@ -282,17 +365,159 @@
         "entrada",
         "puerta",
         "entree",
-        "entrée"
+        "entrée",
+        "portao",
+        "portão"
       ],
       "landing": [
         "landing_zone",
         "helipad",
-        "lz"
+        "lz",
+        "heliport",
+        "helipuerto",
+        "zona_de_aterrizaje",
+        "heliporto",
+        "zona_de_aterragem"
       ],
       "choke": [
         "choke_point",
         "chokepoint",
-        "bottleneck"
+        "bottleneck",
+        "access_constraint",
+        "restriccion_de_acceso",
+        "restricción_de_acceso",
+        "goulet",
+        "estrangulamento"
+      ],
+      "bathing": [
+        "bathing",
+        "bath",
+        "baths",
+        "bathing_facility",
+        "shower",
+        "showers",
+        "wash_bathing",
+        "prot_women_friendly_facilities",
+        "ducha",
+        "duchas",
+        "instalaciones_para_bano",
+        "douche",
+        "douches",
+        "chuveiro",
+        "chuveiros",
+        "balneario",
+        "balneário"
+      ],
+      "waste": [
+        "waste",
+        "solid_waste",
+        "waste_bin",
+        "waste_point",
+        "garbage",
+        "rubbish",
+        "trash",
+        "basura",
+        "residuos",
+        "desechos",
+        "contenedor_de_basura",
+        "dechets",
+        "déchets",
+        "poubelle",
+        "ordures",
+        "lixo",
+        "resíduos",
+        "contentor_de_lixo"
+      ],
+      "safe_space": [
+        "safe_space",
+        "women_safe_space",
+        "wgss",
+        "women_friendly_space",
+        "women_and_girls_safe_space",
+        "women_s_safe_space",
+        "safe_space_women_and_girls",
+        "safe_space_for_women_and_girls",
+        "prot_safe_space_general",
+        "prot_safe_space_women",
+        "prot_safe_space_persons_with_disabilities",
+        "prot_safe_space_lgbtq",
+        "espacio_seguro",
+        "espacio_seguro_para_mujeres",
+        "espace_sur",
+        "espace_sûr",
+        "espace_securise",
+        "espace_sécurisé",
+        "espaco_seguro",
+        "espaço_seguro"
+      ],
+      "lighting": [
+        "lighting",
+        "light",
+        "lights",
+        "lamp",
+        "street_light",
+        "streetlight",
+        "solar_light",
+        "lightning",
+        "iluminacion",
+        "iluminación",
+        "alumbrado",
+        "luz",
+        "eclairage",
+        "éclairage",
+        "lampadaire",
+        "iluminacao",
+        "iluminação"
+      ],
+      "energy": [
+        "energy",
+        "power",
+        "electricity",
+        "generator",
+        "charging",
+        "charging_point",
+        "charging_station",
+        "energy_available",
+        "energia",
+        "energía",
+        "electricidad",
+        "generador",
+        "energie",
+        "énergie",
+        "electricite",
+        "électricité",
+        "groupe_electrogene",
+        "eletricidade",
+        "gerador"
+      ],
+      "market": [
+        "market",
+        "marketplace",
+        "shop",
+        "shops",
+        "mercado",
+        "comercio",
+        "marche",
+        "marché",
+        "boutique",
+        "feira",
+        "loja"
+      ],
+      "hazard": [
+        "hazard",
+        "environmental_hazard",
+        "danger",
+        "landslide",
+        "erosion",
+        "peligro",
+        "riesgo",
+        "peligro_ambiental",
+        "deslizamiento",
+        "risque",
+        "glissement_de_terrain",
+        "perigo",
+        "risco",
+        "deslizamento"
       ],
       "route": [
         "route",
@@ -330,6 +555,14 @@
         "batiment",
         "bâtiment",
         "toit"
+      ],
+      "other": [
+        "other",
+        "other_infrastructure",
+        "otro",
+        "otra",
+        "autre",
+        "outro"
       ]
     }
   },

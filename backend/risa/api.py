@@ -87,7 +87,8 @@ def layer_dict(lyr: Layer) -> dict:
         k = lyr.kobo
         d["kobo"] = {"server": k.server_url, "asset_uid": k.asset_uid, "asset_name": k.asset_name,
                      "last_synced_at": k.last_synced_at, "last_error": k.last_error,
-                     "submissions": k.submission_count, "auto_sync": k.auto_sync}
+                     "submissions": k.submission_count, "auto_sync": k.auto_sync,
+                     "preset": (k.field_map or {}).get("preset", "")}
     if lyr.kind == "analysis":
         d["analysis"] = {k: lyr.meta.get(k) for k in ("source_layer", "model", "detector", "simulated", "progress", "counts", "aoi",
                                                       "seconds", "evaluation",
@@ -964,14 +965,13 @@ def kobo_connect(request, site_id: str, data: KoboConnect):
     server = kobo.check_server(data.server)
     token = data.token.strip()
     asset = kobo.get_asset(server, token, data.asset_uid)
-    questions = kobo.form_questions(asset)
     with transaction.atomic():
         lyr = Layer.objects.create(site=s, name=data.name or asset.get("name") or data.asset_uid, kind="kobo",
                                    status="processing", z_order=_next_z(s), style={"preset": "risa"},
                                    attribution="Field data: KoboCollect direct observation")
         src = KoboSource.objects.create(layer=lyr, server_url=server, asset_uid=data.asset_uid,
                                         asset_name=asset.get("name", ""), token_encrypted=kobo.encrypt_token(token),
-                                        field_map=kobo.guess_field_map(questions))
+                                        field_map=kobo.field_map_for(asset))
     sync_kobo.defer(source_id=src.id, full=True)
     return layer_dict(lyr)
 
@@ -996,6 +996,9 @@ def kobo_patch(request, layer_id: str, data: KoboPatch):
         src.auto_sync = d["auto_sync"]
     if d.get("field_map") is not None:
         src.field_map = {**src.field_map, **d["field_map"]}
+        if src.field_map.get("preset") == "risa" and not kobo.is_risa_map(src.field_map):
+            # Mapped to other questions: no longer the template's mapping
+            src.field_map["preset"] = ""
         src.save()
         # Re-apply the mapping to every submission
         sync_kobo.defer(source_id=src.id, full=True)

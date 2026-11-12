@@ -183,19 +183,28 @@
 <h2>Field data from Kobo</h2>
 <p>Teams record observations with KoboCollect: a water point, its status, a photo, where it is. The dashboard reads them straight from KoboToolbox, so a new submission is on the map within minutes.</p>
 
+<h4>Start from the RISA form</h4>
+<ol>
+  <li>Download the <strong>RISA XLSForm template</strong> from the toolbox on the <a href="https://risa.kobolabs.dev">RISA website</a>. One submission is one observation: its type, status, label, count, location, photos and a comment.</li>
+  <li>Adapt it for the country, as the SOP's Kobo annex describes: the organisations, the P-codes of the admin areas, the sites, and labels in the local language. Add choices and questions; never rename or delete one, so the dashboard still knows the form.</li>
+  <li>Deploy it in KoboToolbox, test it on a phone, and make an API token for an account that can see its data.</li>
+  <li>Connect it, below.</li>
+</ol>
+
 <h4>Connect a project</h4>
 <ol>
   <li>In <strong>Layers</strong>, choose <strong>Add › Connect a Kobo project</strong>.</li>
   <li>Choose the server: the global or EU KoboToolbox server, or another one the instance allows (a national server, or <code>http://kf.kobo.local</code> on a kit). The administrator adds other servers.</li>
   <li>Paste an <strong>API token</strong>: in KoboToolbox, <em>Account settings › Security › API key</em>. Use an account that can view the project's data, ideally one made for the dashboard rather than a person's.</li>
-  <li>Pick the project. Its points come from the form's first location question.</li>
+  <li>Pick the project. A form made from the RISA template maps itself; for any other form, the dashboard guesses the mapping and you check it (below).</li>
 </ol>
 <figure><a href="static/shots/kobo.jpg"><img src="static/shots/kobo.jpg" width="1440" height="900" alt="The Connect a Kobo project dialog: the server, the API token, with a note that it is stored encrypted and only sent to that server, and the project."></a><figcaption>Connecting a Kobo project. The token stays on the server.</figcaption></figure>
 
 <h4>Map the form to RISA</h4>
-<p>The dashboard guesses which questions give the <strong>type</strong> (water point, latrine block, health post…) and the <strong>status</strong>, from the question names and choices, in English, Spanish or French. Check its guess with <strong>⋯ › Map form to RISA</strong>:</p>
+<p>The RISA template's answers are already RISA types and statuses, so its points get the right symbols with no setup. <strong>⋯ › Map form to RISA</strong> says the form was recognised as the RISA template; change the mapping there only if your country's copy renamed a question.</p>
+<p>For another form, such as an older country form, the dashboard guesses which questions give the <strong>type</strong> (water point, latrine block, health post…) and the <strong>status</strong>, from the question names and choices, in English, Spanish, French or Portuguese. Check its guess with <strong>⋯ › Map form to RISA</strong>:</p>
 <ul>
-  <li>the location question, the type and status questions, and the label to show;</li>
+  <li>the location question, the type and status questions, the label to show, and the comment and count questions;</li>
   <li>which answer means which RISA type and status. An answer that isn't mapped shows as <strong>Not assessed</strong> (grey), never as a status;</li>
   <li><strong>Left out (sensitive):</strong> questions that must never be copied onto this server, such as names or phone numbers.</li>
 </ul>
@@ -210,6 +219,7 @@
 <ul>
   <li>GeoJSON, GeoPackage, a zipped Shapefile, KML or KMZ, or a CSV with latitude and longitude columns.</li>
   <li>Columns called <code>type</code>, <code>status</code> and <code>label</code> (or their Spanish and French equivalents) are matched to RISA's types and statuses, so the features get RISA symbols.</li>
+  <li>A CSV export of the RISA form from KoboToolbox works as it is, with or without the group names in its headers: the points come from the location question, and the type, status, label, comment and count from their columns.</li>
 </ul>
 <p>Give each layer a source and date. They become page 1's sources line.</p>
 </section>
@@ -375,7 +385,7 @@
 <h4>Before you deploy</h4>
 <ol class="checklist">
   <li>Agree with the data owner where the data may live and who may see the map. That decides the instance: the consortium's, a national authority's own, or a field kit (see <a href="#run">Where it runs</a>). Get its create key if it needs one.</li>
-  <li>Deploy the RISA form in KoboToolbox, and make an API token for an account that can see its data.</li>
+  <li>Download the RISA XLSForm template from the <a href="https://risa.kobolabs.dev">RISA website</a>, adapt it for the country (see the SOP's Kobo annex), deploy it in KoboToolbox and test it on a phone. Make an API token for an account that can see its data.</li>
   <li>For a kit, or a national server with no internet: load the offline basemap of the area (on a server, the administrator's <code>pack build</code>; see the <a href="https://github.com/joshuaberetta/risa-dash/blob/main/docs/self-hosting.md">self-hosting guide</a>) and any pre-event imagery before it leaves, and check that it opens with the internet off. If the response already exists on the cloud or a national server, import its bundle onto the kit too.</li>
   <li>Decide on the feedback form and test its link.</li>
   <li>Run through the sample response once, so the first real page 1 isn't the first page 1.</li>
@@ -386,7 +396,7 @@
   <li>Create the response and save the edit key where the team can find it.</li>
   <li>Add the site, with its location if you have one.</li>
   <li>Upload the orthomosaic, or add satellite imagery by URL, with its capture date and source.</li>
-  <li>Connect the Kobo project and check <strong>Map form to RISA</strong>: types and statuses right, sensitive questions left out.</li>
+  <li>Connect the Kobo project. The RISA form maps itself; for another form, check <strong>Map form to RISA</strong>: types and statuses right, sensitive questions left out.</li>
   <li>Draw what the form doesn't cover: the site boundary, blocks, routes and their status, flooded areas.</li>
   <li>Check the data table and the summary. Do the figures make sense?</li>
   <li>Make page 1: frame, key message, figures (TBC where estimated), version label.</li>
@@ -426,7 +436,7 @@
 <h4>What the dashboard keeps, and what it doesn't</h4>
 <ul>
   <li><strong>No personal accounts, no tracking, no analytics.</strong> Your browser keeps only the edit key, your layer and basemap choices for each site, and which tours you've seen. The edit key is stored on the server only as a hash.</li>
-  <li><strong>Sensitive questions are left out.</strong> When you connect a Kobo project, list any question about a person (names, phone numbers, ages) under <strong>Left out (sensitive)</strong>. Those answers are never copied to the dashboard.</li>
+  <li><strong>Sensitive questions are left out.</strong> When you connect a Kobo project, list any question about a person (names, phone numbers, ages) under <strong>Left out (sensitive)</strong>. Those answers are never copied to the dashboard. For the RISA form, the collector's username, device and starting location are left out already.</li>
   <li><strong>Kobo tokens</strong> are stored encrypted and sent only to their own Kobo server; they never reach a browser. <strong>Photos</strong> are fetched from Kobo when someone opens them, not stored in the dashboard.</li>
   <li><strong>No AI company sees your data.</strong> The shelter model runs on the dashboard's own server, the kit or the hub, and sends nothing anywhere. Larger models, when they come, run there too, or on a server rented from the same provider in the same region as the instance.</li>
   <li><strong>Feedback</strong> goes into a Kobo form that the response's owner chooses, under their control.</li>

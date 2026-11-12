@@ -19,6 +19,9 @@ from .models import Feature, Layer, Product, Site
 from .symbology import symbology
 
 LOGISTICS = ("storage", "landing", "gate", "choke")
+# Not services: flooded and debris areas, and hazards observed in the field
+HAZARDS = ("flood", "debris", "hazard")
+HAZARD_NEAR = 25  # metres from a hazard point
 VECTOR = ("vector", "kobo", "annotations")
 
 LABELS = {
@@ -46,42 +49,49 @@ LABELS = {
 }
 LABELS["pt"] = {**LABELS["en"]}
 
-# Who acts on a gap, by RISA type: the cluster or area of responsibility
+# Who acts on a gap, by RISA type: the cluster or area of responsibility. Markets go to food
+# security, which leads on markets and cash in most responses (CCCM where it doesn't)
 WHO = {
     "en": {"water": "WASH cluster", "latrine": "WASH cluster", "hand": "WASH cluster", "health": "Health cluster",
            "cfs": "Child protection", "dist": "Site management · CCCM", "registration": "Site management · CCCM",
            "kitchen": "Food security cluster", "storage": "Logistics cluster", "shelter": "Shelter cluster",
            "route": "Logistics cluster", "flood": "Site management · CCCM", "debris": "Site management · CCCM",
-           "other": "Site management · CCCM"},
+           "bathing": "WASH cluster", "waste": "WASH cluster", "safe_space": "Protection (GBV AoR)",
+           "lighting": "Site management · CCCM", "energy": "Site management · CCCM", "hazard": "Site management · CCCM",
+           "market": "Food security cluster", "other": "Site management · CCCM"},
     "es": {"water": "Clúster WASH", "latrine": "Clúster WASH", "hand": "Clúster WASH", "health": "Clúster de salud",
            "cfs": "Protección de la infancia", "dist": "Gestión de sitio · CCCM", "registration": "Gestión de sitio · CCCM",
            "kitchen": "Clúster de seguridad alimentaria", "storage": "Clúster de logística", "shelter": "Clúster de alojamiento",
            "route": "Clúster de logística", "flood": "Gestión de sitio · CCCM", "debris": "Gestión de sitio · CCCM",
-           "other": "Gestión de sitio · CCCM"},
+           "bathing": "Clúster WASH", "waste": "Clúster WASH", "safe_space": "Protección (AoR VBG)",
+           "lighting": "Gestión de sitio · CCCM", "energy": "Gestión de sitio · CCCM", "hazard": "Gestión de sitio · CCCM",
+           "market": "Clúster de seguridad alimentaria", "other": "Gestión de sitio · CCCM"},
     "fr": {"water": "Cluster WASH", "latrine": "Cluster WASH", "hand": "Cluster WASH", "health": "Cluster santé",
            "cfs": "Protection de l'enfance", "dist": "Gestion de site · CCCM", "registration": "Gestion de site · CCCM",
            "kitchen": "Cluster sécurité alimentaire", "storage": "Cluster logistique", "shelter": "Cluster abris",
            "route": "Cluster logistique", "flood": "Gestion de site · CCCM", "debris": "Gestion de site · CCCM",
-           "other": "Gestion de site · CCCM"},
+           "bathing": "Cluster WASH", "waste": "Cluster WASH", "safe_space": "Protection (AoR VBG)",
+           "lighting": "Gestion de site · CCCM", "energy": "Gestion de site · CCCM", "hazard": "Gestion de site · CCCM",
+           "market": "Cluster sécurité alimentaire", "other": "Gestion de site · CCCM"},
 }
 GAP_TEXT = {
     "en": {"route_closed": "Access: {label} closed", "routes_partial": "Access restricted on {labels}",
            "route_default": "Find another route in, or clear it.", "partial_default": "Check the conditions before sending trucks.",
            "service_no": "{type}: {no} of {total} not working", "service_partial": "{type}: {n} of {total} only partly working",
            "service_text": "{labels}: repair, or provide an alternative until then.",
-           "hazard": "{hazard} over {n} shelters", "hazard_blocks": "{hazard} reaches {blocks}: {n} shelters.",
+           "hazard": "{hazard} over {n} shelters", "hazard_near": "{hazard} near {n} shelters", "hazard_blocks": "{hazard} reaches {blocks}: {n} shelters.",
            "hazard_text": " Plan relocation to safer ground."},
     "es": {"route_closed": "Acceso: {label} cerrada", "routes_partial": "Acceso restringido en {labels}",
            "route_default": "Buscar otra ruta o despejarla.", "partial_default": "Verificar las condiciones antes de enviar camiones.",
            "service_no": "{type}: {no} de {total} no funcionan", "service_partial": "{type}: {n} de {total} funcionan parcialmente",
            "service_text": "{labels}: reparar o dar una alternativa mientras tanto.",
-           "hazard": "{hazard} sobre {n} refugios", "hazard_blocks": "{hazard} alcanza {blocks}: {n} refugios.",
+           "hazard": "{hazard} sobre {n} refugios", "hazard_near": "{hazard} cerca de {n} refugios", "hazard_blocks": "{hazard} alcanza {blocks}: {n} refugios.",
            "hazard_text": " Planificar la reubicación a un terreno más seguro."},
     "fr": {"route_closed": "Accès : {label} fermée", "routes_partial": "Accès restreint sur {labels}",
            "route_default": "Trouver une autre voie ou la dégager.", "partial_default": "Vérifier les conditions avant d'envoyer des camions.",
            "service_no": "{type} : {no} sur {total} ne fonctionnent pas", "service_partial": "{type} : {n} sur {total} partiellement",
            "service_text": "{labels} : réparer, ou prévoir une alternative en attendant.",
-           "hazard": "{hazard} sur {n} abris", "hazard_blocks": "{hazard} atteint {blocks} : {n} abris.",
+           "hazard": "{hazard} sur {n} abris", "hazard_near": "{hazard} près de {n} abris", "hazard_blocks": "{hazard} atteint {blocks} : {n} abris.",
            "hazard_text": " Prévoir une réinstallation sur un terrain plus sûr."},
 }
 for t in (WHO, GAP_TEXT):
@@ -177,7 +187,7 @@ def suggest_gaps(product: Product, layer_ids: list[str] | None = None) -> list[d
 
     by_type: dict[str, list] = {}
     for f in feats:
-        if f.risa_type and f.risa_type not in ("route", "flood", "debris", *LOGISTICS):
+        if f.risa_type and f.risa_type not in ("route", *HAZARDS, *LOGISTICS):
             by_type.setdefault(f.risa_type, []).append(f)
     for t, fs in by_type.items():
         label = types.get(t, {}).get("label", t)
@@ -193,7 +203,8 @@ def suggest_gaps(product: Product, layer_ids: list[str] | None = None) -> list[d
                                           "title": T["service_partial"].format(type=label, n=len(part), total=len(fs)),
                                           "text": T["service_text"].format(labels=names), "who": who.get(t, who["other"])}))
 
-    # Hazards over shelters: accepted or drawn shelters inside each flood or debris area
+    # Hazards over shelters: accepted or drawn shelters inside each flood or debris area, or
+    # within HAZARD_NEAR metres of a hazard observed as a point
     ids = [str(lyr.id) for lyr in layers if lyr.kind in VECTOR or lyr.kind == "analysis"]
     if ids:
         with connection.cursor() as cur:
@@ -201,19 +212,20 @@ def suggest_gaps(product: Product, layer_ids: list[str] | None = None) -> list[d
                 SELECT h.risa_type, h.label,
                        (SELECT count(*) FROM risa_feature s WHERE s.layer_id::text = ANY(%s) AND s.risa_type = 'shelter'
                           AND coalesce(s.properties->>'review', 'accepted') = 'accepted'
-                          AND ST_Intersects(s.geom, h.geom)),
+                          AND (ST_Intersects(s.geom, h.geom) OR (h.risa_type = 'hazard'
+                               AND ST_DWithin(s.geom::geography, h.geom::geography, %s)))),
                        (SELECT string_agg(DISTINCT split_part(b.label, ' · ', 1), ', ') FROM risa_feature b
                           WHERE b.layer_id::text = ANY(%s) AND b.risa_type = 'block' AND b.label <> ''
                           AND coalesce(b.properties->>'review', 'accepted') <> 'rejected' AND ST_Intersects(b.geom, h.geom))
-                FROM risa_feature h WHERE h.layer_id::text = ANY(%s) AND h.risa_type IN ('flood', 'debris')""",
-                        [ids, [str(lyr.id) for lyr in vec], [str(lyr.id) for lyr in vec]])
+                FROM risa_feature h WHERE h.layer_id::text = ANY(%s) AND h.risa_type = ANY(%s)""",
+                        [ids, HAZARD_NEAR, [str(lyr.id) for lyr in vec], [str(lyr.id) for lyr in vec], list(HAZARDS)])
             for t, label, n, blocks in cur.fetchall():
                 if not n and not blocks:
                     continue
-                name = label or hazards[t]["label"]
+                name = label or (hazards.get(t) or types[t])["label"]
                 text = (T["hazard_blocks"].format(hazard=name, blocks=blocks, n=n) if blocks else "") + T["hazard_text"]
-                scored.append((2 if n else 1, n, {"status": "no" if n else "partial",
-                                                  "title": T["hazard"].format(hazard=name, n=n), "text": text.strip(),
+                title = T["hazard_near" if t == "hazard" else "hazard"].format(hazard=name, n=n)
+                scored.append((2 if n else 1, n, {"status": "no" if n else "partial", "title": title, "text": text.strip(),
                                                   "who": who[t]}))
     scored.sort(key=lambda x: (-x[0], -x[1]))
     return [g for _, _, g in scored[:5]]

@@ -7,9 +7,11 @@ Vector: anything OGR reads (GeoJSON, GeoPackage, zipped Shapefile, KML, CSV with
 lat/lon) becomes features in PostGIS.
 """
 
+import csv
 import json
 import logging
 import os
+import re
 import subprocess
 import tempfile
 from datetime import date
@@ -19,8 +21,9 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.db import transaction
 
 from . import storage
+from .kobo import well_known
 from .models import Feature, Layer, Upload
-from .symbology import classify
+from .symbology import classify, leaf
 
 log = logging.getLogger(__name__)
 
@@ -141,12 +144,54 @@ def _ogr_path(src: str) -> str:
     return src
 
 
+# Who collected it, and where the form was opened: left out of a Kobo export, as in a sync
+KOBO_DROP = ("username", "deviceid", "start_geopoint", "_submitted_by")
+
+
+def csv_header(src: str) -> list[str]:
+    with open(src, newline="", encoding="utf-8-sig", errors="replace") as f:
+        first = f.readline()
+    # Kobo exports use ; by default
+    sep = max(",;\t", key=first.count)
+    return next(csv.reader([first], delimiter=sep), [])
+
+
+def kobo_export(header: list[str]) -> dict | None:
+    """A Kobo CSV export: the observation's geopoint columns (Kobo splits a geopoint into
+    _<name>_latitude and _<name>_longitude, with the group in front when the export keeps
+    it: obs/_location_latitude, or _obs/location_latitude in older exports), and the
+    comment and count columns. None for any other CSV."""
+    low = {h.lower(): h for h in header}
+    pairs = []
+    for h in header:
+        m = re.fullmatch(r"(.*?)_(.+)_latitude", h, re.I)
+        if not m or (m.group(1) and not re.search(r"[/.\-]$", m.group(1))):
+            continue
+        lon = low.get(f"{m.group(1)}_{m.group(2)}_longitude".lower())
+        if lon:
+            pairs.append((m.group(1) + m.group(2), h, lon))
+    # The observation's location, not where the form was opened
+    pairs.sort(key=lambda p: leaf(p[0]).lower() in ("start_geopoint", "end_geopoint"))
+    if not pairs or not ({"_uuid", "_submission_time", "_id"} & set(low)):
+        return None
+    by_leaf = {}
+    for h in header:
+        by_leaf.setdefault(leaf(h).lower(), h)
+    return {"lat": pairs[0][1], "lon": pairs[0][2],
+            "field_map": {"note": by_leaf.get("note", ""), "count": by_leaf.get("count", "")}}
+
+
 def ingest_vector(layer: Layer, src: str) -> None:
     path = _ogr_path(src)
-    open_opts = []
+    open_opts, srs = [], []
+    export = None
     if src.lower().endswith(".csv"):
-        open_opts = ["-oo", "X_POSSIBLE_NAMES=lon*,lng*,long*,x,easting", "-oo", "Y_POSSIBLE_NAMES=lat*,y,northing",
+        export = kobo_export(csv_header(src))
+        x, y = (export["lon"], export["lat"]) if export else ("lon*,lng*,long*,x,easting", "lat*,y,northing")
+        open_opts = ["-oo", f"X_POSSIBLE_NAMES={x}", "-oo", f"Y_POSSIBLE_NAMES={y}",
                      "-oo", "KEEP_GEOM_COLUMNS=NO", "-oo", "AUTODETECT_TYPE=YES"]
+        # Coordinates in a CSV are WGS 84; OGR leaves the layer without a CRS
+        srs = ["-s_srs", "EPSG:4326"]
     info = json.loads(run(["ogrinfo", "-json", "-so", *open_opts, path]))
     names = [lyr["name"] for lyr in info.get("layers", [])]
     if not names:
@@ -156,7 +201,7 @@ def ingest_vector(layer: Layer, src: str) -> None:
         layer.features.all().delete()
         for name in names:
             out = os.path.join(tmp, f"{len(os.listdir(tmp))}.geojsonl")
-            run(["ogr2ogr", "-f", "GeoJSONSeq", "-t_srs", "EPSG:4326", "-dim", "XY", "-makevalid",
+            run(["ogr2ogr", "-f", "GeoJSONSeq", *srs, "-t_srs", "EPSG:4326", "-dim", "XY", "-makevalid",
                  *open_opts, out, path, name])
             batch = []
             with open(out) as f:
@@ -170,6 +215,10 @@ def ingest_vector(layer: Layer, src: str) -> None:
                     props = feat.get("properties") or {}
                     if len(names) > 1:
                         props["_source_layer"] = name
+                    if export:
+                        props = {k: v for k, v in props.items()
+                                 if leaf(k).lower() not in KOBO_DROP and not k.lower().startswith("_start_geopoint")}
+                        well_known(props, props, export["field_map"])
                     rtype, rstatus, label = classify(props)
                     batch.append(Feature(
                         layer=layer, geom=GEOSGeometry(json.dumps(feat["geometry"]), srid=4326), properties=props,

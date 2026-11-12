@@ -40,7 +40,7 @@ def site_summary(site: Site, layer_ids: list[str] | None = None) -> dict:
     services = [
         {"type": t, "label": types.get(t, {}).get("label", t), **c, "total": sum(c.values())}
         for t, c in sorted(by_type.items(), key=lambda kv: -sum(kv[1].values()))
-        if t not in ("block", "flood", "debris", "gate", "choke")
+        if t not in ("block", "flood", "debris", "hazard", "gate", "choke")
     ]
     water = by_type.get("water", dict(EMPTY))
     w_total = sum(water.values())

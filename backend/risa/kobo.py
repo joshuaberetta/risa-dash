@@ -22,7 +22,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from .models import Feature, KoboSource
-from .symbology import match_status, match_type
+from .symbology import match_status, match_type, symbology
 
 log = logging.getLogger(__name__)
 
@@ -151,10 +151,73 @@ def form_questions(asset: dict) -> list[dict]:
     return out
 
 
+# The RISA template's questions (templates/xlsform/, the data contract in
+# plans/xlsform-template-and-sop.md). Choice names are RISA codes, so no guessing.
+RISA_FORM_ID = "risa_obs"
+RISA_PATHS = {"geo": "obs/location", "type": "obs/feature_type", "status": "obs/status", "label": "obs/feature_id",
+              "note": "note", "count": "obs/count"}
+# Who collected it, and where the form was opened: not needed on the map
+RISA_SENSITIVE = ["username", "deviceid", "start_geopoint"]
+
+
+def form_id(asset: dict) -> str:
+    """The form's id_string (form_id in the XLSForm). Kobo keeps settings as a dict, older
+    assets as a one-row list."""
+    st = (asset.get("content") or {}).get("settings") or {}
+    if isinstance(st, list):
+        st = st[0] if st else {}
+    return str(st.get("id_string") or st.get("form_id") or "")
+
+
+def is_risa_form(asset: dict, questions: list[dict] | None = None) -> bool:
+    """The RISA template, or a country's copy of it (risa_obs_<iso3>, or renamed but with
+    the template's type and status questions)."""
+    if form_id(asset).startswith(RISA_FORM_ID):
+        return True
+    paths = {q["path"] for q in (questions if questions is not None else form_questions(asset))}
+    return {RISA_PATHS["type"], RISA_PATHS["status"]} <= paths
+
+
+def _choice_labels(questions: list[dict]) -> dict:
+    return {q["path"]: {c["name"]: c["label"] for c in q.get("choices", [])} for q in questions if q.get("choices")}
+
+
+def risa_field_map(questions: list[dict]) -> dict:
+    """The field map of the RISA template, straight from the contract. The type and status
+    maps are identity (a country can still edit them in the mapping dialog)."""
+    qmap = {q["path"]: q for q in questions}
+    types = symbology()["types"]
+    statuses = symbology()["status"]
+    tq, sq = qmap.get(RISA_PATHS["type"], {}), qmap.get(RISA_PATHS["status"], {})
+    return {
+        "preset": "risa",
+        **RISA_PATHS,
+        "popup": [p for p in ("obs/feature_id", "obs/status", "obs/status_reason", "obs/count", "note") if p in qmap],
+        "sensitive": list(RISA_SENSITIVE),
+        # A choice a country added that isn't a RISA code still gets a best guess
+        "type_map": {c["name"]: c["name"] if c["name"] in types else match_type(c["name"]) or match_type(c["label"])
+                     for c in tq.get("choices", [])},
+        "status_map": {c["name"]: c["name"] if c["name"] in statuses else match_status(c["name"]) or match_status(c["label"])
+                       for c in sq.get("choices", [])},
+        "choice_labels": _choice_labels(questions),
+    }
+
+
+def is_risa_map(fm: dict) -> bool:
+    """Still the RISA mapping: its location, type, status and label questions unchanged."""
+    return all(fm.get(k) == RISA_PATHS[k] for k in ("geo", "type", "status", "label"))
+
+
+def field_map_for(asset: dict) -> dict:
+    """The RISA preset for a RISA form, the guess for any other."""
+    questions = form_questions(asset)
+    return risa_field_map(questions) if is_risa_form(asset, questions) else guess_field_map(questions)
+
+
 def guess_field_map(questions: list[dict]) -> dict:
-    """Pick the geopoint, type, status and label questions. Works for the RISA form
-    without setup, and as a starting point for other forms."""
-    fm: dict = {"geo": "", "type": "", "status": "", "label": "", "popup": [], "sensitive": []}
+    """Pick the geopoint, type, status and label questions, as a starting point for a form
+    that isn't the RISA template."""
+    fm: dict = {"geo": "", "type": "", "status": "", "label": "", "note": "", "count": "", "popup": [], "sensitive": []}
     geo = [q for q in questions if q["type"] in ("geopoint", "geoshape", "geotrace")]
     if geo:
         fm["geo"] = geo[0]["path"]
@@ -181,6 +244,12 @@ def guess_field_map(questions: list[dict]) -> dict:
     named = [q for q in texts if any(w in q["name"].lower() for w in ("name", "nombre", "nom", "label", "id"))]
     if named or texts:
         fm["label"] = (named or texts)[0]["path"]
+    # The free-text comment and the number of units, by name
+    for key, types, words in (("note", ("text",), ("note", "comment", "coment", "observ", "remark")),
+                              ("count", ("integer", "decimal"), ("count", "how_many", "cantidad", "number_of", "nombre_de"))):
+        hit = next((q for q in questions if q["type"] in types and any(w in q["name"].lower() for w in words)), None)
+        if hit and hit["path"] != fm["label"]:
+            fm[key] = hit["path"]
     fm["popup"] = [q["path"] for q in questions if q["type"] not in ("geopoint", "geoshape", "geotrace")][:12]
     fm["sensitive"] = [
         q["path"] for q in questions if any(w in q["name"].lower() for w in ("phone", "telefono", "name_of", "contact"))
@@ -191,9 +260,7 @@ def guess_field_map(questions: list[dict]) -> dict:
         q = qmap.get(fm[key])
         if q:
             fm[f"{key}_map"] = {c["name"]: (matcher(c["name"]) or matcher(c["label"]) or "") for c in q["choices"]}
-    fm["choice_labels"] = {
-        q["path"]: {c["name"]: c["label"] for c in q.get("choices", [])} for q in questions if q.get("choices")
-    }
+    fm["choice_labels"] = _choice_labels(questions)
     return fm
 
 
@@ -241,6 +308,25 @@ def geometry(sub: dict, fm: dict):
     return None
 
 
+def _int(v):
+    try:
+        return int(float(v))
+    except (TypeError, ValueError):
+        return None
+
+
+def well_known(props: dict, sub: dict, fm: dict) -> None:
+    """The comment and the number of units under fixed names, `note` and `count`, so page 2,
+    the summary and the analysis read them whatever the form calls them. Without a mapping,
+    a top-level `note` question already is one."""
+    note = _val(sub, fm.get("note", "")) if fm.get("note") else None
+    if note not in (None, ""):
+        props["note"] = str(note)
+    count = _int(_val(sub, fm.get("count", ""))) if fm.get("count") else None
+    if count is not None:
+        props["count"] = count
+
+
 def to_feature_fields(sub: dict, fm: dict) -> dict:
     sensitive = set(fm.get("sensitive", []))
     labels = fm.get("choice_labels", {})
@@ -255,7 +341,8 @@ def to_feature_fields(sub: dict, fm: dict) -> dict:
         props[k] = v
         lab = labels.get(k) or next((labels[p] for p in labels if p.split("/")[-1] == k.split("/")[-1]), None)
         if lab and isinstance(v, str):
-            props[f"{k}:label"] = " ".join(lab.get(x, x) for x in v.split())
+            # select_multiple answers are space-separated names: the raw value stays, the labels are joined
+            props[f"{k}:label"] = ", ".join(lab.get(x, x) for x in v.split())
     vs = sub.get("_validation_status") or {}
     props["_validation_status"] = vs.get("label", "") if isinstance(vs, dict) else ""
     props["_photos"] = [
@@ -264,6 +351,7 @@ def to_feature_fields(sub: dict, fm: dict) -> dict:
         for a in sub.get("_attachments", [])
         if str(a.get("mimetype", "")).startswith("image/")
     ]
+    well_known(props, sub, fm)
     tval = _val(sub, fm.get("type", ""))
     sval = _val(sub, fm.get("status", ""))
     rtype = fm.get("type_map", {}).get(str(tval), "") if tval is not None else ""

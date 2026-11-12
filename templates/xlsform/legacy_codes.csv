@@ -1,0 +1,66 @@
+source,legacy_code,legacy_label,sector,feature_type,detail_field,detail_value,note
+mozambique_venezuela,wash_latrine_fixed,Latrines - Fixed/Permanent,wash,latrine,obs/permanence,permanent,
+mozambique_venezuela,wash_latrine_pit,Latrines - Pit,wash,latrine,,,Pit latrine; no detail code.
+mozambique_venezuela,wash_latrine_emergency,Latrines - Emergency/Temporary,wash,latrine,obs/permanence,emergency,Use temporary if it was past the first days.
+mozambique_venezuela,wash_latrine_gender_separated,Latrines - Gender Separated,wash,latrine,obs/wash_access,gender_separated,
+mozambique_venezuela,wash_latrine_accessible,Latrines - Accessible (Disability/Elderly),wash,latrine,obs/wash_access,disability_accessible,
+mozambique_venezuela,wash_latrine_child_friendly,Latrines - Child-Friendly (Reduced Height),wash,latrine,obs/wash_access,child_accessible,
+mozambique_venezuela,wash_water_source_improved,Water Source - Improved (Well/Borehole/Spring),wash,water,,,"One of borehole, well, spring; not known which."
+mozambique_venezuela,wash_water_source_unimproved,Water Source - Unimproved (Surface/Unprotected),wash,water,obs/water_source,surface,
+mozambique_venezuela,wash_water_distribution,Water Distribution System,wash,water,,,
+mozambique_venezuela,wash_water_storage_elevated,Water Storage - Elevated Tank,wash,water,obs/water_storage,tank,
+mozambique_venezuela,wash_water_storage_ground,Water Storage - Ground-Level/Underground,wash,water,obs/water_storage,tank,
+mozambique_venezuela,wash_water_tap_stand,Water Distribution - Tap stand,wash,water,obs/water_distribution,tap_stand,
+mozambique_venezuela,wash_bathing,Bathing facility,wash,bathing,,,
+mozambique_venezuela,wash_waste_bin,Waste bin,wash,waste,obs/waste_disposal,bin,
+mozambique_venezuela,prot_site_management,Site management,protection,registration,obs/site_management,camp_management,
+mozambique_venezuela,prot_safe_space_general,Safe Space - General,protection,safe_space,,,
+mozambique_venezuela,prot_safe_space_women,Safe Space - Women/Girls Focused,protection,safe_space,obs/space_users,women_girls,
+mozambique_venezuela,prot_safe_space_children,Safe Space - Children/Youth Focused,protection,cfs,obs/space_users,children,
+mozambique_venezuela,prot_safe_space_persons_with_disabilities,Safe Space - Persons with Disabilities,protection,safe_space,obs/space_users,disability,
+mozambique_venezuela,prot_safe_space_lgbtq,Safe Space - LGBTQ+ Inclusive,protection,safe_space,obs/space_users,lgbtiq,
+mozambique_venezuela,prot_psosocial,Psychosocial Support/Recreation Space,protection,safe_space,,,Psychosocial support; say so in the note.
+mozambique_venezuela,prot_women_friendly_facilities,Women-Friendly Facilities (Bathing/Changing Spaces),wash,bathing,obs/wash_access,gender_separated,
+mozambique_venezuela,prot_childcare_friendly_space,Child-Friendly/Childcare Space,protection,cfs,obs/space_users,children,
+mozambique_venezuela,prot_community_kitchen,Communal Kitchen,food,kitchen,,,
+mozambique_venezuela,prot_distribution_site,Distribution Site,food,dist,,,
+mozambique_venezuela,prot_entry_point,Entry Point/Reception Area,protection,registration,obs/site_management,reception,A gate with no reception desk is `gate`.
+mozambique_venezuela,hlth_health_clinic,Health Facility - Clinic,health,health,obs/health_level,primary,
+mozambique_venezuela,hlth_health_post,Health Facility - Health Post,health,health,obs/health_level,primary,
+mozambique_venezuela,hlth_health_referral,Health Facility - Referral Hospital,health,health,obs/health_level,secondary,Tertiary if it is a specialised hospital.
+mozambique_venezuela,hlth_reproductive_health,Reproductive Health Services,health,health,obs/health_services,reproductive,
+mozambique_venezuela,hlth_mental_health,Mental Health/Psychosocial Services,health,health,obs/health_services,mental_health,
+mozambique_venezuela,shlt_shelter_transitional,Shelter - Transitional (Semi-Permanent),shelter,shelter,obs/shelter_type,semi_permanent,Venezuela tagged it health.
+mozambique_venezuela,shlt_shelter_permanent,Shelter - Permanent Structure,shelter,shelter,obs/shelter_type,permanent,Venezuela tagged it health.
+mozambique_venezuela,shlt_shelter_collective,Shelter - Collective (School/Hall),shelter,shelter,obs/shelter_type,collective,Venezuela tagged it health.
+mozambique_venezuela,wash_lighting_solar,Lighting - Solar,energy,lighting,obs/lighting_power,solar,
+mozambique_venezuela,wash_lighting_camp,Lighting - General / camp / path / street,energy,lighting,obs/lighting_type,street,
+mozambique_venezuela,wash_lighting_generator,Lighting - Generator/Fuel-Based,energy,lighting,obs/lighting_power,generator,
+mozambique_venezuela,wash_lighting_manual,Lighting - Manual (Lanterns/Candles),energy,lighting,obs/lighting_type,individual,
+mozambique_venezuela,storage_facility,Storage Facility,logistics,storage,,,
+mozambique_venezuela,storage_building,Storage - Building Suitable for Stock,logistics,storage,obs/storage_type,permanent_building,
+mozambique_venezuela,storage_msu_space,Storage - Empty Space Suitable for MSU,logistics,storage,obs/storage_type,msu_space,
+mozambique_venezuela,access_constraint,Access Constraint (add comment),access,choke,,,Venezuela tagged it storage.
+mozambique_venezuela,helipad,Helipad (or Suitable Location),logistics,landing,,,Venezuela tagged it access.
+mozambique_venezuela,environmental_hazard,Environmental Hazard (add comment),environment,hazard,,,
+mozambique_venezuela,energy_available,Energy Available (source and distribution in comment),energy,energy,,,
+mozambique_venezuela,marketplace,Marketplace (add comment),commerce,market,,,
+mozambique_venezuela,other_infrastructure,Other Infrastructure,other,other,,,
+michael_draft,prot_site_management,Site management,protection,registration,,,
+michael_draft,wash_latrine,Latrine,wash,latrine,,,
+michael_draft,wash_bathing,Bathing facility,wash,bathing,,,
+michael_draft,wash_water_source,Water Source / storage / distribution,wash,water,,,
+michael_draft,wash_waste,Waste management,wash,waste,,,
+michael_draft,shlt_shelter,Shelter,shelter,shelter,,,
+michael_draft,prot_friendly_facilities,Friendly Spaces,protection,safe_space,,,cfs when friendly_space is only `child`.
+michael_draft,hlth_health,Health Facility,health,health,,,
+michael_draft,prot_community_kitchen,Communal Kitchen,food,kitchen,,,
+michael_draft,prot_distribution_site,Distribution Site,food,dist,,,
+michael_draft,energy_available,Energy,energy,energy,,,
+michael_draft,wash_lighting,Lighting,energy,lighting,,,
+michael_draft,storage_facility,Storage Facility,logistics,storage,,,
+michael_draft,access_constraint,Access Constraint (add comment),access,choke,,,
+michael_draft,helipad,Helipad (or Suitable Location),logistics,landing,,,
+michael_draft,environmental_hazard,Environmental Hazard (add comment),environment,hazard,,,
+michael_draft,marketplace,Marketplace (add comment),commerce,market,,,
+michael_draft,other_infrastructure,Other Infrastructure,other,other,,,

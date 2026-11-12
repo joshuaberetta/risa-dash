@@ -59,7 +59,10 @@ export interface Analysis {
 const SPHERE_PEOPLE_PER_TAP = 250
 const SPHERE_MAX_WATER_DISTANCE = 500
 const HOUSEHOLD = [4.2, 5.0]
-const SERVICES = ['water', 'latrine', 'hand', 'health', 'cfs', 'dist', 'storage', 'registration', 'kitchen']
+const SERVICES = ['water', 'latrine', 'bathing', 'hand', 'waste', 'health', 'cfs', 'safe_space', 'dist', 'storage', 'registration',
+  'kitchen', 'market', 'lighting', 'energy']
+// Flooded and debris areas, and hazards observed in the field (often a point)
+const HAZARDS = ['flood', 'debris', 'hazard']
 
 // ---- geometry in local metres -------------------------------------------------------
 
@@ -198,7 +201,7 @@ export function analyse(siteName: string, layers: LayerT[], data: Record<string,
   // Detected blocks replace drawn ones, so the same ground isn't counted twice
   const detectedBlocks = allBlocks.filter((f) => f.layer.kind === 'analysis')
   const blocks = detectedBlocks.length ? detectedBlocks : allBlocks
-  const hazards = feats.filter((f) => (f.type === 'flood' || f.type === 'debris') && f.ref.geometry.type.includes('Polygon'))
+  const hazards = feats.filter((f) => HAZARDS.includes(f.type) && (f.type === 'hazard' || f.ref.geometry.type.includes('Polygon')))
   const routes = feats.filter((f) => f.type === 'route')
   const water = services.filter((f) => f.type === 'water')
   const waterOk = water.filter((f) => f.status === 'ok')
@@ -277,14 +280,14 @@ export function analyse(siteName: string, layers: LayerT[], data: Record<string,
     }
   }
 
-  // Flood and debris: exposed blocks and services
+  // Flood, debris and hazards: exposed blocks and services
   for (const h of hazards) {
     const exposedBlocks = blocks.filter((b) => geomDist(b.ref.geometry, h.ref.geometry) < 15)
     const exposedServices = services.filter((s) => geomDist(s.ref.geometry, h.ref.geometry) < 30)
     if (!exposedBlocks.length && !exposedServices.length) continue
     const est = blockEst.filter((b) => exposedBlocks.some((x) => x.ref.id === b.ref.id)).reduce((s, b) => s + b.people, 0)
     findings.push({
-      id: `hazard-${h.ref.id}`, severity: exposedBlocks.length ? 'high' : 'medium', topic: h.type === 'flood' ? 'Flood' : 'Debris',
+      id: `hazard-${h.ref.id}`, severity: exposedBlocks.length ? 'high' : 'medium', topic: h.type === 'flood' ? 'Flood' : h.type === 'debris' ? 'Debris' : 'Hazard',
       title: exposedBlocks.length ? `${list(exposedBlocks.map(name))} border the ${name(h).toLowerCase()}` : `Services next to the ${name(h).toLowerCase()}`,
       detail: [
         exposedBlocks.length && est ? `About ${fmt(round(est, 100))} people live within 15 m of it.` : '',
@@ -393,6 +396,13 @@ const NOTES: Record<string, Partial<Record<string, string>>> = {
   storage: { ok: 'Storage tent intact, stock on pallets off the ground.' },
   gate: { ok: 'Entrance open, no obstruction.' },
   choke: { partial: 'Narrow crossing; market stalls block half the road.', no: 'Crossing blocked.' },
+  bathing: { ok: 'Bathing cubicles screened, doors lock from inside.', partial: 'One cubicle in use; no lighting at night.', no: 'Bathing area dry, screens torn down.' },
+  waste: { ok: 'Bins emptied, area clear.', partial: 'Bins full, waste piling beside them.', no: 'Open dumping; no bins left.' },
+  safe_space: { ok: 'Women’s space open, fenced, staff present.' },
+  lighting: { ok: 'Solar light working along the path.', partial: 'Light dim; panel covered in dust.', no: 'Light post down, no light at night.' },
+  energy: { ok: 'Charging station in use, several phones on charge.', no: 'Generator off, no fuel.' },
+  market: { ok: 'Stalls open, food and soap on sale.', partial: 'A few stalls open, little stock.' },
+  hazard: { ok: 'Eroded bank close to the shelters.' },
 }
 
 /** What an image model might say about an observation's photo. Made up. */
